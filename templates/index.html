@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>声纹识别</title>
+    <script type="text/javascript" src="/static/record.js"></script>
+</head>
+<body>
+<form action="/register" enctype="multipart/form-data" method="post">
+    注册声纹：<input type="file" required accept="audio/*" name="audio"><br>
+    注册名称：<input type="text" name="name"><br>
+
+    <input type="submit" value="上传">
+</form>
+
+<br/><br/><br/>
+<form action="/recognition" enctype="multipart/form-data" method="post">
+    预测声纹：<input type="file" required accept="audio/*" name="audio"><br>
+    <input type="submit" value="上传">
+</form>
+
+<br/><br/><br/>
+<div>
+    <audio controls autoplay></audio>
+    <br/><br/>
+    <input onclick="startRecording()" type="button" value="录音"/>
+    <input onclick="stopRecording()" type="button" value="停止"/>
+    <input onclick="playRecording()" type="button" value="播放"/>
+    <input onclick="uploadAudio()" type="button" value="提交"/>
+    <input onclick="cancelAudio()" type="button" value="取消"/>
+</div>
+
+
+<script>
+
+        var recorder;
+
+        var audio = document.querySelector('audio');
+
+        function startRecording() {
+            HZRecorder.get(function (rec) {
+                recorder = rec;
+                recorder.start();
+            });
+        }
+
+        function stopRecording() {
+            recorder.stop();
+        }
+
+        function playRecording() {
+            recorder.play(audio);
+        }
+
+        function cancelAudio(){
+            recorder.stop();
+            recorder.clear();
+        }
+
+        function uploadAudio() {
+            recorder.upload("/recognition", function (state, e) {
+                switch (state) {
+                    case 'uploading':
+                        var percentComplete = Math.round(e.loaded * 100 / e.total) + '%';
+                        console.log(percentComplete);
+                        break;
+                    case 'ok':
+                        alert(e.target.responseText);
+                        break;
+                    case 'error':
+                        alert("上传失败");
+                        break;
+                    case 'cancel':
+                        alert("上传被取消");
+                        break;
+                }
+            });
+        }
+</script>
+
+</body>
+</html>

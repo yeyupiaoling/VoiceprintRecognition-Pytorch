@@ -10,22 +10,22 @@ class ArcNet(nn.Module):
         Args:
             in_features: size of each input sample
             num_classes: size of each output sample
-            s: norm of input feature
-            m: margin
+            scale: norm of input feature
+            margin: margin
 
             cos(theta + m)
         """
-    def __init__(self, feature_dim, class_dim, s=64.0, m=0.50):
+    def __init__(self, feature_dim, class_dim, scale=64.0, margin=0.50):
         super(ArcNet, self).__init__()
-        self.s = s
-        self.m = m
+        self.scale = scale
+        self.margin = margin
         self.weight = Parameter(torch.FloatTensor(feature_dim, class_dim))
         nn.init.xavier_uniform_(self.weight)
         self.class_dim = class_dim
-        self.cos_m = math.cos(m)
-        self.sin_m = math.sin(m)
-        self.threshold = math.cos(math.pi - m)
-        self.mm = self.sin_m * m
+        self.cos_m = math.cos(margin)
+        self.sin_m = math.sin(margin)
+        self.threshold = math.cos(math.pi - margin)
+        self.mm = self.sin_m * margin
 
     def forward(self, feature, label):
         cos_theta = torch.mm(F.normalize(feature), F.normalize(self.weight, dim=0))
@@ -33,8 +33,8 @@ class ArcNet(nn.Module):
         cos_theta_m = cos_theta * self.cos_m - sin_theta * self.sin_m
         cos_theta_m = torch.where(cos_theta > self.threshold, cos_theta_m, cos_theta - self.mm)
         one_hot = torch.nn.functional.one_hot(label, self.class_dim)
-        output = (one_hot * cos_theta_m) + (torch.abs((1.0 - one_hot)) * cos_theta)
-        output *= self.s
+        output = torch.where(one_hot == 1., cos_theta_m, cos_theta)
+        output *= self.scale
         # 简单的分类方法，学习率需要设置为0.1
         # cosine = self.cosine_sim(feature, self.weight)
         # one_hot = torch.nn.functional.one_hot(label, self.class_dim)

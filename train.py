@@ -58,8 +58,8 @@ def save_model(args, model, metric_fc, optimizer, epoch_id):
     if not os.path.exists(model_params_path):
         os.makedirs(model_params_path)
     # 保存模型参数和优化方法参数
-    torch.save(model.module.state_dict(), os.path.join(model_params_path, 'model_params.pth'))
-    torch.save(metric_fc.module.state_dict(), os.path.join(model_params_path, 'metric_fc_params.pth'))
+    torch.save(model.state_dict(), os.path.join(model_params_path, 'model_params.pth'))
+    torch.save(metric_fc.state_dict(), os.path.join(model_params_path, 'metric_fc_params.pth'))
     torch.save(optimizer.state_dict(), os.path.join(model_params_path, 'optimizer.pth'))
     # 删除旧的模型
     old_model_path = os.path.join(args.save_model, args.use_model, 'epoch_%d' % (epoch_id - 3))
@@ -69,34 +69,30 @@ def save_model(args, model, metric_fc, optimizer, epoch_id):
     all_model_path = os.path.join(args.save_model, '%s.pth' % args.use_model)
     if not os.path.exists(os.path.dirname(all_model_path)):
         os.makedirs(os.path.dirname(all_model_path))
-    torch.jit.save(torch.jit.script(model.module), all_model_path)
+    torch.jit.save(torch.jit.script(model), all_model_path)
 
 
 def train():
+    device_ids = [int(i) for i in args.gpus.split(',')]
     # 数据输入的形状
     input_shape = eval(args.input_shape)
     # 获取数据
     train_dataset = CustomDataset(args.train_list_path, model='train', spec_len=input_shape[3])
-    if len(args.gpus.split(',')) > 1:
-        batch_sampler = torch.utils.data.DistributedSampler(train_dataset, shuffle=True)
-    else:
-        batch_sampler = None
     train_loader = DataLoader(dataset=train_dataset,
-                              batch_sampler=batch_sampler,
-                              batch_size=args.batch_size,
-                              shuffle=(batch_sampler is None),
+                              batch_size=args.batch_size * len(device_ids),
+                              shuffle=True,
                               num_workers=args.num_workers)
     test_dataset = CustomDataset(args.test_list_path, model='test', spec_len=input_shape[3])
     test_loader = DataLoader(dataset=test_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
-    device = torch.device("cuda:0")
+    device = torch.device("cuda")
     # 获取模型
     model = resnet_face34()
-    metric_fc = ArcNet(512, args.num_classes, s=64, m=0.5)
+    metric_fc = ArcNet(512, args.num_classes, scale=64, margin=0.5)
 
     if len(args.gpus.split(',')) > 1:
-        model = DataParallel(model, device_ids=[int(i) for i in args.gpus.split(',')])
-        metric_fc = DataParallel(metric_fc, device_ids=[int(i) for i in args.gpus.split(',')])
+        model = DataParallel(model, device_ids=device_ids, output_device=device_ids[0])
+        metric_fc = DataParallel(metric_fc, device_ids=device_ids, output_device=device_ids[0])
 
     model.to(device)
     metric_fc.to(device)
@@ -116,7 +112,7 @@ def train():
 
     # 加载模型参数和优化方法参数
     if args.resume:
-        if len(args.gpus.split(',')) > 1:
+        if len(device_ids) > 1:
             model.module.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
             metric_fc.module.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
             optimizer.load_state_dict(torch.load(os.path.join(args.resume, 'optimizer.pth')))
@@ -160,12 +156,13 @@ def train():
         print('='*70)
 
         # 保存模型
-        if len(args.gpus.split(',')) > 1:
+        if len(device_ids) > 1:
             save_model(args, model.module, metric_fc.module, optimizer, epoch_id)
         else:
             save_model(args, model, metric_fc, optimizer, epoch_id)
 
 
 if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
     print_arguments(args)
     train()

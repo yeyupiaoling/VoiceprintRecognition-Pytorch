@@ -9,8 +9,8 @@ from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('audio_path1',      str,    'audio_db/a_1.wav',       '预测第一个音频')
-add_arg('audio_path2',      str,    'audio_db/a_2.wav',       '预测第二个音频')
+add_arg('audio_path1',      str,    'audio/a_1.wav',          '预测第一个音频')
+add_arg('audio_path2',      str,    'audio/a_2.wav',          '预测第二个音频')
 add_arg('threshold',        float,   0.7,                     '判断是否为同一个人的阈值')
 add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
 add_arg('model_path',       str,    'models/infer/model',     '预测模型的路径')
