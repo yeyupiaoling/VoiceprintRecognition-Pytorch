@@ -1,13 +1,13 @@
 import argparse
 import functools
 import os
-import wave
+import shutil
 
 import numpy as np
 import torch
-import pyaudio
 
 from utils.reader import load_audio
+from utils.record import RecordAudio
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -63,47 +63,32 @@ def recognition(path):
     return name, pro
 
 
-if __name__ == '__main__':
-    load_audio_db('audio_db')
-    # 录音参数
-    CHUNK = 1024
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 16000
-    RECORD_SECONDS = 3
-    WAVE_OUTPUT_FILENAME = "dataset/temp.wav"
+# 声纹注册
+def register(path, user_name):
+    save_path = os.path.join(args.audio_db, user_name + os.path.basename(path)[-4:])
+    shutil.move(path, save_path)
+    feature = infer(save_path)[0]
+    person_name.append(user_name)
+    person_feature.append(feature)
 
-    # 打开录音
-    p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
+
+if __name__ == '__main__':
+    load_audio_db(args.audio_db)
+    record_audio = RecordAudio()
 
     while True:
-        try:
-            i = input("按下回车键开机录音，录音3秒中：")
-            print("开始录音......")
-            frames = []
-            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-                data = stream.read(CHUNK)
-                frames.append(data)
-
-            print("录音已结束!")
-
-            wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-            wf.setnchannels(CHANNELS)
-            wf.setsampwidth(p.get_sample_size(FORMAT))
-            wf.setframerate(RATE)
-            wf.writeframes(b''.join(frames))
-            wf.close()
-
-            # 识别对比音频库的音频
-            name, p = recognition(WAVE_OUTPUT_FILENAME)
+        select_fun = int(input("请选择功能，0为注册音频到声纹库，1为执行声纹识别："))
+        if select_fun == 0:
+            audio_path = record_audio.record()
+            name = input("请输入该音频用户的名称：")
+            if name == '': continue
+            register(audio_path, name)
+        elif select_fun == 1:
+            audio_path = record_audio.record()
+            name, p = recognition(audio_path)
             if p > args.threshold:
                 print("识别说话的为：%s，相似度为：%f" % (name, p))
             else:
                 print("音频库没有该用户的语音")
-        except:
-            pass
+        else:
+            print('请正确选择功能')
