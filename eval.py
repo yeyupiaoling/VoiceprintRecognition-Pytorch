@@ -31,8 +31,8 @@ def cal_accuracy(y_score, y_true):
     y_true = np.asarray(y_true)
     best_accuracy = 0
     best_threshold = 0
-    for i in range(len(y_score)):
-        threshold = y_score[i]
+    for i in tqdm(range(0, 100)):
+        threshold = i * 0.01
         y_test = (y_score >= threshold)
         acc = np.mean((y_test == y_true).astype(int))
         if acc > best_accuracy:

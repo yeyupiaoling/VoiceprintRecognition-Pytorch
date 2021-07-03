@@ -12,6 +12,7 @@ def load_audio(audio_path, mode='train', win_length=400, sr=16000, hop_length=16
     if mode == 'infer':
         wav = remove_silence(wav, sr)
         wav = remove_noise(wav, sr)
+        assert len(wav) > 0, "音频经过去除噪声和静音片段后，得到的结果为空，该音频不可用！"
     # 数据拼接
     if mode == 'train':
         extended_wav = np.append(wav, wav)
@@ -30,8 +31,6 @@ def load_audio(audio_path, mode='train', win_length=400, sr=16000, hop_length=16
         # 随机裁剪
         rand_time = np.random.randint(0, freq_time - spec_len)
         spec_mag = mag_T[:, rand_time:rand_time + spec_len]
-    elif mode == 'infer':
-        spec_mag = mag_T
     else:
         spec_mag = mag_T[:, :spec_len]
     mean = np.mean(spec_mag, 0, keepdims=True)

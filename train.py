@@ -14,7 +14,7 @@ from torchsummary import summary
 
 from utils.reader import CustomDataset
 from utils.metrics import ArcNet
-from utils.resnet import resnet_face34
+from utils.resnet import resnet34
 from utils.utility import add_arguments, print_arguments
 
 
@@ -26,7 +26,9 @@ add_arg('num_workers',      int,    4,                        '读取数据的�
 add_arg('num_epoch',        int,    50,                       '训练的轮数')
 add_arg('num_classes',      int,    3242,                     '分类的类别数量')
 add_arg('learning_rate',    float,  1e-3,                     '初始学习率的大小')
-add_arg('input_shape',      str,    '(None, 1, 257, 257)',    '数据输入的形状')
+add_arg('weight_decay',     float,  5e-4,                     'weight_decay的大小')
+add_arg('lr_step',          int,    10,                       '学习率衰减步数')
+add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
 add_arg('train_list_path',  str,    'dataset/train_list.txt', '训练数据的数据列表路径')
 add_arg('test_list_path',   str,    'dataset/test_list.txt',  '测试数据的数据列表路径')
 add_arg('save_model',       str,    'models/',                '模型保存的路径')
@@ -39,7 +41,7 @@ args = parser.parse_args()
 @torch.no_grad()
 def test(model, metric_fc, test_loader, device):
     accuracies = []
-    for batch_id, (spec_mag, label) in enumerate(test_loader()):
+    for batch_id, (spec_mag, label) in enumerate(test_loader):
         spec_mag = spec_mag.to(device)
         label = label.to(device).long()
         feature = model(spec_mag)
@@ -54,7 +56,7 @@ def test(model, metric_fc, test_loader, device):
 
 # 保存模型
 def save_model(args, model, metric_fc, optimizer, epoch_id):
-    model_params_path = os.path.join(args.save_model, args.use_model, 'epoch_%d' % epoch_id)
+    model_params_path = os.path.join(args.save_model, 'epoch_%d' % epoch_id)
     if not os.path.exists(model_params_path):
         os.makedirs(model_params_path)
     # 保存模型参数和优化方法参数
@@ -62,11 +64,11 @@ def save_model(args, model, metric_fc, optimizer, epoch_id):
     torch.save(metric_fc.state_dict(), os.path.join(model_params_path, 'metric_fc_params.pth'))
     torch.save(optimizer.state_dict(), os.path.join(model_params_path, 'optimizer.pth'))
     # 删除旧的模型
-    old_model_path = os.path.join(args.save_model, args.use_model, 'epoch_%d' % (epoch_id - 3))
+    old_model_path = os.path.join(args.save_model, 'epoch_%d' % (epoch_id - 3))
     if os.path.exists(old_model_path):
         shutil.rmtree(old_model_path)
     # 保存整个模型和参数
-    all_model_path = os.path.join(args.save_model, '%s.pth' % args.use_model)
+    all_model_path = os.path.join(args.save_model, 'resnet34.pth')
     if not os.path.exists(os.path.dirname(all_model_path)):
         os.makedirs(os.path.dirname(all_model_path))
     torch.jit.save(torch.jit.script(model), all_model_path)
@@ -77,17 +79,17 @@ def train():
     # 数据输入的形状
     input_shape = eval(args.input_shape)
     # 获取数据
-    train_dataset = CustomDataset(args.train_list_path, model='train', spec_len=input_shape[3])
+    train_dataset = CustomDataset(args.train_list_path, model='train', spec_len=input_shape[2])
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size * len(device_ids),
                               shuffle=True,
                               num_workers=args.num_workers)
-    test_dataset = CustomDataset(args.test_list_path, model='test', spec_len=input_shape[3])
+    test_dataset = CustomDataset(args.test_list_path, model='test', spec_len=input_shape[2])
     test_loader = DataLoader(dataset=test_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     device = torch.device("cuda")
     # 获取模型
-    model = resnet_face34()
+    model = resnet34()
     metric_fc = ArcNet(512, args.num_classes, scale=64, margin=0.5)
 
     if len(args.gpus.split(',')) > 1:
@@ -96,7 +98,10 @@ def train():
 
     model.to(device)
     metric_fc.to(device)
-    summary(model, input_shape)
+    if len(args.gpus.split(',')) > 1:
+        summary(model.module, input_shape)
+    else:
+        summary(model, input_shape)
 
     # 获取预训练的epoch数
     last_epoch = int(re.findall(r'\d+', args.resume)[-1]) + 1 if args.resume is not None else 0

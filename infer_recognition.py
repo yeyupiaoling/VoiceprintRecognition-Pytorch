@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
 add_arg('threshold',        float,   0.7,                     '判断是否为同一个人的阈值')
-add_arg('model_path',       str,    'models/infer/model',     '预测模型的路径')
+add_arg('model_path',       str,    'models/resnet34.pth',    '预测模型的路径')
 args = parser.parse_args()
 
 print_arguments(args)
@@ -36,7 +36,7 @@ def infer(audio_path):
     data = torch.tensor(data, dtype=torch.float32, device=device)
     # 执行预测
     feature = model(data)
-    return feature.numpy()
+    return feature.data.cpu().numpy()
 
 
 # 加载要识别的音频库
