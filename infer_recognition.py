@@ -13,7 +13,7 @@ from utils.utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
-add_arg('threshold',        float,   0.7,                     '判断是否为同一个人的阈值')
+add_arg('threshold',        float,   0.71,                    '判断是否为同一个人的阈值')
 add_arg('model_path',       str,    'models/resnet34.pth',    '预测模型的路径')
 args = parser.parse_args()
 

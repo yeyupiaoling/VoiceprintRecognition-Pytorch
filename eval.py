@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('list_path',        str,    'dataset/test_list.txt',  '测试数据的数据列表路径')
 add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
-add_arg('model_path',       str,    'models/infer/model',     '预测模型的路径')
+add_arg('model_path',       str,    'models/resnet34.pth',    '预测模型的路径')
 args = parser.parse_args()
 
 print_arguments(args)
@@ -45,12 +45,12 @@ def cal_accuracy(y_score, y_true):
 # 预测音频
 def infer(audio_path):
     input_shape = eval(args.input_shape)
-    data = load_audio(audio_path, mode='infer', spec_len=input_shape[2])
+    data = load_audio(audio_path, mode='test', spec_len=input_shape[2])
     data = data[np.newaxis, :]
-    data = torch.tensor(data, dtype=torch.float32)
+    data = torch.tensor(data, dtype=torch.float32, device=device)
     # 执行预测
     feature = model(data)
-    return feature.numpy()
+    return feature.data.cpu().numpy()[0]
 
 
 def get_all_audio_feature(list_path):
@@ -59,7 +59,7 @@ def get_all_audio_feature(list_path):
     features, labels = [], []
     print('开始提取全部的音频特征...')
     for line in tqdm(lines):
-        path, label = line.replace('\n', '').split(' ')
+        path, label = line.replace('\n', '').split('\t')
         feature = infer(path)
         features.append(feature)
         labels.append(int(label))
@@ -83,7 +83,7 @@ def main():
             score = cosin_metric(feature_1, feature_2)
             scores.append(score)
             y_true.append(int(labels[i] == labels[j]))
-    accuracy, threshold = cal_accuracy(scores, labels)
+    accuracy, threshold = cal_accuracy(scores, y_true)
     print('当阈值为%f, 准确率最大，为：%f' % (threshold, accuracy))
 
 

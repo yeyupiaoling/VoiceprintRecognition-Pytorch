@@ -103,28 +103,29 @@ def train():
     else:
         summary(model, input_shape)
 
-    # 获取预训练的epoch数
-    last_epoch = int(re.findall(r'\d+', args.resume)[-1]) + 1 if args.resume is not None else 0
+    # 初始化epoch数
+    last_epoch = 0
     # 获取优化方法
-    optimizer = torch.optim.SGD([{'params': model.parameters(), 'initial_lr': args.learning_rate},
-                                 {'params': metric_fc.parameters(), 'initial_lr': args.learning_rate}],
+    optimizer = torch.optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
                                 lr=args.learning_rate, momentum=0.9, weight_decay=args.weight_decay)
     # 获取学习率衰减函数
-    scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=0.1, last_epoch=last_epoch, verbose=True)
+    scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=0.1, verbose=True)
 
     # 获取损失函数
     criterion = torch.nn.CrossEntropyLoss()
 
     # 加载模型参数和优化方法参数
     if args.resume:
+        optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.pth'))
+        optimizer.load_state_dict(optimizer_state)
+        # 获取预训练的epoch数
+        last_epoch = optimizer_state['state'][0]['step']
         if len(device_ids) > 1:
             model.module.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
             metric_fc.module.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
-            optimizer.load_state_dict(torch.load(os.path.join(args.resume, 'optimizer.pth')))
         else:
             model.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
             metric_fc.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
-            optimizer.load_state_dict(torch.load(os.path.join(args.resume, 'optimizer.pth')))
         print('成功加载模型参数和优化方法参数')
 
     # 开始训练

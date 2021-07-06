@@ -9,7 +9,7 @@
 # 模型下载
 | 数据集 | 准确率 | 下载地址 |
 | :---: | :---: | :---: |
-| [中文语音语料数据集](https://github.com/KuangDD/zhvoice) | 训练中 | [训练中]() |
+| [中文语音语料数据集](https://github.com/KuangDD/zhvoice) | 0.999955 | [点击下载](https://download.csdn.net/download/qq_33200967/20045269) |
 
 # 安装环境
 1. 安装Pytorch，如果已经安装过Pytorch，测无需再次安装。
@@ -75,7 +75,7 @@ model_path: models/infer/model
 开始两两对比音频特征...
 100%|█████████████████████████████████████████████████████| 5332/5332 [01:43<00:00, 51.62it/s]
 100%|█████████████████████████████████████████████████████| 100/100 [00:03<00:00, 28.04it/s]
-当阈值为0.700000, 准确率最大，准确率为：0.999950
+当阈值为0.710000, 准确率最大，准确率为：0.999955
 ```
 
 # 声纹对比
@@ -91,10 +91,10 @@ audio_path1: audio/a_1.wav
 audio_path2: audio/b_2.wav
 input_shape: (1, 257, 257)
 model_path: models/infer/model
-threshold: 0.7
+threshold: 0.71
 ------------------------------------------------
 
-audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：0.020499
+audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：-0.259855
 ```
 
 
@@ -111,7 +111,7 @@ python infer_recognition.py
 audio_db: audio_db
 input_shape: (1, 257, 257)
 model_path: models/infer/model
-threshold: 0.7
+threshold: 0.71
 ------------------------------------------------
 
 Loaded 李达康 audio.
