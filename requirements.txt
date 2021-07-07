@@ -9,5 +9,3 @@ pyaudio==0.2.11
 pyworld==0.2.12
 pydub==0.25.1
 torchsummary~=1.5.1
-flask~=1.1.2
-flask-cors~=3.0.10
