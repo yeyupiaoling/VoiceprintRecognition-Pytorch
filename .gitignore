@@ -4,3 +4,11 @@ dataset/
 models/
 log/
 temp/
+audio_db/
+!audio_db/李达康.wav
+!audio_db/沙瑞金.wav
+audio/
+!audio/a_1.wav
+!audio/a_2.wav
+!audio/b_1.wav
+!audio/b_2.wav
