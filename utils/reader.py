@@ -1,18 +1,12 @@
 import librosa
 import numpy as np
 from torch.utils import data
-from aukit import remove_silence, remove_noise
 
 
 # 加载并预处理音频
 def load_audio(audio_path, mode='train', win_length=400, sr=16000, hop_length=160, n_fft=512, spec_len=257):
     # 读取音频数据
     wav, sr_ret = librosa.load(audio_path, sr=sr)
-    # 推理的数据要移除静音部分
-    if mode == 'infer':
-        wav = remove_silence(wav, sr)
-        wav = remove_noise(wav, sr)
-        assert len(wav) > 0, "音频经过去除噪声和静音片段后，得到的结果为空，该音频不可用！"
     # 数据拼接
     if mode == 'train':
         extended_wav = np.append(wav, wav)

@@ -1,11 +1,7 @@
 numba==0.52.0
 librosa~=0.8.1
 numpy==1.19.2
-aukit==1.4.4
 tqdm==4.59.0
-webrtcvad==2.0.10
 visualdl==2.1.1
 pyaudio==0.2.11
-pyworld==0.2.12
-pydub==0.25.1
 torchsummary~=1.5.1
