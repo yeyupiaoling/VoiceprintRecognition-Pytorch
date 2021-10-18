@@ -7,9 +7,10 @@
  - Pytorch 1.8.1
 
 # 模型下载
-| 数据集 | 类别数量 | 准确率 | 下载地址 |
-| :---: |:---: |  :---: | :---: |
-| [中文语音语料数据集](https://github.com/KuangDD/zhvoice)| 3242 | 0.999955 | [点击下载](https://download.csdn.net/download/qq_33200967/20045269) |
+| 数据集 | 类别数量 | 下载地址 |
+| :---: |:---: | :---: |
+| [中文语音语料数据集](https://github.com/KuangDD/zhvoice)| 3242 | [点击下载](https://download.csdn.net/download/qq_33200967/20045269) |
+| 更大数据集 | 6235 | [点击下载](https://download.csdn.net/download/qq_33200967/33236624) |
 
 # 安装环境
 1. 安装Pytorch，如果已经安装过Pytorch，测无需再次安装。

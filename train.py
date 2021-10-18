@@ -119,7 +119,7 @@ def train():
         optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.pth'))
         optimizer.load_state_dict(optimizer_state)
         # 获取预训练的epoch数
-        last_epoch = optimizer_state['state'][0]['step']
+        last_epoch = int(re.findall('(\d+)', args.resume)[-1])
         if len(device_ids) > 1:
             model.module.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
             metric_fc.module.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
@@ -150,8 +150,8 @@ def train():
                 acc = np.mean((output == label).astype(int))
                 eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch_id - last_epoch) * len(train_loader) - batch_id)
                 eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
-                print('[%s] Train epoch %d, batch: %d/%d, loss: %f, accuracy: %f, eta: %s' % (
-                    datetime.now(), epoch_id, batch_id, len(train_loader), loss.item(), acc.item(), eta_str))
+                print('[%s] Train epoch %d, batch: %d/%d, loss: %f, accuracy: %f, lr: %f, eta: %s' % (
+                    datetime.now(), epoch_id, batch_id, len(train_loader), loss.item(), acc.item(), scheduler.get_lr()[0], eta_str))
         scheduler.step()
         # 开始评估
         model.eval()
