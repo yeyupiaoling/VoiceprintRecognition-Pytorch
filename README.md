@@ -53,11 +53,9 @@ dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
 ```python
 wav, sr_ret = librosa.load(audio_path, sr=sr)
 linear = librosa.stft(extended_wav, n_fft=n_fft, win_length=win_length, hop_length=hop_length)
-linear_T = linear.T
-mag, _ = librosa.magphase(linear_T)
-mag_T = mag.T
-freq, freq_time = mag_T.shape
-spec_mag = mag_T[:, :spec_len]
+mag, _ = librosa.magphase(linear)
+freq, freq_time = mag.shape
+spec_mag = mag[:, :spec_len]
 mean = np.mean(spec_mag, 0, keepdims=True)
 std = np.std(spec_mag, 0, keepdims=True)
 spec_mag = (spec_mag - mean) / (std + 1e-5)
