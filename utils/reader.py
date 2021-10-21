@@ -16,17 +16,15 @@ def load_audio(audio_path, mode='train', win_length=400, sr=16000, hop_length=16
         extended_wav = np.append(wav, wav[::-1])
     # 计算短时傅里叶变换
     linear = librosa.stft(extended_wav, n_fft=n_fft, win_length=win_length, hop_length=hop_length)
-    linear_T = linear.T
-    mag, _ = librosa.magphase(linear_T)
-    mag_T = mag.T
-    freq, freq_time = mag_T.shape
+    mag, _ = librosa.magphase(linear)
+    freq, freq_time = mag.shape
     assert freq_time >= spec_len, "非静音部分长度不能低于1.3s"
     if mode == 'train':
         # 随机裁剪
         rand_time = np.random.randint(0, freq_time - spec_len)
-        spec_mag = mag_T[:, rand_time:rand_time + spec_len]
+        spec_mag = mag[:, rand_time:rand_time + spec_len]
     else:
-        spec_mag = mag_T[:, :spec_len]
+        spec_mag = mag[:, :spec_len]
     mean = np.mean(spec_mag, 0, keepdims=True)
     std = np.std(spec_mag, 0, keepdims=True)
     spec_mag = (spec_mag - mean) / (std + 1e-5)
