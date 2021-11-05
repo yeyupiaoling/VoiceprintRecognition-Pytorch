@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from torchsummary import summary
 
 from utils.reader import CustomDataset
-from utils.metrics import ArcNet
+from utils.arcmargin import ArcNet
 from utils.resnet import resnet34
 from utils.utility import add_arguments, print_arguments
 
@@ -90,7 +90,7 @@ def train():
     device = torch.device("cuda")
     # 获取模型
     model = resnet34()
-    metric_fc = ArcNet(512, args.num_classes, scale=64, margin=0.5)
+    metric_fc = ArcNet(512, args.num_classes)
 
     if len(args.gpus.split(',')) > 1:
         model = DataParallel(model, device_ids=device_ids, output_device=device_ids[0])
