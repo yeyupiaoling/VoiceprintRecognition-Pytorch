@@ -1,171 +1,212 @@
-import os
-import re
-import shutil
-import time
-from datetime import datetime, timedelta
 import argparse
 import functools
+import os
+import time
+from datetime import datetime, timedelta
+
 import numpy as np
 import torch
+import yaml
+from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader
 from torchsummary import summary
+from visualdl import LogWriter
 
-from utils.reader import CustomDataset
-from utils.arcmargin import ArcNet
-from utils.resnet import resnet34
+from modules.loss import AAMLoss
+from modules.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
+from data_utils.reader import CustomDataset, collate_fn
+from data_utils.noise_perturb import NoisePerturbAugmentor
+from data_utils.speed_perturb import SpeedPerturbAugmentor
+from data_utils.volume_perturb import VolumePerturbAugmentor
+from data_utils.spec_augment import SpecAugmentor
 from utils.utility import add_arguments, print_arguments
-
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('gpus',             str,    '0',                      '训练使用的GPU序号，使用英文逗号,隔开，如：0,1')
+add_arg('use_model',        str,    'ecapa_tdnn',             '所使用的模型')
 add_arg('batch_size',       int,    32,                       '训练的批量大小')
 add_arg('num_workers',      int,    4,                        '读取数据的线程数量')
 add_arg('num_epoch',        int,    50,                       '训练的轮数')
-add_arg('num_classes',      int,    3242,                     '分类的类别数量')
+add_arg('num_speakers',     int,    10,                     '分类的类别数量')
 add_arg('learning_rate',    float,  1e-3,                     '初始学习率的大小')
 add_arg('weight_decay',     float,  5e-4,                     'weight_decay的大小')
 add_arg('lr_step',          int,    10,                       '学习率衰减步数')
-add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
 add_arg('train_list_path',  str,    'dataset/train_list.txt', '训练数据的数据列表路径')
 add_arg('test_list_path',   str,    'dataset/test_list.txt',  '测试数据的数据列表路径')
-add_arg('save_model',       str,    'models/',                '模型保存的路径')
-add_arg('resume',           str,    None,                     '恢复训练，当为None则不使用恢复模型')
-add_arg('pretrained_model', str,    None,                     '预训练模型的路径，当为None则不使用预训练模型')
+add_arg('save_model_dir',   str,    'models/',                '模型保存的路径')
+add_arg('feature_method',   str,    'melspectrogram',         '音频特征提取方法')
+add_arg('augment_conf_path',str,    'configs/augment.yml',    '数据增强的配置文件，为json格式')
+add_arg('resume',           str,    None,                     '恢复训练的模型文件夹，当为None则不使用恢复模型')
+add_arg('pretrained_model', str,    None,                     '预训练模型的模型文件夹，当为None则不使用预训练模型')
 args = parser.parse_args()
 
 
 # 评估模型
 @torch.no_grad()
-def test(model, metric_fc, test_loader, device):
+def evaluate(model, eval_loader):
+    model.eval()
     accuracies = []
-    for batch_id, (spec_mag, label) in enumerate(test_loader):
-        spec_mag = spec_mag.to(device)
-        label = label.to(device).long()
-        feature = model(spec_mag)
-        output = metric_fc(feature, label)
+    for batch_id, (audio, label, audio_lens) in enumerate(eval_loader):
+        output = model(audio, audio_lens)
+        # 计算准确率
         output = output.data.cpu().numpy()
         output = np.argmax(output, axis=1)
         label = label.data.cpu().numpy()
         acc = np.mean((output == label).astype(int))
         accuracies.append(acc.item())
+    model.train()
     return float(sum(accuracies) / len(accuracies))
 
 
-# 保存模型
-def save_model(args, model, metric_fc, optimizer, epoch_id):
-    model_params_path = os.path.join(args.save_model, 'epoch_%d' % epoch_id)
-    if not os.path.exists(model_params_path):
-        os.makedirs(model_params_path)
-    # 保存模型参数和优化方法参数
-    torch.save(model.state_dict(), os.path.join(model_params_path, 'model_params.pth'))
-    torch.save(metric_fc.state_dict(), os.path.join(model_params_path, 'metric_fc_params.pth'))
-    torch.save(optimizer.state_dict(), os.path.join(model_params_path, 'optimizer.pth'))
-    # 删除旧的模型
-    old_model_path = os.path.join(args.save_model, 'epoch_%d' % (epoch_id - 3))
-    if os.path.exists(old_model_path):
-        shutil.rmtree(old_model_path)
-    # 保存整个模型和参数
-    all_model_path = os.path.join(args.save_model, 'resnet34.pth')
-    if not os.path.exists(os.path.dirname(all_model_path)):
-        os.makedirs(os.path.dirname(all_model_path))
-    torch.jit.save(torch.jit.script(model), all_model_path)
-
-
 def train():
+    # 获取有多少张显卡训练
     device_ids = [int(i) for i in args.gpus.split(',')]
-    # 数据输入的形状
-    input_shape = eval(args.input_shape)
+    # 日志记录器
+    writer = LogWriter(logdir='log')
+    # 获取数据增强器
+    augmentors = None
+    if args.augment_conf_path is not None:
+        augmentors = {}
+        with open(args.augment_conf_path, encoding="utf-8") as fp:
+            configs = yaml.load(fp, Loader=yaml.FullLoader)
+        augmentors['noise'] = NoisePerturbAugmentor(**configs['noise'])
+        augmentors['speed'] = SpeedPerturbAugmentor(**configs['speed'])
+        augmentors['volume'] = VolumePerturbAugmentor(**configs['volume'])
+        augmentors['specaug'] = SpecAugmentor(**configs['specaug'])
     # 获取数据
-    train_dataset = CustomDataset(args.train_list_path, model='train', spec_len=input_shape[2])
+    train_dataset = CustomDataset(args.train_list_path,
+                                  feature_method=args.feature_method,
+                                  mode='train',
+                                  sr=16000,
+                                  chunk_duration=3,
+                                  augmentors=augmentors)
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size * len(device_ids),
+                              collate_fn=collate_fn,
                               shuffle=True,
                               num_workers=args.num_workers)
-    test_dataset = CustomDataset(args.test_list_path, model='test', spec_len=input_shape[2])
-    test_loader = DataLoader(dataset=test_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
+    # 测试数据
+    eval_dataset = CustomDataset(args.test_list_path,
+                                 feature_method=args.feature_method,
+                                 mode='eval',
+                                 sr=16000,
+                                 chunk_duration=3)
+    eval_loader = DataLoader(dataset=eval_dataset,
+                             batch_size=args.batch_size,
+                             collate_fn=collate_fn,
+                             num_workers=args.num_workers)
 
     device = torch.device("cuda")
     # 获取模型
-    model = resnet34()
-    metric_fc = ArcNet(512, args.num_classes)
+    if args.use_model == 'ecapa_tdnn':
+        ecapa_tdnn = EcapaTdnn(input_size=train_dataset.input_size)
+        model = SpeakerIdetification(backbone=ecapa_tdnn, num_class=args.num_speakers)
+    else:
+        raise Exception(f'{args.use_model} 模型不存在！')
 
     if len(args.gpus.split(',')) > 1:
         model = DataParallel(model, device_ids=device_ids, output_device=device_ids[0])
-        metric_fc = DataParallel(metric_fc, device_ids=device_ids, output_device=device_ids[0])
 
     model.to(device)
-    metric_fc.to(device)
-    if len(args.gpus.split(',')) > 1:
-        summary(model.module, input_shape)
-    else:
-        summary(model, input_shape)
+    # if len(args.gpus.split(',')) > 1:
+    #     summary(model.module, (1, train_dataset.input_size, 98))
+    # else:
+    #     summary(model, (1, train_dataset.input_size, 98))
 
     # 初始化epoch数
     last_epoch = 0
     # 获取优化方法
-    optimizer = torch.optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
+    optimizer = torch.optim.SGD(model.parameters(),
                                 lr=args.learning_rate, momentum=0.9, weight_decay=args.weight_decay)
     # 获取学习率衰减函数
     scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=0.1, verbose=True)
 
-    # 获取损失函数
-    criterion = torch.nn.CrossEntropyLoss()
+    # 加载预训练模型
+    if args.pretrained_model is not None:
+        model_dict = model.state_dict()
+        param_state_dict = torch.load(os.path.join(args.pretrained_model, 'model.ptn'))
+        for name, weight in model_dict.items():
+            if name in param_state_dict.keys():
+                if weight.shape != list(param_state_dict[name].shape):
+                    print('{} not used, shape {} unmatched with {} in model.'.
+                          format(name, list(param_state_dict[name].shape), weight.shape))
+                    param_state_dict.pop(name, None)
+            else:
+                print('Lack weight: {}'.format(name))
+        model.load_state_dict(param_state_dict)
+        print('成功加载预训练模型参数')
 
-    # 加载模型参数和优化方法参数
-    if args.resume:
-        optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.pth'))
+    # 恢复训练
+    if args.resume is not None:
+        model.set_state_dict(torch.load(os.path.join(args.resume, 'model.ptn')))
+        optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.ptn'))
         optimizer.load_state_dict(optimizer_state)
         # 获取预训练的epoch数
-        last_epoch = int(re.findall('(\d+)', args.resume)[-1])
-        if len(device_ids) > 1:
-            model.module.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
-            metric_fc.module.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
-        else:
-            model.load_state_dict(torch.load(os.path.join(args.resume, 'model_params.pth')))
-            metric_fc.load_state_dict(torch.load(os.path.join(args.resume, 'metric_fc_params.pth')))
-        print('成功加载模型参数和优化方法参数')
+        last_epoch = optimizer_state['LR_Scheduler']['last_epoch']
+        print(f'成功加载第 {last_epoch} 轮的模型参数和优化方法参数')
 
-    # 开始训练
+    # 获取损失函数
+    loss = AAMLoss()
+    train_step = 0
+    test_step = 0
     sum_batch = len(train_loader) * (args.num_epoch - last_epoch)
-    for epoch_id in range(last_epoch, args.num_epoch):
-        for batch_id, data in enumerate(train_loader):
-            start = time.time()
-            data_input, label = data
-            data_input = data_input.to(device)
+    # 开始训练
+    for epoch in range(last_epoch, args.num_epoch):
+        loss_sum = []
+        accuracies = []
+        start = time.time()
+        for batch_id, (audio, label, audio_lens) in enumerate(train_loader):
+            print(audio.shape)
+            audio = audio.to(device)
+            print(audio.shape)
+            audio_lens = audio.to(audio_lens)
             label = label.to(device).long()
-            feature = model(data_input)
-            output = metric_fc(feature, label)
-            loss = criterion(output, label)
+            output = model(audio, audio_lens)
+            # 计算损失值
+            los = loss(output, label)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
+            # 计算准确率
+            output = output.data.cpu().numpy()
+            output = np.argmax(output, axis=1)
+            label = label.data.cpu().numpy()
+            acc = np.mean((output == label).astype(int))
+            accuracies.append(acc.item())
+            loss_sum.append(los.item())
+            # 多卡训练只使用一个进程打印
             if batch_id % 100 == 0:
-                output = output.data.cpu().numpy()
-                output = np.argmax(output, axis=1)
-                label = label.data.cpu().numpy()
-                acc = np.mean((output == label).astype(int))
-                eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch_id - last_epoch) * len(train_loader) - batch_id)
+                eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch - last_epoch) * len(train_loader) - batch_id)
                 eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
-                print('[%s] Train epoch %d, batch: %d/%d, loss: %f, accuracy: %f, lr: %f, eta: %s' % (
-                    datetime.now(), epoch_id, batch_id, len(train_loader), loss.item(), acc.item(), scheduler.get_lr()[0], eta_str))
+                print(f'[{datetime.now()}] '
+                      f'Train epoch [{epoch}/{args.num_epoch}], '
+                      f'batch: [{batch_id}/{len(train_loader)}], '
+                      f'loss: {(sum(loss_sum) / len(loss_sum)):.5f}, '
+                      f'accuracy: {(sum(accuracies) / len(accuracies)):.5f}, '
+                      f'lr: {scheduler.get_lr():.8f}, '
+                      f'eta: {eta_str}')
+                writer.add_scalar('Train loss', los.numpy(), train_step)
+                train_step += 1
+            start = time.time()
+        # 执行评估和保存模型
+        s = time.time()
+        acc = evaluate(model, eval_loader)
+        eta_str = str(timedelta(seconds=int(time.time() - s)))
+        print('='*70)
+        print(f'[{datetime.now()}] Test {epoch}, accuracy: {acc:.5f} time: {eta_str}')
+        print('='*70)
+        writer.add_scalar('Test acc', acc, test_step)
+        # 记录学习率
+        writer.add_scalar('Learning rate', scheduler.get_lr(), epoch)
+        test_step += 1
         scheduler.step()
-        # 开始评估
-        model.eval()
-        print('='*70)
-        accuracy = test(model, metric_fc, test_loader, device)
-        model.train()
-        print('[{}] Test epoch {} Accuracy {:.5}'.format(datetime.now(), epoch_id, accuracy))
-        print('='*70)
-
         # 保存模型
-        if len(device_ids) > 1:
-            save_model(args, model.module, metric_fc.module, optimizer, epoch_id)
-        else:
-            save_model(args, model, metric_fc, optimizer, epoch_id)
+        save_path = os.path.join(args.save_model_dir, args.use_model)
+        os.makedirs(save_path, exist_ok=True)
+        torch.save(model.state_dict(), os.path.join(save_path, 'model.pth'))
+        torch.save(optimizer.state_dict(), os.path.join(save_path, 'optimizer.pth'))
 
 
 if __name__ == '__main__':

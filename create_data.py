@@ -1,11 +1,10 @@
 import json
 import os
-from random import sample
-from tqdm import tqdm
-import librosa
-import numpy as np
+
 from pydub import AudioSegment
-from utils.reader import load_audio
+from tqdm import tqdm
+
+from data_utils.reader import load_audio
 
 
 # 生成数据列表

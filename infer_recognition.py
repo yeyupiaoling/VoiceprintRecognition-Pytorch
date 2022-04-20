@@ -6,37 +6,49 @@ import shutil
 import numpy as np
 import torch
 
-from utils.reader import load_audio
+from modules.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
+from data_utils.reader import load_audio, CustomDataset
 from utils.record import RecordAudio
 from utils.utility import add_arguments, print_arguments
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('input_shape',      str,    '(1, 257, 257)',          '数据输入的形状')
-add_arg('threshold',        float,   0.71,                    '判断是否为同一个人的阈值')
+add_arg('use_model',        str,    'ecapa_tdnn',             '所使用的模型')
+add_arg('threshold',        float,   0.5,                     '判断是否为同一个人的阈值')
 add_arg('audio_db',         str,    'audio_db',               '音频库的路径')
-add_arg('model_path',       str,    'models/resnet34.pth',    '预测模型的路径')
+add_arg('feature_method',   str,    'melspectrogram',         '音频特征提取方法')
+add_arg('resume',           str,    'models/',                '模型文件夹路径')
 args = parser.parse_args()
-
 print_arguments(args)
 
+dataset = CustomDataset(data_list_path=None, feature_method=args.feature_method)
+# 获取模型
+if args.use_model == 'ecapa_tdnn':
+    ecapa_tdnn = EcapaTdnn(input_size=dataset.input_size)
+    model = SpeakerIdetification(backbone=ecapa_tdnn)
+else:
+    raise Exception(f'{args.use_model} 模型不存在！')
+# 指定使用设备
 device = torch.device("cuda")
-
-model = torch.jit.load(args.model_path)
 model.to(device)
+# 加载模型
+model_path = os.path.join(args.resume, args.use_model, 'model.pdparams')
+model.load_state_dict(torch.load(model_path))
+print(f"成功加载模型参数和优化方法参数：{model_path}")
 model.eval()
 
 person_feature = []
 person_name = []
 
 
+# 执行识别
 def infer(audio_path):
-    input_shape = eval(args.input_shape)
-    data = load_audio(audio_path, mode='infer', spec_len=input_shape[2])
+    data = load_audio(audio_path, mode='infer', feature_method=args.feature_method)
     data = data[np.newaxis, :]
-    data = torch.tensor(data, dtype=torch.float32, device=device)
+    data = torch.tensor(data, dtype=torch.float32)
+    data_length = torch.tensor([1], dtype=torch.float32)
     # 执行预测
-    feature = model(data)
+    feature = model(data, data_length)
     return feature.data.cpu().numpy()
 
 
@@ -49,9 +61,10 @@ def load_audio_db(audio_db_path):
         feature = infer(path)[0]
         person_name.append(name)
         person_feature.append(feature)
-        print("Loaded %s audio." % name)
+        print(f"Loaded {name} audio.")
 
 
+# 声纹识别
 def recognition(path):
     name = ''
     pro = 0
@@ -88,7 +101,7 @@ if __name__ == '__main__':
             audio_path = record_audio.record()
             name, p = recognition(audio_path)
             if p > args.threshold:
-                print("识别说话的为：%s，相似度为：%f" % (name, p))
+                print(f"识别说话的为：{name}，相似度为：{p}")
             else:
                 print("音频库没有该用户的语音")
         else:

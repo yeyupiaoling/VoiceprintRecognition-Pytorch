@@ -1,7 +1,7 @@
 numba==0.52.0
-librosa~=0.8.1
-numpy==1.19.2
-tqdm==4.59.0
-visualdl==2.1.1
-pyaudio==0.2.11
+librosa==0.9.1
+numpy>=1.19.2
+tqdm>=4.59.0
+visualdl>=2.1.1
+pyaudio>=0.2.11
 torchsummary~=1.5.1
