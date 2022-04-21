@@ -27,7 +27,7 @@ class AdditiveAngularMargin(nn.Module):
         self.mm = math.sin(math.pi - self.margin) * self.margin
 
     def forward(self, outputs, targets):
-        cosine = outputs.astype('float32')
+        cosine = outputs.float()
         sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
         phi = cosine * self.cos_m - sine * self.sin_m
         if self.easy_margin:
@@ -45,7 +45,7 @@ class AAMLoss(nn.Module):
         self.criterion = torch.nn.KLDivLoss(reduction="sum")
 
     def forward(self, outputs, targets):
-        targets = F.one_hot(targets, outputs.shape[1])
+        targets = F.one_hot(targets, outputs.shape[1]).float()
         predictions = self.loss_fn(outputs, targets)
         predictions = F.log_softmax(predictions, dim=1)
         loss = self.criterion(predictions, targets) / targets.sum()

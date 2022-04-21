@@ -15,6 +15,7 @@ from utils.utility import add_arguments, print_arguments, cal_accuracy_threshold
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('use_model',        str,    'ecapa_tdnn',             '所使用的模型')
+add_arg('num_speakers',     int,    3242,                     '分类的类别数量')
 add_arg('feature_method',   str,    'melspectrogram',         '音频特征提取方法')
 add_arg('list_path',        str,    'dataset/test_list.txt',  '测试数据的数据列表路径')
 add_arg('resume',           str,    'models/',                '模型文件夹路径')
@@ -63,7 +64,7 @@ def get_all_audio_feature(list_path):
         # 获取特征
         feature = model.backbone(audio, audio_lens).data.cpu().numpy()
         features = np.concatenate((features, feature)) if features is not None else feature
-        labels = np.concatenate((labels, label.data.cpu().numpy())) if labels is not None else label.data.cpu().numpy()
+        labels = np.concatenate((labels, label)) if labels is not None else label
     labels = labels.astype(np.int32)
     print('分类准确率为：{}'.format(sum(accuracies) / len(accuracies)))
     return features, labels

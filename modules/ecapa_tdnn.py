@@ -157,7 +157,7 @@ class SpeakerIdetification(nn.Module):
             input_size = lin_neurons
 
         # the final layer
-        self.weight = Parameter(torch.FloatTensor(input_size, num_class))
+        self.weight = Parameter(torch.FloatTensor(num_class, input_size))
 
     def forward(self, x, lengths=None):
         """Do the speaker identification model forwrd,
@@ -173,8 +173,7 @@ class SpeakerIdetification(nn.Module):
         Returns:
             paddle.Tensor: return the logits of the feats
         """
-        # x.shape: (N, C, L)
-        print(x.size())
+        # x.shape: (N, C, L) => (N, L, C)
         x = x.permute(0, 2, 1)
         x = self.backbone(x)  # (N, emb_size)
         if self.dropout is not None:
@@ -183,6 +182,6 @@ class SpeakerIdetification(nn.Module):
         for fc in self.blocks:
             x = fc(x)
 
-        logits = F.linear(F.normalize(x), F.normalize(self.weight, dim=0))
+        logits = F.linear(F.normalize(x), F.normalize(self.weight, dim=1))
 
         return logits

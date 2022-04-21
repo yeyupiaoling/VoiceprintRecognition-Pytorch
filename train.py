@@ -9,7 +9,7 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 from torch.nn import DataParallel
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchsummary import summary
 from visualdl import LogWriter
 
@@ -29,16 +29,14 @@ add_arg('use_model',        str,    'ecapa_tdnn',             '所使用的模�
 add_arg('batch_size',       int,    32,                       '训练的批量大小')
 add_arg('num_workers',      int,    4,                        '读取数据的线程数量')
 add_arg('num_epoch',        int,    50,                       '训练的轮数')
-add_arg('num_speakers',     int,    10,                     '分类的类别数量')
+add_arg('num_speakers',     int,    3242,                     '分类的类别数量')
 add_arg('learning_rate',    float,  1e-3,                     '初始学习率的大小')
-add_arg('weight_decay',     float,  5e-4,                     'weight_decay的大小')
-add_arg('lr_step',          int,    10,                       '学习率衰减步数')
 add_arg('train_list_path',  str,    'dataset/train_list.txt', '训练数据的数据列表路径')
 add_arg('test_list_path',   str,    'dataset/test_list.txt',  '测试数据的数据列表路径')
 add_arg('save_model_dir',   str,    'models/',                '模型保存的路径')
 add_arg('feature_method',   str,    'melspectrogram',         '音频特征提取方法')
 add_arg('augment_conf_path',str,    'configs/augment.yml',    '数据增强的配置文件，为json格式')
-add_arg('resume',           str,    None,                     '恢复训练的模型文件夹，当为None则不使用恢复模型')
+add_arg('resume',           str,    'models/ecapa_tdnn',                     '恢复训练的模型文件夹，当为None则不使用恢复模型')
 add_arg('pretrained_model', str,    None,                     '预训练模型的模型文件夹，当为None则不使用预训练模型')
 args = parser.parse_args()
 
@@ -48,7 +46,10 @@ args = parser.parse_args()
 def evaluate(model, eval_loader):
     model.eval()
     accuracies = []
+    device = torch.device("cuda")
     for batch_id, (audio, label, audio_lens) in enumerate(eval_loader):
+        audio = audio.to(device)
+        audio_lens = audio.to(audio_lens)
         output = model(audio, audio_lens)
         # 计算准确率
         output = output.data.cpu().numpy()
@@ -58,6 +59,14 @@ def evaluate(model, eval_loader):
         accuracies.append(acc.item())
     model.train()
     return float(sum(accuracies) / len(accuracies))
+
+
+# 保存模型
+def save_model(save_path, model, optimizer, epoch):
+    os.makedirs(save_path, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(save_path, 'model.pth'))
+    torch.save({'last_epoch': torch.tensor(epoch)}, os.path.join(save_path, 'model.state'))
+    torch.save(optimizer.state_dict(), os.path.join(save_path, 'optimizer.pth'))
 
 
 def train():
@@ -110,45 +119,44 @@ def train():
         model = DataParallel(model, device_ids=device_ids, output_device=device_ids[0])
 
     model.to(device)
-    # if len(args.gpus.split(',')) > 1:
-    #     summary(model.module, (1, train_dataset.input_size, 98))
-    # else:
-    #     summary(model, (1, train_dataset.input_size, 98))
+    if len(args.gpus.split(',')) > 1:
+        summary(model.module, (train_dataset.input_size, 98))
+    else:
+        summary(model, (train_dataset.input_size, 98))
 
     # 初始化epoch数
     last_epoch = 0
     # 获取优化方法
-    optimizer = torch.optim.SGD(model.parameters(),
-                                lr=args.learning_rate, momentum=0.9, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=5e-4)
     # 获取学习率衰减函数
-    scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=0.1, verbose=True)
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.num_epoch)
 
     # 加载预训练模型
     if args.pretrained_model is not None:
         model_dict = model.state_dict()
-        param_state_dict = torch.load(os.path.join(args.pretrained_model, 'model.ptn'))
+        param_state_dict = torch.load(os.path.join(args.pretrained_model, 'model.pth'))
         for name, weight in model_dict.items():
             if name in param_state_dict.keys():
-                if weight.shape != list(param_state_dict[name].shape):
+                if list(weight.shape) != list(param_state_dict[name].shape):
                     print('{} not used, shape {} unmatched with {} in model.'.
-                          format(name, list(param_state_dict[name].shape), weight.shape))
+                          format(name, list(param_state_dict[name].shape), list(weight.shape)))
                     param_state_dict.pop(name, None)
             else:
                 print('Lack weight: {}'.format(name))
-        model.load_state_dict(param_state_dict)
+        model.load_state_dict(param_state_dict, strict=False)
         print('成功加载预训练模型参数')
 
     # 恢复训练
     if args.resume is not None:
-        model.set_state_dict(torch.load(os.path.join(args.resume, 'model.ptn')))
-        optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.ptn'))
+        model.load_state_dict(torch.load(os.path.join(args.resume, 'model.pth')))
+        state = torch.load(os.path.join(args.resume, 'model.state'))
+        last_epoch = state['last_epoch']
+        optimizer_state = torch.load(os.path.join(args.resume, 'optimizer.pth'))
         optimizer.load_state_dict(optimizer_state)
-        # 获取预训练的epoch数
-        last_epoch = optimizer_state['LR_Scheduler']['last_epoch']
         print(f'成功加载第 {last_epoch} 轮的模型参数和优化方法参数')
 
     # 获取损失函数
-    loss = AAMLoss()
+    criterion = AAMLoss()
     train_step = 0
     test_step = 0
     sum_batch = len(train_loader) * (args.num_epoch - last_epoch)
@@ -158,14 +166,12 @@ def train():
         accuracies = []
         start = time.time()
         for batch_id, (audio, label, audio_lens) in enumerate(train_loader):
-            print(audio.shape)
             audio = audio.to(device)
-            print(audio.shape)
             audio_lens = audio.to(audio_lens)
             label = label.to(device).long()
             output = model(audio, audio_lens)
             # 计算损失值
-            los = loss(output, label)
+            loss = criterion(output, label)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -175,7 +181,7 @@ def train():
             label = label.data.cpu().numpy()
             acc = np.mean((output == label).astype(int))
             accuracies.append(acc.item())
-            loss_sum.append(los.item())
+            loss_sum.append(loss.item())
             # 多卡训练只使用一个进程打印
             if batch_id % 100 == 0:
                 eta_sec = ((time.time() - start) * 1000) * (sum_batch - (epoch - last_epoch) * len(train_loader) - batch_id)
@@ -185,9 +191,10 @@ def train():
                       f'batch: [{batch_id}/{len(train_loader)}], '
                       f'loss: {(sum(loss_sum) / len(loss_sum)):.5f}, '
                       f'accuracy: {(sum(accuracies) / len(accuracies)):.5f}, '
-                      f'lr: {scheduler.get_lr():.8f}, '
+                      f'lr: {scheduler.get_lr()[0]:.8f}, '
                       f'eta: {eta_str}')
-                writer.add_scalar('Train loss', los.numpy(), train_step)
+                writer.add_scalar('Train/Loss', loss.item(), train_step)
+                writer.add_scalar('Train/Accuracy', (sum(accuracies) / len(accuracies)), train_step)
                 train_step += 1
             start = time.time()
         # 执行评估和保存模型
@@ -197,16 +204,17 @@ def train():
         print('='*70)
         print(f'[{datetime.now()}] Test {epoch}, accuracy: {acc:.5f} time: {eta_str}')
         print('='*70)
-        writer.add_scalar('Test acc', acc, test_step)
+        writer.add_scalar('Test/Accuracy', acc, test_step)
         # 记录学习率
-        writer.add_scalar('Learning rate', scheduler.get_lr(), epoch)
+        writer.add_scalar('Train/Learning rate', scheduler.get_lr()[0], epoch)
         test_step += 1
         scheduler.step()
         # 保存模型
         save_path = os.path.join(args.save_model_dir, args.use_model)
-        os.makedirs(save_path, exist_ok=True)
-        torch.save(model.state_dict(), os.path.join(save_path, 'model.pth'))
-        torch.save(optimizer.state_dict(), os.path.join(save_path, 'optimizer.pth'))
+        if len(device_ids) > 1:
+            save_model(save_path, model.module, optimizer, epoch)
+        else:
+            save_model(save_path, model, optimizer, epoch)
 
 
 if __name__ == '__main__':
