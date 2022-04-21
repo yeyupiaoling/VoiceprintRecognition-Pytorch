@@ -92,21 +92,21 @@ class AttentiveStatsPool(nn.Module):
 class EcapaTdnn(nn.Module):
     def __init__(self, input_size=80, channels=512, embd_dim=192):
         super().__init__()
-        self.layer1 = Conv1dReluBn(input_size, channels, kernel_size=5, padding=2)
+        self.layer1 = Conv1dReluBn(input_size, channels, kernel_size=5, padding=2, dilation=1)
         self.layer2 = SE_Res2Block(channels, kernel_size=3, stride=1, padding=2, dilation=2, scale=8)
         self.layer3 = SE_Res2Block(channels, kernel_size=3, stride=1, padding=3, dilation=3, scale=8)
         self.layer4 = SE_Res2Block(channels, kernel_size=3, stride=1, padding=4, dilation=4, scale=8)
 
         cat_channels = channels * 3
+        out_channels = cat_channels * 2
         self.emb_size = embd_dim
-        self.conv = nn.Conv1d(cat_channels, 1536, kernel_size=1)
-        self.pooling = AttentiveStatsPool(1536, 128)
-        self.bn1 = nn.BatchNorm1d(3072)
-        self.linear = nn.Linear(3072, embd_dim)
+        self.conv = nn.Conv1d(cat_channels, cat_channels, kernel_size=1)
+        self.pooling = AttentiveStatsPool(cat_channels, 128)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.linear = nn.Linear(out_channels, embd_dim)
         self.bn2 = nn.BatchNorm1d(embd_dim)
 
     def forward(self, x):
-        x = x.transpose(1, 2)
         out1 = self.layer1(x)
         out2 = self.layer2(out1) + out1
         out3 = self.layer3(out1 + out2) + out1 + out2
@@ -159,7 +159,7 @@ class SpeakerIdetification(nn.Module):
         # the final layer
         self.weight = Parameter(torch.FloatTensor(num_class, input_size))
 
-    def forward(self, x, lengths=None):
+    def forward(self, x):
         """Do the speaker identification model forwrd,
            including the speaker embedding model and the classifier model network
 
@@ -173,8 +173,7 @@ class SpeakerIdetification(nn.Module):
         Returns:
             paddle.Tensor: return the logits of the feats
         """
-        # x.shape: (N, C, L) => (N, L, C)
-        x = x.permute(0, 2, 1)
+        # x.shape: (N, C, L)
         x = self.backbone(x)  # (N, emb_size)
         if self.dropout is not None:
             x = self.dropout(x)

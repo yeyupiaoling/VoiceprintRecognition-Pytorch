@@ -33,7 +33,7 @@ device = torch.device("cuda")
 model.to(device)
 # 加载模型
 model_path = os.path.join(args.resume, args.use_model, 'model.pdparams')
-model.load_state_dict(torch.load(model_path))
+model.backbone.load_state_dict(torch.load(model_path), strict=False)
 print(f"成功加载模型参数和优化方法参数：{model_path}")
 model.eval()
 
@@ -45,10 +45,9 @@ person_name = []
 def infer(audio_path):
     data = load_audio(audio_path, mode='infer', feature_method=args.feature_method)
     data = data[np.newaxis, :]
-    data = torch.tensor(data, dtype=torch.float32)
-    data_length = torch.tensor([1], dtype=torch.float32)
+    data = torch.tensor(data, dtype=torch.float32, device=device)
     # 执行预测
-    feature = model(data, data_length)
+    feature = model(data)
     return feature.data.cpu().numpy()
 
 

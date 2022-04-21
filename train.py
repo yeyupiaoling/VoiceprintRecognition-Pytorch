@@ -36,7 +36,7 @@ add_arg('test_list_path',   str,    'dataset/test_list.txt',  '测试数据的�
 add_arg('save_model_dir',   str,    'models/',                '模型保存的路径')
 add_arg('feature_method',   str,    'melspectrogram',         '音频特征提取方法')
 add_arg('augment_conf_path',str,    'configs/augment.yml',    '数据增强的配置文件，为json格式')
-add_arg('resume',           str,    'models/ecapa_tdnn',                     '恢复训练的模型文件夹，当为None则不使用恢复模型')
+add_arg('resume',           str,    None,                     '恢复训练的模型文件夹，当为None则不使用恢复模型')
 add_arg('pretrained_model', str,    None,                     '预训练模型的模型文件夹，当为None则不使用预训练模型')
 args = parser.parse_args()
 
@@ -47,10 +47,9 @@ def evaluate(model, eval_loader):
     model.eval()
     accuracies = []
     device = torch.device("cuda")
-    for batch_id, (audio, label, audio_lens) in enumerate(eval_loader):
+    for batch_id, (audio, label, _) in enumerate(eval_loader):
         audio = audio.to(device)
-        audio_lens = audio.to(audio_lens)
-        output = model(audio, audio_lens)
+        output = model(audio)
         # 计算准确率
         output = output.data.cpu().numpy()
         output = np.argmax(output, axis=1)
@@ -165,11 +164,10 @@ def train():
         loss_sum = []
         accuracies = []
         start = time.time()
-        for batch_id, (audio, label, audio_lens) in enumerate(train_loader):
+        for batch_id, (audio, label, _) in enumerate(train_loader):
             audio = audio.to(device)
-            audio_lens = audio.to(audio_lens)
             label = label.to(device).long()
-            output = model(audio, audio_lens)
+            output = model(audio)
             # 计算损失值
             loss = criterion(output, label)
             optimizer.zero_grad()
