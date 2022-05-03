@@ -157,7 +157,8 @@ class SpeakerIdetification(nn.Module):
             input_size = lin_neurons
 
         # the final layer
-        self.weight = Parameter(torch.FloatTensor(num_class, input_size))
+        self.weight = Parameter(torch.FloatTensor(num_class, input_size), requires_grad=True)
+        nn.init.xavier_normal_(self.weight, gain=1)
 
     def forward(self, x):
         """Do the speaker identification model forwrd,
@@ -181,6 +182,6 @@ class SpeakerIdetification(nn.Module):
         for fc in self.blocks:
             x = fc(x)
 
-        logits = F.linear(F.normalize(x), F.normalize(self.weight, dim=1))
+        logits = F.linear(F.normalize(x), F.normalize(self.weight, dim=-1))
 
         return logits

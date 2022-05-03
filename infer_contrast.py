@@ -32,7 +32,13 @@ device = torch.device("cuda")
 model.to(device)
 # 加载模型
 model_path = os.path.join(args.resume, args.use_model, 'model.pth')
-model.backbone.load_state_dict(torch.load(model_path), strict=False)
+model_dict = model.state_dict()
+param_state_dict = torch.load(model_path)
+for name, weight in model_dict.items():
+    if name in param_state_dict.keys():
+        if list(weight.shape) != list(param_state_dict[name].shape):
+            param_state_dict.pop(name, None)
+model.load_state_dict(param_state_dict, strict=False)
 print(f"成功加载模型参数和优化方法参数：{model_path}")
 model.eval()
 
