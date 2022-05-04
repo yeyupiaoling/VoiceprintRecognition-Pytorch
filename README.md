@@ -8,16 +8,16 @@
 
 
 # 模型下载
-|    模型     |     预处理方法      |                          数据集                           | 类别数量 | 分类准确率  | 两两对比准确率 |  模型下载地址  |
-|:---------:|:--------------:|:------------------------------------------------------:|:----:|:------:|:-------:|:--------:|
+|    模型     |     预处理方法      |                          数据集                           | 类别数量 | 分类准确率  | 两两对比准确率 |                             模型下载地址                              |
+|:---------:|:--------------:|:------------------------------------------------------:|:----:|:------:|:-------:|:---------------------------------------------------------------:|
 | EcapaTdnn | melspectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 | 0.9682 | 0.99982 | [点击下载](https://download.csdn.net/download/qq_33200967/85270001) |
-| EcapaTdnn |  spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 |        |         | [点击下载]() |
-| EcapaTdnn | melspectrogram |                         更大的数据集                         | 6235 |        |         | [点击下载]() |
-| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6235 |        |         | [点击下载]() |
+| EcapaTdnn |  spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 | 0.9690 | 0.99982 | [点击下载](https://download.csdn.net/download/qq_33200967/85282594) |
+| EcapaTdnn | melspectrogram |                         更大的数据集                         | 6235 |        |         |                            [点击下载]()                             |
+| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6235 |        |         |                            [点击下载]()                             |
 
 
 # 安装环境
-1. 安装Pytorch的GPU版本，如果已经安装过Pytorch，测无需再次安装。
+1. 安装Pytorch的GPU版本，如果已经安装过Pytorch，无需再次安装。
 ```shell
 pip install torch==1.10.2
 ```
