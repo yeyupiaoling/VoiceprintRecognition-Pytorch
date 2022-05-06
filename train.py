@@ -119,9 +119,9 @@ def train():
 
     model.to(device)
     if len(args.gpus.split(',')) > 1:
-        summary(model.module, (train_dataset.input_size, 98))
+        summary(model.module, (train_dataset.input_size, 98), device='cuda')
     else:
-        summary(model, (train_dataset.input_size, 98))
+        summary(model, (train_dataset.input_size, 98), device='cuda')
 
     # 初始化epoch数
     last_epoch = 0

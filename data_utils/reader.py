@@ -30,8 +30,8 @@ def load_audio(audio_path, feature_method='melspectrogram', mode='train', sr=160
             wav = wav[start:stop]
             # 对每次都满长度的再次裁剪
             if random.random() > 0.5:
-                wav[:random.randint(1, sr // 2)] = 0
-                wav = wav[:-random.randint(1, sr // 2)]
+                wav[:random.randint(1, sr // 4)] = 0
+                wav = wav[:-random.randint(1, sr // 4)]
         # 数据增强
         if augmentors is not None:
             for key, augmentor in augmentors.items():
