@@ -13,7 +13,7 @@
 | EcapaTdnn | melspectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 | 0.9682 | 0.99982 | [点击下载](https://download.csdn.net/download/qq_33200967/85270001) |
 | EcapaTdnn |  spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 | 0.9690 | 0.99982 | [点击下载](https://download.csdn.net/download/qq_33200967/85282594) |
 | EcapaTdnn | melspectrogram |                         更大的数据集                         | 6355 | 0.9166 | 0.99991 | [点击下载](https://download.csdn.net/download/qq_33200967/85298248) |
-| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6355 |        |         |                            [点击下载]()                             |
+| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6355 | 0.9154 | 0.99990 | [点击下载](https://download.csdn.net/download/qq_33200967/85308533) |
 
 
 # 安装环境
