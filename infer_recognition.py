@@ -53,7 +53,7 @@ def infer(audio_path):
     data = data[np.newaxis, :]
     data = torch.tensor(data, dtype=torch.float32, device=device)
     # 执行预测
-    feature = model(data)
+    feature = model.backbone(data)
     return feature.data.cpu().numpy()
 
 
