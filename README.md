@@ -16,14 +16,14 @@
 
 
 # 模型下载
-|    模型     |     预处理方法      |                          数据集                           | 类别数量  | 分类准确率  | 两两对比准确率 |                             模型下载地址                              |
-|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:------:|:-------:|:---------------------------------------------------------------:|
-| EcapaTdnn | melspectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.9682 | 0.99982 | [点击下载](https://download.csdn.net/download/qq_33200967/85270001) |
-| EcapaTdnn |  spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.9690 | 0.99982 | [点击下载](https://download.csdn.net/download/qq_33200967/85282594) |
-| EcapaTdnn | melspectrogram |                         更大的数据集                         | 6355  | 0.9166 | 0.99991 | [点击下载](https://download.csdn.net/download/qq_33200967/85298248) |
-| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6355  | 0.9154 | 0.99990 | [点击下载](https://download.csdn.net/download/qq_33200967/85308533) |
-| EcapaTdnn | melspectrogram |                         超大的数据集                         | 13718 | 0.9179 | 0.99995 | [点击下载](https://download.csdn.net/download/qq_33200967/86395020) |
-| EcapaTdnn |  spectrogram   |                         超大的数据集                         | 13718 | 0.9344 | 0.99995 | [点击下载](https://download.csdn.net/download/qq_33200967/86398338) |
+|    模型     |     预处理方法      |                          数据集                           | 类别数量  | 分类准确率  | 两两对比准确率 |                                                            模型下载地址                                                             |
+|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:------:|:-------:|:-----------------------------------------------------------------------------------------------------------------------------:|
+| EcapaTdnn | melspectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.9682 | 0.99982 |  [CSDN](https://download.csdn.net/download/qq_33200967/85270001)/[淘宝](https://item.taobao.com/item.htm?ft=t&id=688104422763)  |
+| EcapaTdnn |  spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.9690 | 0.99982 |  [CSDN](https://download.csdn.net/download/qq_33200967/85282594)/[淘宝](https://item.taobao.com/item.htm?ft=t&id=687487364002)  |
+| EcapaTdnn | melspectrogram |                         更大的数据集                         | 6355  | 0.9166 | 0.99991 | [CSDN](https://download.csdn.net/download/qq_33200967/85298248)  /[淘宝](https://item.taobao.com/item.htm?ft=t&id=688386707777) |
+| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6355  | 0.9154 | 0.99990 | [CSDN](https://download.csdn.net/download/qq_33200967/85308533) /[淘宝](https://item.taobao.com/item.htm?ft=t&id=687820113874)  |
+| EcapaTdnn | melspectrogram |                         超大的数据集                         | 13718 | 0.9179 | 0.99995 | [CSDN](https://download.csdn.net/download/qq_33200967/86395020) /[淘宝](https://item.taobao.com/item.htm?ft=t&id=688106534442)  |
+| EcapaTdnn |  spectrogram   |                         超大的数据集                         | 13718 | 0.9344 | 0.99995 | [CSDN](https://download.csdn.net/download/qq_33200967/86398338) /[淘宝](https://item.taobao.com/item.htm?ft=t&id=688387443622)  |
 
 
 # 安装环境
