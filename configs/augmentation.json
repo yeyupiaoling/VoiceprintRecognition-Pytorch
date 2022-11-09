@@ -1,0 +1,72 @@
+[
+  {
+    "type": "noise",
+    "aug_type": "audio",
+    "params": {
+      "min_snr_dB": 10,
+      "max_snr_dB": 50,
+      "repetition": 2,
+      "noise_dir": "dataset/noise/"
+    },
+    "prob": 0.0
+  },
+  {
+    "type": "resample",
+    "aug_type": "audio",
+    "params": {
+      "new_sample_rate": [8000, 32000, 44100, 48000]
+    },
+    "prob": 0.0
+  },
+  {
+    "type": "speed",
+    "aug_type": "audio",
+    "params": {
+      "min_speed_rate": 0.9,
+      "max_speed_rate": 1.1,
+      "num_rates": 3
+    },
+    "prob": 0.5
+  },
+  {
+    "type": "shift",
+    "aug_type": "audio",
+    "params": {
+      "min_shift_ms": -5,
+      "max_shift_ms": 5
+    },
+    "prob": 0.0
+  },
+  {
+    "type": "volume",
+    "aug_type": "audio",
+    "params": {
+      "min_gain_dBFS": -15,
+      "max_gain_dBFS": 15
+    },
+    "prob": 0.5
+  },
+  {
+    "type": "specaug",
+    "aug_type": "feature",
+    "params": {
+      "inplace": true,
+      "max_time_warp": 5,
+      "max_t_ratio": 0.01,
+      "n_freq_masks": 2,
+      "max_f_ratio": 0.05,
+      "n_time_masks": 2,
+      "replace_with_zero": true
+    },
+    "prob": 0.5
+  },
+  {
+    "type": "specsub",
+    "aug_type": "feature",
+    "params": {
+      "max_t": 10,
+      "num_t_sub": 2
+    },
+    "prob": 0.0
+  }
+]

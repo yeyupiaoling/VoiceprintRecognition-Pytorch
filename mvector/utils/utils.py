@@ -3,12 +3,25 @@ import distutils.util
 import numpy as np
 from tqdm import tqdm
 
+from mvector.utils.logger import setup_logger
 
-def print_arguments(args):
-    print("-----------  Configuration Arguments -----------")
+logger = setup_logger(__name__)
+
+
+def print_arguments(args, configs):
+    logger.info("----------- 额外配置参数 -----------")
     for arg, value in sorted(vars(args).items()):
-        print("%s: %s" % (arg, value))
-    print("------------------------------------------------")
+        logger.info("%s: %s" % (arg, value))
+    logger.info("------------------------------------------------")
+    logger.info("----------- 配置文件参数 -----------")
+    for arg, value in sorted(configs.items()):
+        if isinstance(value, dict):
+            logger.info(f"{arg}:")
+            for a, v in sorted(value.items()):
+                logger.info("\t%s: %s" % (a, v))
+        else:
+            logger.info("%s: %s" % (arg, value))
+    logger.info("------------------------------------------------")
 
 
 def add_arguments(argname, type, default, help, argparser, **kwargs):
@@ -18,6 +31,20 @@ def add_arguments(argname, type, default, help, argparser, **kwargs):
                            type=type,
                            help=help + ' 默认: %(default)s.',
                            **kwargs)
+
+
+class Dict(dict):
+    __setattr__ = dict.__setitem__
+    __getattr__ = dict.__getitem__
+
+
+def dict_to_object(dict_obj):
+    if not isinstance(dict_obj, dict):
+        return dict_obj
+    inst = Dict()
+    for k, v in dict_obj.items():
+        inst[k] = dict_to_object(v)
+    return inst
 
 
 # 根据对角余弦值计算准确率和最优的阈值
@@ -49,4 +76,3 @@ def cal_accuracy(y_score, y_true, threshold=0.5):
 # 计算对角余弦值
 def cosin_metric(x1, x2):
     return np.dot(x1, x2) / (np.linalg.norm(x1) * np.linalg.norm(x2))
-
