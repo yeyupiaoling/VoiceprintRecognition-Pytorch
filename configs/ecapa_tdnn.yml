@@ -36,7 +36,7 @@ preprocess_conf:
 
 optimizer_conf:
   # 初始学习率的大小
-  learning_rate: 0.0001
+  learning_rate: 0.001
   weight_decay: 1e-6
 
 model_conf:

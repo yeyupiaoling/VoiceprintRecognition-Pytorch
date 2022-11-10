@@ -1,5 +1,5 @@
 # 前言
-此版本为新版本，如想使用使用旧版本，请转到[V1.0版本](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle/tree/V1.0) ，本项目使用了EcapaTdnn模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
+此版本为新版本，如想使用使用旧版本，请转到[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0)，本项目使用了EcapaTdnn模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
 
 
 **欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`1169600237`，问题答案为博主Github的ID`yeyupiaoling`。
@@ -11,33 +11,39 @@
 
 使用环境：
 
- - Python 3.7
- - Pytorch 1.10.2
+ - Anaconda 3
+ - Python 3.8
+ - Pytorch 1.12.1
+ - Windows 10 or Ubuntu 18.04
 
 
 # 模型下载
-|    模型     |     预处理方法      |                          数据集                           | 类别数量  | 分类准确率  | 两两对比准确率 |                                                            模型下载地址                                                             |
-|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:------:|:-------:|:-----------------------------------------------------------------------------------------------------------------------------:|
-| EcapaTdnn | melspectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.9682 | 0.99982 |  [CSDN](https://download.csdn.net/download/qq_33200967/85270001)/[淘宝](https://item.taobao.com/item.htm?ft=t&id=688104422763)  |
-| EcapaTdnn |  spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.9690 | 0.99982 |  [CSDN](https://download.csdn.net/download/qq_33200967/85282594)/[淘宝](https://item.taobao.com/item.htm?ft=t&id=687487364002)  |
-| EcapaTdnn | melspectrogram |                         更大的数据集                         | 6355  | 0.9166 | 0.99991 | [CSDN](https://download.csdn.net/download/qq_33200967/85298248)  /[淘宝](https://item.taobao.com/item.htm?ft=t&id=688386707777) |
-| EcapaTdnn |  spectrogram   |                         更大的数据集                         | 6355  | 0.9154 | 0.99990 | [CSDN](https://download.csdn.net/download/qq_33200967/85308533) /[淘宝](https://item.taobao.com/item.htm?ft=t&id=687820113874)  |
-| EcapaTdnn | melspectrogram |                         超大的数据集                         | 13718 | 0.9179 | 0.99995 | [CSDN](https://download.csdn.net/download/qq_33200967/86395020) /[淘宝](https://item.taobao.com/item.htm?ft=t&id=688106534442)  |
-| EcapaTdnn |  spectrogram   |                         超大的数据集                         | 13718 | 0.9344 | 0.99995 | [CSDN](https://download.csdn.net/download/qq_33200967/86398338) /[淘宝](https://item.taobao.com/item.htm?ft=t&id=688387443622)  |
+
+|    模型     |    预处理方法    |                          数据集                           | 类别数量 | 分类准确率 | 两两对比准确率 | 模型下载地址 |
+|:---------:|:-----------:|:------------------------------------------------------:|:----:|:-----:|:-------:|:------:|
+| EcapaTdnn | spectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 |       |         |        |
 
 
-# 安装环境
-1. 安装Pytorch的GPU版本，如果已经安装过Pytorch，无需再次安装。
+## 安装环境
+
+ - 首先安装的是Pytorch的GPU版本，如果已经安装过了，请跳过。
 ```shell
-pip install torch==1.10.2
+conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=10.2 -c pytorch
 ```
 
-2. 安装其他依赖库，命令如下，注意librosa的版本是0.9.1，旧版本的梅尔频谱计算方式不一样。
+ - 安装ppvector库。
+ 
+使用pip安装，命令如下：
 ```shell
-pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+python -m pip install mvector -U -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-**注意：** [libsora和pyaudio安装出错解决办法](docs/faq.md)
+**建议源码安装**，源码安装能保证使用最新代码。
+```shell
+git clone https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch.git
+cd VoiceprintRecognition_Pytorch/
+python setup.py install
+```
 
 # 创建数据
 本教程笔者使用的是[中文语音语料数据集](https://github.com/fighting41love/zhvoice) ，这个数据集一共有3242个人的语音数据，有1130000+条语音数据，下载之前要全部解压数据集。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
@@ -66,29 +72,64 @@ dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
 使用`train.py`训练模型，本项目支持多个音频预处理方式，通过参数`feature_method`可以指定，`melspectrogram`为梅尔频谱，`spectrogram`为声谱图。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
 ```shell
 # 单卡训练
-python train.py
+CUDA_VISIBLE_DEVICES=0 python train.py
 # 多卡训练
-python train.py --gpus=0,1
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 train.py
 ```
 
 训练输出日志：
 ```
------------  Configuration Arguments -----------
-augment_conf_path: configs/augment.yml
-batch_size: 64
-feature_method: melspectrogram
-gpus: 0
-learning_rate: 0.001
-num_epoch: 30
-num_speakers: 3242
-num_workers: 4
-pretrained_model: None
-resume: None
-save_model_dir: models/
-test_list_path: dataset/test_list.txt
-train_list_path: dataset/train_list.txt
-use_model: ecapa_tdnn
-------------------------------------------------
+[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:12 - ----------- 额外配置参数 -----------
+[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:14 - augment_conf_path: configs/augmentation.json
+[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:14 - configs: configs/ecapa_tdnn.yml
+[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:14 - pretrained_model: None
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:14 - resume_model: None
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:14 - save_model_path: models/
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:14 - use_gpu: True
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:15 - ------------------------------------------------
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:16 - ----------- 配置文件参数 -----------
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:19 - dataset_conf:
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	batch_size: 64
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	chunk_duration: 3
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	do_vad: False
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	min_duration: 0.5
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	num_speakers: 10
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	num_workers: 8
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	test_list: dataset/test_list.txt
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	train_list: dataset/train_list.txt
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:19 - model_conf:
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	channels: [512, 512, 512, 512, 1536]
+[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	dilations: [1, 2, 3, 4, 1]
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	kernel_sizes: [5, 3, 3, 3, 1]
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	lin_neurons: 192
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:19 - optimizer_conf:
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	learning_rate: 0.001
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	warmup_steps: 200
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	weight_decay: 1e-6
+[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:19 - preprocess_conf:
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	feature_method: spectrogram
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	frame_length: 25
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	frame_shift: 10
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	n_mels: 80
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	sample_rate: 16000
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	target_dB: -20
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	use_dB_normalization: True
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:19 - train_conf:
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	log_interval: 10
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	max_epoch: 30
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:23 - use_model: ecapa_tdnn
+[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:24 - ------------------------------------------------
+[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'noise', 'aug_type': 'audio', 'params': {'min_snr_dB': 10, 'max_snr_dB': 50, 'repetition': 2, 'noise_dir': 'dataset/noise/'}, 'prob': 0.0}
+[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'resample', 'aug_type': 'audio', 'params': {'new_sample_rate': [8000, 32000, 44100, 48000]}, 'prob': 0.0}
+[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'speed', 'aug_type': 'audio', 'params': {'min_speed_rate': 0.9, 'max_speed_rate': 1.1, 'num_rates': 3}, 'prob': 0.0}
+[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'shift', 'aug_type': 'audio', 'params': {'min_shift_ms': -5, 'max_shift_ms': 5}, 'prob': 0.0}
+[2022-11-05 19:58:31.590535 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'volume', 'aug_type': 'audio', 'params': {'min_gain_dBFS': -15, 'max_gain_dBFS': 15}, 'prob': 0.0}
+[2022-11-05 19:58:31.590535 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'specaug', 'aug_type': 'feature', 'params': {'inplace': True, 'max_time_warp': 5, 'max_t_ratio': 0.01, 'n_freq_masks': 2, 'max_f_ratio': 0.05, 'n_time_masks': 2, 'replace_with_zero': False}, 'prob': 0.0}
+[2022-11-05 19:58:31.590535 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'specsub', 'aug_type': 'feature', 'params': {'max_t': 10, 'num_t_sub': 2}, 'prob': 0.0}
+I0424 08:57:03.707505  3377 nccl_context.cc:74] init nccl context nranks: 2 local rank: 0 gpu id: 0 ring id: 0
+W0424 08:57:03.930370  3377 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
+W0424 08:57:03.932493  3377 device_context.cc:465] device: 0, cuDNN Version: 7.6.
+I0424 08:57:05.431638  3377 nccl_context.cc:107] init nccl context nranks: 2 local rank: 0 gpu id: 0 ring id: 10
 ······
 [2022-04-24 09:25:10.481272] Train epoch [0/30], batch: [7500/8290], loss: 9.03724, accuracy: 0.33252, lr: 0.00100000, eta: 14:58:26
 [2022-04-24 09:25:32.909873] Train epoch [0/30], batch: [7600/8290], loss: 9.00004, accuracy: 0.33600, lr: 0.00100000, eta: 15:09:07
@@ -112,7 +153,7 @@ VisualDL页面：
 
 
 # 数据增强
-本项目提供了几种音频增强操作，分布是随机裁剪，添加背景噪声，调节语速，调节音量，和SpecAugment。其中后面4种增加的参数可以在`configs/augment.yml`修改，参数`prob`是指定该增强操作的概率，如果不想使用该增强方式，可以设置为0。要主要的是，添加背景噪声需要把多个噪声音频文件存放在`dataset/noise`，否则会跳过噪声增强
+本项目提供了几种音频增强操作，分布是随机裁剪，添加背景噪声，调节语速，调节音量，和SpecAugment。其中后面4种增加的参数可以在`configs/augmentation.json`修改，参数`prob`是指定该增强操作的概率，如果不想使用该增强方式，可以设置为0。要主要的是，添加背景噪声需要把多个噪声音频文件存放在`dataset/noise`，否则会跳过噪声增强
 ```yaml
 noise:
   min_snr_dB: 10
@@ -130,13 +171,8 @@ python eval.py
 ```
 
 输出类似如下：
-```shell
------------  Configuration Arguments -----------
-feature_method: melspectrogram
-list_path: dataset/test_list.txt
-num_speakers: 3242
-resume: models/
-use_model: ecapa_tdnn
+```
+······
 ------------------------------------------------
 W0425 08:27:32.057426 17654 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6.

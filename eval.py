@@ -25,8 +25,10 @@ trainer = MVectorTrainer(configs=configs, use_gpu=args.use_gpu)
 
 # 开始评估
 start = time.time()
-loss, accuracy = trainer.evaluate(resume_model=args.resume_model.format(configs['use_model'],
-                                                                        configs['preprocess_conf']['feature_method']),
-                                  cal_threshold=True)
+loss, accuracy, precision, recall, f1_score = trainer.evaluate(
+    resume_model=args.resume_model.format(configs['use_model'],
+                                          configs['preprocess_conf']['feature_method']),
+    cal_threshold=True)
 end = time.time()
-print('评估消耗时间：{}s，loss：{:.5f}，accuracy：{:.5f}'.format(int(end - start), loss, accuracy))
+print('评估消耗时间：{}s，loss：{:.5f}，accuracy：{:.5f}, precision: {:.5f}, recall: {:.5f}, f1_score: {:.5f}'
+      .format(int(end - start), loss, accuracy, precision, recall, f1_score))

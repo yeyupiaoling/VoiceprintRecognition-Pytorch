@@ -9,6 +9,8 @@ from datetime import timedelta
 import numpy as np
 import torch
 import torch.distributed as dist
+from sklearn.metrics import confusion_matrix
+from torch.utils.data.distributed import DistributedSampler
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torchsummary import summary
@@ -69,15 +71,15 @@ class MVectorTrainer(object):
                                                min_duration=self.configs.dataset_conf.min_duration,
                                                augmentation_config=augmentation_config,
                                                mode='train')
-            train_batch_sampler = None
+            train_sampler = None
             if torch.cuda.device_count() > 1:
                 # 设置支持多卡训练
-                train_batch_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset,
-                                                                          shuffle=True)
+                train_sampler = DistributedSampler(dataset=self.train_dataset)
             self.train_loader = DataLoader(dataset=self.train_dataset,
                                            collate_fn=collate_fn,
+                                           shuffle=(train_sampler is None),
                                            batch_size=self.configs.dataset_conf.batch_size,
-                                           batch_sampler=train_batch_sampler,
+                                           sampler=train_sampler,
                                            num_workers=self.configs.dataset_conf.num_workers)
         # 获取测试数据
         self.test_dataset = CustomDataset(preprocess_configs=self.configs.preprocess_conf,
@@ -95,7 +97,8 @@ class MVectorTrainer(object):
         # 获取模型
         if self.configs.use_model == 'ecapa_tdnn':
             self.ecapa_tdnn = EcapaTdnn(input_size=input_size, **self.configs.model_conf)
-            self.model = SpeakerIdetification(backbone=self.ecapa_tdnn, num_class=self.configs.dataset_conf.num_speakers)
+            self.model = SpeakerIdetification(backbone=self.ecapa_tdnn,
+                                              num_class=self.configs.dataset_conf.num_speakers)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
         self.model.to(self.device)
@@ -104,13 +107,10 @@ class MVectorTrainer(object):
         # 获取损失函数
         self.loss = AAMLoss()
         if is_train:
-            # 优化方法
-            self.optimizer = torch.optim.SGD(params=self.model.parameters(),
-                                             lr=float(self.configs.optimizer_conf.learning_rate),
-                                             momentum=0.9,
-                                             weight_decay=float(self.configs.optimizer_conf.weight_decay))
-            # 学习率衰减函数
-            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=int(self.configs.train_conf.max_epoch * 1.2))
+            # 获取优化方法
+            self.optimizer = torch.optim.Adam(params=self.model.parameters(),
+                                              lr=float(self.configs.optimizer_conf.learning_rate),
+                                              weight_decay=float(self.configs.optimizer_conf.weight_decay))
 
     def __load_pretrained(self, pretrained_model):
         # 加载预训练模型
@@ -193,13 +193,17 @@ class MVectorTrainer(object):
                 shutil.rmtree(old_model_path)
         logger.info('已保存模型：{}'.format(model_path))
 
-    def __train_epoch(self, epoch_id, save_model_path, local_rank, writer):
+    def __train_epoch(self, epoch_id, save_model_path, local_rank, writer, nranks=0):
         train_times, accuracies, loss_sum = [], [], []
         start = time.time()
         sum_batch = len(self.train_loader) * self.configs.train_conf.max_epoch
         for batch_id, (audio, label) in enumerate(self.train_loader):
-            audio = audio.to(self.device)
-            label = label.to(self.device).long()
+            if nranks > 1:
+                audio = audio.to(local_rank)
+                label = label.to(local_rank).long()
+            else:
+                audio = audio.to(self.device)
+                label = label.to(self.device).long()
             output = self.model(audio)
             # 计算损失值
             los = self.loss(output, label)
@@ -263,7 +267,7 @@ class MVectorTrainer(object):
         if nranks > 1 and self.use_gpu:
             # 初始化NCCL环境
             dist.init_process_group(backend='nccl')
-            local_rank = dist.get_rank()
+            local_rank = int(os.environ["LOCAL_RANK"])
 
         # 获取数据
         self.__setup_dataloader(augment_conf_path=augment_conf_path, is_train=True)
@@ -272,6 +276,7 @@ class MVectorTrainer(object):
 
         # 支持多卡训练
         if nranks > 1 and self.use_gpu:
+            self.model.to(local_rank)
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[local_rank])
         logger.info('训练数据：{}'.format(len(self.train_dataset)))
 
@@ -281,6 +286,9 @@ class MVectorTrainer(object):
 
         test_step, self.train_step = 0, 0
         last_epoch += 1
+        # 学习率衰减函数
+        self.scheduler = CosineAnnealingLR(self.optimizer, T_max=int(self.configs.train_conf.max_epoch * 1.2),
+                                           last_epoch=last_epoch)
         if local_rank == 0:
             writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], last_epoch)
         # 开始训练
@@ -289,13 +297,14 @@ class MVectorTrainer(object):
             start_epoch = time.time()
             # 训练一个epoch
             self.__train_epoch(epoch_id=epoch_id, save_model_path=save_model_path, local_rank=local_rank,
-                               writer=writer)
+                               writer=writer, nranks=nranks)
             # 多卡训练只使用一个进程执行评估和保存模型
             if local_rank == 0:
                 logger.info('=' * 70)
-                loss, acc = self.evaluate(resume_model=None)
-                logger.info('Test epoch: {}, time/epoch: {}, loss: {:.5f}, accuracy: {:.5f}'.format(
-                    epoch_id, str(timedelta(seconds=(time.time() - start_epoch))), loss, acc))
+                loss, acc, precision, recall, f1_score = self.evaluate(resume_model=None)
+                logger.info('Test epoch: {}, time/epoch: {}, loss: {:.5f}, accuracy: {:.5f}, precision: {:.5f}, '
+                            'recall: {:.5f}, f1_score: {:.5f}'.format(epoch_id, str(timedelta(
+                    seconds=(time.time() - start_epoch))), loss, acc, precision, recall, f1_score))
                 logger.info('=' * 70)
                 writer.add_scalar('Test/Accuracy', acc, test_step)
                 writer.add_scalar('Test/Loss', loss, test_step)
@@ -335,8 +344,8 @@ class MVectorTrainer(object):
         else:
             eval_model = self.model
 
+        accuracies, losses, preds, r_labels = [], [], [], []
         features, labels = None, None
-        accuracies, losses = [], []
         with torch.no_grad():
             for batch_id, (audio, label) in enumerate(tqdm(self.test_loader)):
                 audio = audio.to(self.device)
@@ -348,7 +357,9 @@ class MVectorTrainer(object):
                 output = output.data.cpu().numpy()
                 # 模型预测标签
                 pred = np.argmax(output, axis=1)
-
+                preds.extend(pred.tolist())
+                # 真实标签
+                r_labels.extend(label.tolist())
                 # 计算准确率
                 acc = np.mean((pred == label).astype(int))
                 accuracies.append(acc)
@@ -359,6 +370,17 @@ class MVectorTrainer(object):
         loss = float(sum(losses) / len(losses))
         acc = float(sum(accuracies) / len(accuracies))
         self.model.train()
+        # 计算精确率、召回率、f1_score
+        cm = confusion_matrix(labels, preds)
+        FP = cm.sum(axis=0) - np.diag(cm)
+        FN = cm.sum(axis=1) - np.diag(cm)
+        TP = np.diag(cm)
+        TN = cm.sum() - (FP + FN + TP)
+        # 精确率
+        precision = TP / (TP + FP + 1e-6)
+        # 召回率
+        recall = TP / (TP + FN + 1e-6)
+        f1_score = (2 * precision * recall) / (precision + recall + 1e-12)
 
         if cal_threshold:
             scores, y_true = [], []
@@ -376,7 +398,7 @@ class MVectorTrainer(object):
             print('找出最优的阈值和对应的准确率...')
             best_acc, threshold = cal_accuracy_threshold(scores, y_true)
             print(f'当阈值为{threshold:.2f}, 两两对比准确率最大，准确率为：{best_acc:.5f}')
-        return loss, acc
+        return loss, acc, np.mean(precision), np.mean(recall), np.mean(f1_score)
 
     def export(self, save_model_path='models/', resume_model='models/ecapa_tdnn_spectrogram/best_model/'):
         """
