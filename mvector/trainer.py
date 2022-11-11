@@ -47,10 +47,6 @@ class MVectorTrainer(object):
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
         self.test_loader = None
-        # 获取分类标签
-        with open(self.configs.dataset_conf.label_list_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        self.class_labels = [l.replace('\n', '') for l in lines]
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.num_workers = 0
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
@@ -111,6 +107,8 @@ class MVectorTrainer(object):
             self.optimizer = torch.optim.Adam(params=self.model.parameters(),
                                               lr=float(self.configs.optimizer_conf.learning_rate),
                                               weight_decay=float(self.configs.optimizer_conf.weight_decay))
+            # 学习率衰减函数
+            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=int(self.configs.train_conf.max_epoch * 1.2))
 
     def __load_pretrained(self, pretrained_model):
         # 加载预训练模型
@@ -283,12 +281,12 @@ class MVectorTrainer(object):
         self.__load_pretrained(pretrained_model=pretrained_model)
         # 加载恢复模型
         last_epoch, best_acc = self.__load_checkpoint(save_model_path=save_model_path, resume_model=resume_model)
+        if last_epoch > 0:
+            self.optimizer.step()
+            [self.scheduler.step() for _ in range(last_epoch)]
 
         test_step, self.train_step = 0, 0
         last_epoch += 1
-        # 学习率衰减函数
-        self.scheduler = CosineAnnealingLR(self.optimizer, T_max=int(self.configs.train_conf.max_epoch * 1.2),
-                                           last_epoch=last_epoch)
         if local_rank == 0:
             writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], last_epoch)
         # 开始训练

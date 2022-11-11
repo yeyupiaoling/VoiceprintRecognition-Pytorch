@@ -16,8 +16,6 @@ dataset_conf:
   train_list: 'dataset/train_list.txt'
   # 测试数据的数据列表路径
   test_list: 'dataset/test_list.txt'
-  # 标签列表
-  label_list_path: 'dataset/label_list.txt'
 
 # 数据预处理参数
 preprocess_conf:
