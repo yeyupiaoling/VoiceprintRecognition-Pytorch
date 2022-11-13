@@ -116,7 +116,10 @@ class MVectorTrainer(object):
             if os.path.isdir(pretrained_model):
                 pretrained_model = os.path.join(pretrained_model, 'model.pt')
             assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
-            model_dict = self.model.state_dict()
+            if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
+                model_dict = self.model.module.state_dict()
+            else:
+                model_dict = self.model.state_dict()
             model_state_dict = torch.load(pretrained_model)
             # 过滤不存在的参数
             for name, weight in model_dict.items():
