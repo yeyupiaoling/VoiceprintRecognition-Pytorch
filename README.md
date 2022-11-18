@@ -19,11 +19,12 @@
 
 # 模型下载
 
-|    模型     |    预处理方法    |                          数据集                           | 类别数量 |  分类准确率  | 两两对比准确率 |   精准率   |   召回率   | F1-score |                             模型下载地址                              |
-|:---------:|:-----------:|:------------------------------------------------------:|:----:|:-------:|:-------:|:-------:|:-------:|:--------:|:---------------------------------------------------------------:|
-| EcapaTdnn | spectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 | 0.97392 | 0.99987 | 0.97138 | 0.96969 | 0.96969  | [点击下载](https://download.csdn.net/download/qq_33200967/86951378) |
-| EcapaTdnn |    fbank    | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242 | 0.97597 | 0.99987 | 0.97702 | 0.97415 | 0.97239  | [点击下载](https://download.csdn.net/download/qq_33200967/87015334) |
-| EcapaTdnn | spectrogram |                         更大的数据集                         | 6355 | 0.88783 | 0.99991 | 0.83247 | 0.85038 | 0.83062  | [点击下载](https://download.csdn.net/download/qq_33200967/86987829) |
+|    模型     |    预处理方法    |                          数据集                           | 类别数量  |  分类准确率  | 两两对比准确率 |   精准率   |   召回率   | F1-score |                             模型下载地址                              |
+|:---------:|:-----------:|:------------------------------------------------------:|:-----:|:-------:|:-------:|:-------:|:-------:|:--------:|:---------------------------------------------------------------:|
+| EcapaTdnn | spectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.97392 | 0.99987 | 0.97138 | 0.96969 | 0.96969  | [点击下载](https://download.csdn.net/download/qq_33200967/86951378) |
+| EcapaTdnn |    fbank    | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.97597 | 0.99987 | 0.97702 | 0.97415 | 0.97239  | [点击下载](https://download.csdn.net/download/qq_33200967/87015334) |
+| EcapaTdnn | spectrogram |                         更大的数据集                         | 6355  | 0.88783 | 0.99991 | 0.83247 | 0.85038 | 0.83062  | [点击下载](https://download.csdn.net/download/qq_33200967/86987829) |
+| EcapaTdnn | spectrogram |                         超大的数据集                         | 13718 |         |         |         |         |          |                            [点击下载]()                             |
 
 ## 安装环境
 
@@ -75,7 +76,7 @@ dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
 # 单卡训练
 CUDA_VISIBLE_DEVICES=0 python train.py
 # 多卡训练
-CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 train.py
+CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py
 ```
 
 训练输出日志：
