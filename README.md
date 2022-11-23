@@ -24,7 +24,7 @@
 | EcapaTdnn | spectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.97392 | 0.99987 | 0.97138 | 0.96969 | 0.96969  | [点击下载](https://download.csdn.net/download/qq_33200967/86951378) |
 | EcapaTdnn |    fbank    | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.97597 | 0.99987 | 0.97702 | 0.97415 | 0.97239  | [点击下载](https://download.csdn.net/download/qq_33200967/87015334) |
 | EcapaTdnn | spectrogram |                         更大的数据集                         | 6355  | 0.88783 | 0.99991 | 0.83247 | 0.85038 | 0.83062  | [点击下载](https://download.csdn.net/download/qq_33200967/86987829) |
-| EcapaTdnn | spectrogram |                         超大的数据集                         | 13718 |         |         |         |         |          |                            [点击下载]()                             |
+| EcapaTdnn | spectrogram |                         超大的数据集                         | 13718 | 0.92013 | 0.99996 | 0.86595 | 0.88838 | 0.87062  | [点击下载](https://download.csdn.net/download/qq_33200967/87131658) |
 
 ## 安装环境
 
