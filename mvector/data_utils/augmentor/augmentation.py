@@ -1,16 +1,13 @@
 """Contains the data augmentation pipeline."""
 
 import json
-import os
 import random
 
-from mvector.data_utils.augmentor.volume_perturb import VolumePerturbAugmentor
+from mvector.data_utils.augmentor.noise_perturb import NoisePerturbAugmentor
+from mvector.data_utils.augmentor.resample import ResampleAugmentor
 from mvector.data_utils.augmentor.shift_perturb import ShiftPerturbAugmentor
 from mvector.data_utils.augmentor.speed_perturb import SpeedPerturbAugmentor
-from mvector.data_utils.augmentor.noise_perturb import NoisePerturbAugmentor
-from mvector.data_utils.augmentor.spec_augment import SpecAugmentor
-from mvector.data_utils.augmentor.spec_sub import SpecSubAugmentor
-from mvector.data_utils.augmentor.resample import ResampleAugmentor
+from mvector.data_utils.augmentor.volume_perturb import VolumePerturbAugmentor
 from mvector.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -60,23 +57,6 @@ class AugmentationPipeline(object):
           "max_gain_dBFS": 15
         },
         "prob": 1.0
-      },
-      {
-        "type": "specaug",
-        "params": {
-          "W": 0,
-          "warp_mode": "PIL",
-          "F": 10,
-          "n_freq_masks": 2,
-          "T": 50,
-          "n_time_masks": 2,
-          "p": 1.0,
-          "adaptive_number_ratio": 0,
-          "adaptive_size_ratio": 0,
-          "max_n_time_masks": 20,
-          "replace_with_zero": true
-        },
-        "prob": 1.0
       }
     ]
     This augmentation configuration inserts two augmentation models
@@ -91,7 +71,6 @@ class AugmentationPipeline(object):
 
     def __init__(self, augmentation_config):
         self._augmentors, self._rates = self._parse_pipeline_from(augmentation_config, aug_type='audio')
-        self._spec_augmentors, self._spec_rates = self._parse_pipeline_from(augmentation_config, aug_type='feature')
 
     def transform_audio(self, audio_segment):
         """Run the pre-processing pipeline for data augmentation.
@@ -104,17 +83,6 @@ class AugmentationPipeline(object):
         for augmentor, rate in zip(self._augmentors, self._rates):
             if random.random() < rate:
                 augmentor.transform_audio(audio_segment)
-
-    def transform_feature(self, spec_segment):
-        """spectrogram augmentation.
-
-        Args:
-            spec_segment (np.ndarray): audio feature, (D, T).
-        """
-        for augmentor, rate in zip(self._spec_augmentors, self._spec_rates):
-            if random.random() < rate:
-                spec_segment = augmentor.transform_feature(spec_segment)
-        return spec_segment
 
     def _parse_pipeline_from(self, config_json, aug_type):
         """Parse the config json to build a augmentation pipelien."""
@@ -143,9 +111,5 @@ class AugmentationPipeline(object):
             return ResampleAugmentor(**params)
         elif augmentor_type == "noise":
             return NoisePerturbAugmentor(**params)
-        elif augmentor_type == "specaug":
-            return SpecAugmentor(**params)
-        elif augmentor_type == "specsub":
-            return SpecSubAugmentor(**params)
         else:
             raise ValueError("Unknown augmentor type [%s]." % augmentor_type)

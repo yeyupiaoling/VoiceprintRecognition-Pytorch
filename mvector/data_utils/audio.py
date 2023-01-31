@@ -451,17 +451,13 @@ class AudioSegment(object):
     def vad(self, top_db=20, overlap=200):
         self._samples = vad(wav=self._samples, top_db=top_db, overlap=overlap)
 
-    def crop(self, length, mode='eval'):
-        num_chunk_samples = int(length * self.sample_rate)
-        if self.num_samples > num_chunk_samples + 1:
+    def crop(self, duration, mode='eval'):
+        num_chunk_samples = int(duration * self.sample_rate)
+        if self.num_samples > num_chunk_samples:
             if mode == 'train':
                 start = random.randint(0, self.num_samples - num_chunk_samples - 1)
                 stop = start + num_chunk_samples
                 self._samples = self._samples[start:stop]
-                # 对每次都满长度的再次裁剪
-                if random.random() > 0.5:
-                    self._samples[:random.randint(1, self.sample_rate // 4)] = 0
-                    self._samples = self._samples[:-random.randint(1, self.sample_rate // 4)]
             else:
                 self._samples = self._samples[:num_chunk_samples]
 

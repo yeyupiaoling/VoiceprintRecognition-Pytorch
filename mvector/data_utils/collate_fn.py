@@ -6,11 +6,11 @@ import torch
 def collate_fn(batch):
     # 找出音频长度最长的
     batch = sorted(batch, key=lambda sample: sample[0].shape[0], reverse=True)
-    freq_size = batch[0][0].shape[1]
     max_audio_length = batch[0][0].shape[0]
     batch_size = len(batch)
     # 以最大的长度创建0张量
-    inputs = np.zeros((batch_size, max_audio_length, freq_size), dtype='float32')
+    inputs = np.zeros((batch_size, max_audio_length), dtype='float32')
+    input_lens_ratio = []
     labels = []
     for x in range(batch_size):
         sample = batch[x]
@@ -18,7 +18,8 @@ def collate_fn(batch):
         labels.append(sample[1])
         seq_length = tensor.shape[0]
         # 将数据插入都0张量中，实现了padding
-        inputs[x, :seq_length, :] = tensor[:, :]
+        inputs[x, :seq_length] = tensor[:]
+        input_lens_ratio.append(seq_length/max_audio_length)
+    input_lens_ratio = np.array(input_lens_ratio, dtype='float32')
     labels = np.array(labels, dtype='int64')
-    # 打乱数据
-    return torch.tensor(inputs), torch.tensor(labels)
+    return torch.tensor(inputs), torch.tensor(labels), torch.tensor(input_lens_ratio)

@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from mvector import SUPPORT_MODEL
 from mvector.data_utils.audio import AudioSegment
-from mvector.data_utils.featurizer.audio_featurizer import AudioFeaturizer
+from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.models.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
 from mvector.utils.logger import setup_logger
 from mvector.utils.utils import dict_to_object
@@ -42,7 +42,8 @@ class MVectorPredictor:
         self.threshold = threshold
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
-        self._audio_featurizer = AudioFeaturizer(**self.configs.preprocess_conf)
+        self._audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
+        self._audio_featurizer.to(self.device)
         # 获取模型
         if self.configs.use_model == 'ecapa_tdnn':
             ecapa_tdnn = EcapaTdnn(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
@@ -113,12 +114,11 @@ class MVectorPredictor:
             if audio_path in self.users_audio_path: continue
             # 读取声纹库音频
             audio_data = AudioSegment.from_file(audio_path)
-            audio_feature = self._audio_featurizer.featurize(audio_data)
             # 获取用户名
             user_name = os.path.basename(os.path.dirname(audio_path))
             self.users_name.append(user_name)
             self.users_audio_path.append(audio_path)
-            input_audios.append(audio_feature)
+            input_audios.append(audio_data.samples)
             # 处理一批数据
             if len(input_audios) == self.configs.dataset_conf.batch_size:
                 features = self.predict_batch(input_audios)
@@ -180,10 +180,17 @@ class MVectorPredictor:
             input_data = AudioSegment.from_wave_bytes(audio_data)
         else:
             raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
-        audio_feature = self._audio_featurizer.featurize(input_data)
-        input_data = torch.tensor(audio_feature, dtype=torch.float32, device=self.device).unsqueeze(0)
+        # 重采样
+        if input_data.sample_rate != self.configs.dataset_conf.sample_rate:
+            input_data.resample(self.configs.dataset_conf.sample_rate)
+        # decibel normalization
+        if self.configs.dataset_conf.use_dB_normalization:
+            input_data.normalize(target_db=self.configs.dataset_conf.target_dB)
+        input_data = torch.tensor(input_data.samples, dtype=torch.float32, device=self.device).unsqueeze(0)
+        input_len_ratio = torch.tensor([1], dtype=torch.float32, device=self.device)
+        audio_feature, _ = self._audio_featurizer(input_data, input_len_ratio)
         # 执行预测
-        feature = self.predictor(input_data).data.cpu().numpy()[0]
+        feature = self.predictor(audio_feature).data.cpu().numpy()[0]
         return feature
 
     def predict_batch(self, audios_data):
@@ -194,18 +201,22 @@ class MVectorPredictor:
         """
         # 找出音频长度最长的
         batch = sorted(audios_data, key=lambda a: a.shape[0], reverse=True)
-        freq_size = batch[0].shape[1]
         max_audio_length = batch[0].shape[0]
         batch_size = len(batch)
         # 以最大的长度创建0张量
-        inputs = np.zeros((batch_size, max_audio_length, freq_size), dtype=np.float32)
-        for i, sample in enumerate(batch):
-            seq_length = sample.shape[0]
+        inputs = np.zeros((batch_size, max_audio_length), dtype='float32')
+        input_lens_ratio = []
+        for x in range(batch_size):
+            tensor = batch[x]
+            seq_length = tensor.shape[0]
             # 将数据插入都0张量中，实现了padding
-            inputs[i, :seq_length, :] = sample[:, :]
+            inputs[x, :seq_length] = tensor[:]
+            input_lens_ratio.append(seq_length/max_audio_length)
         audios_data = torch.tensor(inputs, dtype=torch.float32, device=self.device)
+        input_lens_ratio = torch.tensor(input_lens_ratio, dtype=torch.float32, device=self.device)
+        audio_feature, _ = self._audio_featurizer(audios_data, input_lens_ratio)
         # 执行预测
-        features = self.predictor(audios_data).data.cpu().numpy()
+        features = self.predictor(audio_feature).data.cpu().numpy()
         return features
 
     # 声纹对比
