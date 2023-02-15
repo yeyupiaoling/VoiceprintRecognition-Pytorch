@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 
 # 生成数据列表
-def get_data_list(infodata_path, list_path, zhvoice_path):
+def get_data_list(infodata_path, list_path, zhvoice_path, to_wav=True):
     with open(infodata_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
@@ -28,11 +28,14 @@ def get_data_list(infodata_path, list_path, zhvoice_path):
         label = speakers_dict[speaker]
         sound_path = os.path.join(zhvoice_path, line['index'])
         if not os.path.exists(sound_path):continue
-        save_path = "%s.wav" % sound_path[:-4]
-        if not os.path.exists(save_path):
-            wav = AudioSegment.from_mp3(sound_path)
-            wav.export(save_path, format="wav")
-            os.remove(sound_path)
+        if to_wav:
+            save_path = "%s.wav" % sound_path[:-4]
+            if not os.path.exists(save_path):
+                wav = AudioSegment.from_mp3(sound_path)
+                wav.export(save_path, format="wav")
+                os.remove(sound_path)
+        else:
+            save_path = sound_path
         if sound_sum % 200 == 0:
             f_test.write('%s\t%d\n' % (save_path.replace('\\', '/'), label))
         else:
@@ -44,4 +47,4 @@ def get_data_list(infodata_path, list_path, zhvoice_path):
 
 
 if __name__ == '__main__':
-    get_data_list('dataset/zhvoice/text/infodata.json', 'dataset', 'dataset/zhvoice')
+    get_data_list('dataset/zhvoice/text/infodata.json', 'dataset', 'dataset/zhvoice', to_wav=True)
