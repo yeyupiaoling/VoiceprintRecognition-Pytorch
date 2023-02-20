@@ -3,6 +3,7 @@ import pickle
 
 import numpy as np
 import torch
+import yaml
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 
@@ -11,7 +12,7 @@ from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.models.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
 from mvector.utils.logger import setup_logger
-from mvector.utils.utils import dict_to_object
+from mvector.utils.utils import dict_to_object, print_arguments
 
 logger = setup_logger(__name__)
 
@@ -40,6 +41,11 @@ class MVectorPredictor:
         # 索引候选数量
         self.cdd_num = 5
         self.threshold = threshold
+        # 读取配置文件
+        if isinstance(configs, str):
+            with open(configs, 'r', encoding='utf-8') as f:
+                configs = yaml.load(f.read(), Loader=yaml.FullLoader)
+            print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self._audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)

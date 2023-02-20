@@ -9,6 +9,7 @@ from datetime import timedelta
 import numpy as np
 import torch
 import torch.distributed as dist
+import yaml
 from sklearn.metrics import confusion_matrix
 from torch.utils.data.distributed import DistributedSampler
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -24,7 +25,7 @@ from mvector.data_utils.reader import CustomDataset
 from mvector.models.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
 from mvector.models.loss import AAMLoss
 from mvector.utils.logger import setup_logger
-from mvector.utils.utils import dict_to_object, cal_accuracy_threshold
+from mvector.utils.utils import dict_to_object, cal_accuracy_threshold, print_arguments
 
 logger = setup_logger(__name__)
 
@@ -43,6 +44,11 @@ class MVectorTrainer(object):
             os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
             self.device = torch.device("cpu")
         self.use_gpu = use_gpu
+        # 读取配置文件
+        if isinstance(configs, str):
+            with open(configs, 'r', encoding='utf-8') as f:
+                configs = yaml.load(f.read(), Loader=yaml.FullLoader)
+            print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
