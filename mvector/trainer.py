@@ -14,7 +14,7 @@ from sklearn.metrics import confusion_matrix
 from torch.utils.data.distributed import DistributedSampler
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
-from torchsummary import summary
+from torchinfo import summary
 from tqdm import tqdm
 from visualdl import LogWriter
 
@@ -111,7 +111,7 @@ class MVectorTrainer(object):
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
         self.model.to(self.device)
-        summary(self.model, (98, self.audio_featurizer.feature_dim))
+        summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
         # print(self.model)
         # 获取损失函数
         self.loss = AAMLoss()
