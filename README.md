@@ -71,7 +71,7 @@ dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
 ```
 
 # 训练模型
-使用`train.py`训练模型，本项目支持多个音频预处理方式，通过参数`feature_method`可以指定，`melspectrogram`为梅尔频谱，`spectrogram`为声谱图。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
+使用`train.py`训练模型，本项目支持多个音频预处理方式，通过`configs/ecapa_tdnn.yml`配置文件的参数`preprocess_conf.feature_method`可以指定，`MelSpectrogram`为梅尔频谱，`Spectrogram`为语谱图，`MFCC`梅尔频谱倒谱系数。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
 ```shell
 # 单卡训练
 CUDA_VISIBLE_DEVICES=0 python train.py
@@ -81,46 +81,49 @@ CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 tra
 
 训练输出日志：
 ```
-[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:12 - ----------- 额外配置参数 -----------
-[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:14 - augment_conf_path: configs/augmentation.json
-[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:14 - configs: configs/ecapa_tdnn.yml
-[2022-11-05 19:58:31.558526 INFO   ] utils:print_arguments:14 - pretrained_model: None
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:14 - resume_model: None
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:14 - save_model_path: models/
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:14 - use_gpu: True
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:15 - ------------------------------------------------
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:16 - ----------- 配置文件参数 -----------
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:19 - dataset_conf:
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	batch_size: 64
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	chunk_duration: 3
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	do_vad: False
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	min_duration: 0.5
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	num_speakers: 10
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	num_workers: 8
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	test_list: dataset/test_list.txt
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	train_list: dataset/train_list.txt
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:19 - model_conf:
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	channels: [512, 512, 512, 512, 1536]
-[2022-11-05 19:58:31.559523 INFO   ] utils:print_arguments:21 - 	dilations: [1, 2, 3, 4, 1]
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	kernel_sizes: [5, 3, 3, 3, 1]
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	lin_neurons: 192
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:19 - optimizer_conf:
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	learning_rate: 0.001
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	warmup_steps: 200
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:21 - 	weight_decay: 1e-6
-[2022-11-05 19:58:31.560524 INFO   ] utils:print_arguments:19 - preprocess_conf:
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	feature_method: spectrogram
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	frame_length: 25
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	frame_shift: 10
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	n_mels: 80
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	sample_rate: 16000
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	target_dB: -20
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	use_dB_normalization: True
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:19 - train_conf:
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	log_interval: 10
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:21 - 	max_epoch: 30
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:23 - use_model: ecapa_tdnn
-[2022-11-05 19:58:31.568523 INFO   ] utils:print_arguments:24 - ------------------------------------------------
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - augment_conf_path: configs/augmentation.json
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - pretrained_model: None
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - resume_model: None
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - save_model_path: models/
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - use_gpu: True
+[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:16 - ------------------------------------------------
+[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:18 - ----------- 配置文件参数 -----------
+[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:21 - dataset_conf:
+[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:28 - 	batch_size: 64
+[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:28 - 	chunk_duration: 3
+[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:28 - 	do_vad: False
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	min_duration: 0.5
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	num_speakers: 3242
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	num_workers: 4
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	sample_rate: 16000
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	target_dB: -20
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	test_list: dataset/test_list.txt
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	train_list: dataset/train_list.txt
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	use_dB_normalization: True
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 - feature_conf:
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	hop_length: 160
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	n_fft: 400
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	n_mels: 80
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	sr: 16000
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	win_length: 400
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	window: hann
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 - model_conf:
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	channels: [512, 512, 512, 512, 1536]
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	dilations: [1, 2, 3, 4, 1]
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	kernel_sizes: [5, 3, 3, 3, 1]
+[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	lin_neurons: 192
+[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:21 - optimizer_conf:
+[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	learning_rate: 0.001
+[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	weight_decay: 1e-6
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - preprocess_conf:
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	feature_method: MelSpectrogram
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - train_conf:
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	log_interval: 100
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	max_epoch: 30
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:30 - use_model: ecapa_tdnn
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:31 - ------------------------------------------------
 [2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'noise', 'aug_type': 'audio', 'params': {'min_snr_dB': 10, 'max_snr_dB': 50, 'repetition': 2, 'noise_dir': 'dataset/noise/'}, 'prob': 0.0}
 [2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'resample', 'aug_type': 'audio', 'params': {'new_sample_rate': [8000, 32000, 44100, 48000]}, 'prob': 0.0}
 [2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'speed', 'aug_type': 'audio', 'params': {'min_speed_rate': 0.9, 'max_speed_rate': 1.1, 'num_rates': 3}, 'prob': 0.0}
