@@ -33,12 +33,11 @@ preprocess_conf:
 # MelSpectrogram的参数，其他的预处理方法查看对应API设设置参数
 feature_conf:
   sample_rate: 16000
-  n_fft: 1024
-  hop_length: 320
-  win_length: 1024
-  f_min: 50.0
-  f_max: 14000.0
-  n_mels: 64
+  n_mels: 80
+  n_fft: 400
+  hop_length: 160
+  win_length: 400
+  window: 'hann'
 
 optimizer_conf:
   # 初始学习率的大小
