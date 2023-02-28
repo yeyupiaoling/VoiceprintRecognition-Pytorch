@@ -1,5 +1,7 @@
 # 前言
-此版本为新版本，如想使用使用旧版本，请转到[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0)，本项目使用了EcapaTdnn模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
+此版本为新版本，相比上一个版本，最大的变化是此版本支持pip安装，以及把预处理使用模型算子实现，这样做的好处就是可以直接使用GPU计算，大幅度提高了预处理的速度，估计预处理速度可在10~20倍。
+
+如想使用使用旧版本，请转到[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0)，本项目使用了EcapaTdnn模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
 
 
 **欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`1169600237`，问题答案为博主Github的ID`yeyupiaoling`。
@@ -20,11 +22,13 @@
 # 模型下载
 
 
-|    模型     |     预处理方法      |                          数据集                           | 类别数量 | 分类准确率 | 两两对比准确率 | 精准率 | 召回率 | F1-score | 模型下载地址 |
-|:---------:|:--------------:|:------------------------------------------------------:|:----:|:-----:|:-------:|:---:|:---:|:--------:|:------:|
-| EcapaTdnn | MelSpectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) |      |       |         |     |     |          |        |
-| EcapaTdnn | MelSpectrogram |                         更大的数据集                         |      |       |         |     |     |          |        |
-| EcapaTdnn | MelSpectrogram |                         超大的数据集                         |      |       |         |     |     |          |        |
+|    模型     |     预处理方法      |                          数据集                           | 类别数量  | 分类准确率 | 两两对比准确率 | 精准率 | 召回率 |                                                    模型下载地址                                                     |
+|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:-----:|:-------:|:---:|:---:|:-------------------------------------------------------------------------------------------------------------:|
+| EcapaTdnn | MelSpectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |       |         |     |     | 即将提供下载，着急可以使用旧分支[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0) |
+| EcapaTdnn |  Spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |       |         |     |     |                                                                                                               |
+| EcapaTdnn |      MFCC      | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |       |         |     |     |                                                                                                               |
+| EcapaTdnn | MelSpectrogram |                         更大的数据集                         | 6355  |       |         |     |     |                                                                                                               |
+| EcapaTdnn | MelSpectrogram |                         超大的数据集                         | 13718 |       |         |     |     |                                                                                                               |
 
 ## 安装环境
 
