@@ -22,13 +22,13 @@
 # 模型下载
 
 
-|    模型     |     预处理方法      |                          数据集                           | 类别数量  | 分类准确率 | 两两对比准确率 | 精准率 | 召回率 |                                                    模型下载地址                                                     |
-|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:-----:|:-------:|:---:|:---:|:-------------------------------------------------------------------------------------------------------------:|
-| EcapaTdnn | MelSpectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |       |         |     |     | 即将提供下载，着急可以使用旧分支[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0) |
-| EcapaTdnn |  Spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |       |         |     |     |                                                                                                               |
-| EcapaTdnn |      MFCC      | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |       |         |     |     |                                                                                                               |
-| EcapaTdnn | MelSpectrogram |                         更大的数据集                         | 6355  |       |         |     |     |                                                                                                               |
-| EcapaTdnn | MelSpectrogram |                         超大的数据集                         | 13718 |       |         |     |     |                                                                                                               |
+|    模型     |     预处理方法      |                          数据集                           | 类别数量  |  分类准确率  | 两两对比准确率 |   精准率   |   召回率   |                                                    模型下载地址                                                     |
+|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:-------:|:-------:|:-------:|:-------:|:-------------------------------------------------------------------------------------------------------------:|
+| EcapaTdnn | MelSpectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.95971 | 0.99985 | 0.96294 | 0.95817 |                                                                                                               |
+| EcapaTdnn |  Spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.95795 | 0.99984 | 0.96290 | 0.95786 |                                                                                                               |
+| EcapaTdnn |      MFCC      | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  |         |         |         |         |                                                                                                               |
+| EcapaTdnn | MelSpectrogram |                         更大的数据集                         | 6355  |         |         |         |         | 即将提供下载，着急可以使用旧分支[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0) |
+| EcapaTdnn | MelSpectrogram |                         超大的数据集                         | 13718 |         |         |         |         |                                                                                                               |
 
 ## 安装环境
 

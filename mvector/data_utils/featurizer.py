@@ -23,7 +23,12 @@ class AudioFeaturizer(nn.Module):
         elif feature_method == 'Spectrogram':
             self.feat_fun = Spectrogram(**feature_conf)
         elif feature_method == 'MFCC':
-            self.feat_fun = MFCC(**feature_conf)
+            melkwargs = feature_conf.copy()
+            del melkwargs['sample_rate']
+            del melkwargs['n_mfcc']
+            self.feat_fun = MFCC(sample_rate=self._feature_conf.sample_rate,
+                                 n_mfcc=self._feature_conf.n_mfcc,
+                                 melkwargs=melkwargs)
         else:
             raise Exception(f'预处理方法 {self._feature_method} 不存在!')
 
