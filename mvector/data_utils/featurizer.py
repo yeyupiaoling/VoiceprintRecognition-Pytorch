@@ -61,7 +61,7 @@ class AudioFeaturizer(nn.Module):
         elif self._feature_method == 'MelSpectrogram':
             return self._feature_conf.n_mels
         elif self._feature_method == 'Spectrogram':
-            return 257
+            return self._feature_conf.n_fft // 2 + 1
         elif self._feature_method == 'MFCC':
             return self._feature_conf.n_mfcc
         else:
