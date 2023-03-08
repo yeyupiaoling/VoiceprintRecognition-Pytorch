@@ -53,6 +53,9 @@ class MVectorTrainer(object):
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
         self.test_loader = None
+        # 获取特征器
+        self.audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
+        self.audio_featurizer.to(self.device)
 
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.num_workers = 0
@@ -299,10 +302,6 @@ class MVectorTrainer(object):
             # 初始化NCCL环境
             dist.init_process_group(backend='nccl')
             local_rank = int(os.environ["LOCAL_RANK"])
-
-        # 获取特征器
-        self.audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
-        self.audio_featurizer.to(local_rank)
         # 获取数据
         self.__setup_dataloader(augment_conf_path=augment_conf_path, is_train=True)
         # 获取模型
@@ -311,6 +310,7 @@ class MVectorTrainer(object):
         # 支持多卡训练
         if nranks > 1 and self.use_gpu:
             self.model.to(local_rank)
+            self.audio_featurizer.to(local_rank)
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[local_rank])
         logger.info('训练数据：{}'.format(len(self.train_dataset)))
 
