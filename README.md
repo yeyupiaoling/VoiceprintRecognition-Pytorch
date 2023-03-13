@@ -21,14 +21,74 @@
 
 # 模型下载
 
-
-|    模型     |     预处理方法      |                          数据集                           | 类别数量  |  分类准确率  | 两两对比准确率 |   精准率   |   召回率   |                                                    模型下载地址                                                     |
-|:---------:|:--------------:|:------------------------------------------------------:|:-----:|:-------:|:-------:|:-------:|:-------:|:-------------------------------------------------------------------------------------------------------------:|
-| EcapaTdnn | MelSpectrogram | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.95971 | 0.99985 | 0.96294 | 0.95817 |                        [点击下载](https://download.csdn.net/download/qq_33200967/87153070)                        |
-| EcapaTdnn |  Spectrogram   | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.95795 | 0.99984 | 0.96290 | 0.95786 |                        [点击下载](https://download.csdn.net/download/qq_33200967/87015334)                        |
-| EcapaTdnn |      MFCC      | [中文语音语料数据集](https://github.com/fighting41love/zhvoice) | 3242  | 0.97142 | 0.99988 | 0.97131 | 0.96721 |                        [点击下载](https://download.csdn.net/download/qq_33200967/87523304)                        |
-| EcapaTdnn | MelSpectrogram |                         更大的数据集                         | 6355  | 0.90020 | 0.99992 | 0.83658 | 0.85483 |                        [点击下载](https://download.csdn.net/download/qq_33200967/86987829)                        |   
-| EcapaTdnn | MelSpectrogram |                         超大的数据集                         | 13718 |         |         |         |         | 即将提供下载，着急可以使用旧分支[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0) |
+<table align="center">
+<tr>
+  <th align="center">模型</th>
+  <th align="center">预处理方法</th>
+  <th align="center">数据集</th>
+  <th align="center">类别数量</th>
+  <th align="center">分类准确率</th>
+  <th align="center">两两对比准确率</th>
+  <th align="center">精准率</th>
+  <th align="center">召回率</th>
+  <th align="center">模型下载地址</th>
+</tr>
+<tr>
+  <td align="center">EcapaTdnn</td>
+  <td align="center">MelSpectrogram</td>
+  <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
+  <td align="center">3242</td>
+  <td align="center">0.95971</td>
+  <td align="center">0.99985</td>
+  <td align="center">0.96294</td>
+  <td align="center">0.95817</td>
+  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87153070">点击下载</a></td>
+</tr>
+<tr>
+  <td align="center">EcapaTdnn</td>
+  <td align="center">Spectrogram</td>
+  <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
+  <td align="center">3242</td>
+  <td align="center">0.95795</td>
+  <td align="center">0.99984</td>
+  <td align="center">0.96290</td>
+  <td align="center">0.95786</td>
+  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87015334">点击下载</a></td>
+</tr>
+<tr>
+  <td align="center">EcapaTdnn</td>
+  <td align="center">MFCC</td>
+  <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
+  <td align="center">3242</td>
+  <td align="center">0.97142</td>
+  <td align="center">0.99988</td>
+  <td align="center">0.97131</td>
+  <td align="center">0.96721</td>
+  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87523304">点击下载</a></td>
+</tr>
+<tr>
+  <td align="center">EcapaTdnn</td>
+  <td align="center">MelSpectrogram</td>
+  <td align="center">更大的数据集</td>
+  <td align="center">6355</td>
+  <td align="center">0.90020</td>
+  <td align="center">0.99992</td>
+  <td align="center">0.83658</td>
+  <td align="center">0.85483</td>
+  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/86987829">点击下载</a></td>
+</tr>
+<tr>
+  <td align="center">EcapaTdnn</td>
+  <td align="center">MelSpectrogram</td>
+  <td align="center">超大的数据集</td>
+  <td align="center">13718</td>
+  <td align="center">0.92042</td>
+  <td align="center">0.99995</td>
+  <td align="center">0.87236</td>
+  <td align="center">0.89033</td>
+  <td align="center">即将提供下载，着急可以使用旧分支<a href="https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle/tree/release/1.0">release/1.0</a></td>
+</tr>
+</table>
 
 ## 安装环境
 
