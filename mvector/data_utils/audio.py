@@ -295,6 +295,7 @@ class AudioSegment(object):
         :raises ValueError: If the required gain to normalize the segment to
                             the target_db value exceeds max_gain_db.
         """
+        if -np.inf == self.rms_db: return
         gain = target_db - self.rms_db
         if gain > max_gain_db:
             raise ValueError(
