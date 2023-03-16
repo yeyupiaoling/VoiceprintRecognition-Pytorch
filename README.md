@@ -121,7 +121,7 @@ python setup.py install
 python create_data.py
 ```
 
-执行上面的程序之后，会生成以下的数据格式，如果要自定义数据，参考如下数据列表，前面是音频的相对路径，后面的是该音频对应的说话人的标签，就跟分类一样。
+执行上面的程序之后，会生成以下的数据格式，如果要自定义数据，参考如下数据列表，前面是音频的相对路径，后面的是该音频对应的说话人的标签，就跟分类一样。**自定义数据集的注意**，测试数据列表的ID可以不用跟训练的ID一样，也就是说测试的数据的说话人可以不用出现在训练集，只要保证测试数据列表中同一个人相同的ID即可。
 ```
 dataset/zhvoice/zhmagicdata/5_895/5_895_20170614203758.wav	3238
 dataset/zhvoice/zhmagicdata/5_895/5_895_20170614214007.wav	3238
@@ -200,20 +200,25 @@ W0424 08:57:03.930370  3377 device_context.cc:447] Please NOTE: device: 0, GPU C
 W0424 08:57:03.932493  3377 device_context.cc:465] device: 0, cuDNN Version: 7.6.
 I0424 08:57:05.431638  3377 nccl_context.cc:107] init nccl context nranks: 2 local rank: 0 gpu id: 0 ring id: 10
 ······
-[2022-04-24 09:25:10.481272] Train epoch [0/30], batch: [7500/8290], loss: 9.03724, accuracy: 0.33252, lr: 0.00100000, eta: 14:58:26
-[2022-04-24 09:25:32.909873] Train epoch [0/30], batch: [7600/8290], loss: 9.00004, accuracy: 0.33600, lr: 0.00100000, eta: 15:09:07
-[2022-04-24 09:25:55.321806] Train epoch [0/30], batch: [7700/8290], loss: 8.96284, accuracy: 0.33950, lr: 0.00100000, eta: 15:13:13
-[2022-04-24 09:26:17.836304] Train epoch [0/30], batch: [7800/8290], loss: 8.92626, accuracy: 0.34294, lr: 0.00100000, eta: 14:57:15
-[2022-04-24 09:26:40.306800] Train epoch [0/30], batch: [7900/8290], loss: 8.88968, accuracy: 0.34638, lr: 0.00100000, eta: 14:51:06
-[2022-04-24 09:27:02.778450] Train epoch [0/30], batch: [8000/8290], loss: 8.85430, accuracy: 0.34964, lr: 0.00100000, eta: 15:00:36
-[2022-04-24 09:27:25.240278] Train epoch [0/30], batch: [8100/8290], loss: 8.81858, accuracy: 0.35294, lr: 0.00100000, eta: 14:51:58
-[2022-04-24 09:27:47.690570] Train epoch [0/30], batch: [8200/8290], loss: 8.78368, accuracy: 0.35630, lr: 0.00100000, eta: 14:55:41
-======================================================================
-[2022-04-24 09:28:12.084404] Test 0, accuracy: 0.76057 time: 0:00:04
-======================================================================
-[2022-04-24 09:28:12.909394] Train epoch [1/30], batch: [0/8290], loss: 5.83753, accuracy: 0.68750, lr: 0.00099453, eta: 2 days, 3:47:48
-[2022-04-24 09:28:35.346418] Train epoch [1/30], batch: [100/8290], loss: 5.80430, accuracy: 0.64527, lr: 0.00099453, eta: 15:00:01
-[2022-04-24 09:28:57.873686] Train epoch [1/30], batch: [200/8290], loss: 5.78946, accuracy: 0.64218, lr: 0.00099453, eta: 14:46:39
+[2023-03-16 20:30:42.559858 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [0/16579], loss: 16.48008, accuracy: 0.01562, learning rate: 0.00000000, speed: 21.27 data/sec, eta: 17 days, 7:38:55
+[2023-03-16 20:31:15.045717 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [100/16579], loss: 16.34529, accuracy: 0.00062, learning rate: 0.00000121, speed: 197.03 data/sec, eta: 1 day, 20:52:05
+[2023-03-16 20:31:47.086451 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [200/16579], loss: 16.31631, accuracy: 0.00054, learning rate: 0.00000241, speed: 199.77 data/sec, eta: 1 day, 20:14:40
+[2023-03-16 20:32:19.711337 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [300/16579], loss: 16.30544, accuracy: 0.00047, learning rate: 0.00000362, speed: 196.19 data/sec, eta: 1 day, 21:02:28
+[2023-03-16 20:32:52.853642 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [400/16579], loss: 16.29228, accuracy: 0.00043, learning rate: 0.00000483, speed: 193.14 data/sec, eta: 1 day, 21:44:42
+[2023-03-16 20:33:25.116274 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [500/16579], loss: 16.27346, accuracy: 0.00041, learning rate: 0.00000603, speed: 198.40 data/sec, eta: 1 day, 20:31:18
+······
+[2023-03-16 20:34:09.633572 INFO   ] trainer:train:304 - ======================================================================
+100%|███████████████████████████████████| 84/84 [00:10<00:00,  7.79it/s]
+开始两两对比音频特征...
+100%|██████████████████████████████| 5332/5332 [00:07<00:00, 749.89it/s]
+[2023-03-16 20:34:29.328638 INFO   ] trainer:train:306 - Test epoch: 1, time/epoch: 0:00:48.881889, threshold: 0.72, tpr: 0.62350, fpr: 0.04601, eer: 0.42250
+[2023-03-16 20:34:29.328840 INFO   ] trainer:train:309 - ======================================================================
+[2023-03-16 20:34:29.728986 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/ecapa_tdnn_MelSpectrogram/best_model
+[2023-03-16 20:34:30.724868 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/ecapa_tdnn_MelSpectrogram/epoch_1
+[2023-03-16 20:30:42.559858 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [0/16579], loss: 16.48008, accuracy: 0.01562, learning rate: 0.00000000, speed: 21.27 data/sec, eta: 17 days, 7:38:55
+[2023-03-16 20:31:15.045717 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [100/16579], loss: 16.34529, accuracy: 0.00062, learning rate: 0.00000121, speed: 197.03 data/sec, eta: 1 day, 20:52:05
+[2023-03-16 20:31:47.086451 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [200/16579], loss: 16.31631, accuracy: 0.00054, learning rate: 0.00000241, speed: 199.77 data/sec, eta: 1 day, 20:14:40
+[2023-03-16 20:32:19.711337 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [300/16579], loss: 16.30544, accuracy: 0.00047, learning rate: 0.00000362, speed: 196.19 data/sec, eta: 1 day, 21:02:28
 ······
 ```
 
@@ -234,7 +239,7 @@ noise:
 
 
 # 评估模型
-训练结束之后会保存预测模型，我们用预测模型来预测测试集中的音频特征，然后使用音频特征进行两两对比，阈值从0到1,步长为0.01进行控制，找到最佳的阈值并计算准确率。
+训练结束之后会保存预测模型，我们用预测模型来预测测试集中的音频特征，然后使用音频特征进行两两对比，计算tpr、fpr、eer。
 ```shell
 python eval.py
 ```
@@ -245,15 +250,11 @@ python eval.py
 ------------------------------------------------
 W0425 08:27:32.057426 17654 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-成功加载模型参数和优化方法参数：models/ecapa_tdnn/model.pdparams
-开始提取全部的音频特征...
-167it [00:15, 10.70it/s]
-分类准确率为：0.9608
+[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/ecapa_tdnn_MelSpectrogram/best_model/model.pdparams
+100%|███████████████████████████| 84/84 [00:28<00:00,  2.95it/s]
 开始两两对比音频特征...
 100%|███████████████████████████| 5332/5332 [00:05<00:00, 1027.83it/s]
-找出最优的阈值和对应的准确率...
-100%|███████████████████████████| 100/100 [00:06<00:00, 16.54it/s]
-当阈值为0.58, 两两对比准确率最大，准确率为：0.99980
+评估消耗时间：65s，threshold：0.26，tpr：0.99391, fpr: 0.00611, eer: 0.01220
 ```
 
 # 声纹对比

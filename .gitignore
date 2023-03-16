@@ -8,3 +8,4 @@ test.py
 models/
 dataset/
 audio_db/
+output/

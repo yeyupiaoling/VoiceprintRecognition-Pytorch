@@ -10,10 +10,9 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import yaml
-from sklearn.metrics import confusion_matrix
-from torch.utils.data.distributed import DistributedSampler
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 from torchinfo import summary
 from tqdm import tqdm
 from visualdl import LogWriter
@@ -22,10 +21,11 @@ from mvector import SUPPORT_MODEL
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
+from mvector.metric.metrics import TprAtFpr
 from mvector.models.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
 from mvector.models.loss import AAMLoss
 from mvector.utils.logger import setup_logger
-from mvector.utils.utils import dict_to_object, cal_accuracy_threshold, print_arguments
+from mvector.utils.utils import dict_to_object, print_arguments
 
 logger = setup_logger(__name__)
 
@@ -189,7 +189,7 @@ class MVectorTrainer(object):
         return last_epoch, best_acc
 
     # 保存模型
-    def __save_checkpoint(self, save_model_path, epoch_id, best_acc=0., best_model=False):
+    def __save_checkpoint(self, save_model_path, epoch_id, best_eer=0., best_model=False):
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             state_dict = self.model.module.state_dict()
         else:
@@ -206,7 +206,7 @@ class MVectorTrainer(object):
         torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pt'))
         torch.save(state_dict, os.path.join(model_path, 'model.pt'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
-            f.write('{"last_epoch": %d, "accuracy": %f}' % (epoch_id, best_acc))
+            f.write('{"last_epoch": %d, "eer": %f}' % (epoch_id, best_eer))
         if not best_model:
             last_model_path = os.path.join(save_model_path,
                                            f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
@@ -316,7 +316,7 @@ class MVectorTrainer(object):
 
         self.__load_pretrained(pretrained_model=pretrained_model)
         # 加载恢复模型
-        last_epoch, best_acc = self.__load_checkpoint(save_model_path=save_model_path, resume_model=resume_model)
+        last_epoch, best_eer = self.__load_checkpoint(save_model_path=save_model_path, resume_model=resume_model)
         if last_epoch > 0:
             self.optimizer.step()
             [self.scheduler.step() for _ in range(last_epoch)]
@@ -335,24 +335,26 @@ class MVectorTrainer(object):
             # 多卡训练只使用一个进程执行评估和保存模型
             if local_rank == 0:
                 logger.info('=' * 70)
-                loss, acc, precision, recall, f1_score = self.evaluate(resume_model=None)
-                logger.info('Test epoch: {}, time/epoch: {}, loss: {:.5f}, accuracy: {:.5f}, precision: {:.5f}, '
-                            'recall: {:.5f}, f1_score: {:.5f}'.format(epoch_id, str(timedelta(
-                    seconds=(time.time() - start_epoch))), loss, acc, precision, recall, f1_score))
+                tpr, fpr, eer, threshold = self.evaluate(resume_model=None)
+                logger.info('Test epoch: {}, time/epoch: {}, threshold: {:.2f}, tpr: {:.5f}, fpr: {:.5f}, '
+                            'eer: {:.5f}'.format(epoch_id, str(timedelta(
+                    seconds=(time.time() - start_epoch))), threshold, tpr, fpr, eer))
                 logger.info('=' * 70)
-                writer.add_scalar('Test/Accuracy', acc, test_step)
-                writer.add_scalar('Test/Loss', loss, test_step)
+                writer.add_scalar('Test/threshold', threshold, test_step)
+                writer.add_scalar('Test/tpr', tpr, test_step)
+                writer.add_scalar('Test/fpr', fpr, test_step)
+                writer.add_scalar('Test/eer', eer, test_step)
                 test_step += 1
                 self.model.train()
                 # # 保存最优模型
-                if acc >= best_acc:
-                    best_acc = acc
-                    self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_acc=acc,
+                if eer <= best_eer:
+                    best_eer = eer
+                    self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer,
                                            best_model=True)
                 # 保存模型
-                self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_acc=acc)
+                self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer)
 
-    def evaluate(self, resume_model='models/ecapa_tdnn_spectrogram/best_model/', cal_threshold=False):
+    def evaluate(self, resume_model='models/ecapa_tdnn_MelSpectrogram/best_model/', save_image_path=None):
         """
         评估模型
         :param resume_model: 所使用的模型
@@ -376,7 +378,6 @@ class MVectorTrainer(object):
         else:
             eval_model = self.model
 
-        accuracies, losses, preds, r_labels = [], [], [], []
         features, labels = None, None
         with torch.no_grad():
             for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.test_loader)):
@@ -384,57 +385,43 @@ class MVectorTrainer(object):
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
                 audio_features, _ = self.audio_featurizer(audio, input_lens_ratio)
-                output = eval_model(audio_features)
                 feature = eval_model.backbone(audio_features).data.cpu().numpy()
-                los = self.loss(output, label)
                 label = label.data.cpu().numpy()
-                output = output.data.cpu().numpy()
-                # 模型预测标签
-                pred = np.argmax(output, axis=1)
-                preds.extend(pred.tolist())
-                # 真实标签
-                r_labels.extend(label.tolist())
-                # 计算准确率
-                acc = np.mean((pred == label).astype(int))
-                accuracies.append(acc)
-                losses.append(los.data.cpu().numpy())
                 # 存放特征
                 features = np.concatenate((features, feature)) if features is not None else feature
                 labels = np.concatenate((labels, label)) if labels is not None else label
-        loss = float(sum(losses) / len(losses))
-        acc = float(sum(accuracies) / len(accuracies))
         self.model.train()
-        # 计算精确率、召回率、f1_score
-        cm = confusion_matrix(labels, preds)
-        FP = cm.sum(axis=0) - np.diag(cm)
-        FN = cm.sum(axis=1) - np.diag(cm)
-        TP = np.diag(cm)
-        TN = cm.sum() - (FP + FN + TP)
-        # 精确率
-        precision = TP / (TP + FP + 1e-6)
-        # 召回率
-        recall = TP / (TP + FN + 1e-6)
-        f1_score = (2 * precision * recall) / (precision + recall + 1e-12)
+        metric = TprAtFpr()
+        labels = labels.astype(np.int32)
+        print('开始两两对比音频特征...')
+        for i in tqdm(range(len(features))):
+            feature_1 = features[i]
+            feature_1 = np.expand_dims(feature_1, 0).repeat(len(features) - i, axis=0)
+            feature_2 = features[i:]
+            feature_1 = torch.tensor(feature_1, dtype=torch.float32)
+            feature_2 = torch.tensor(feature_2, dtype=torch.float32)
+            score = torch.nn.functional.cosine_similarity(feature_1, feature_2, dim=-1).data.cpu().numpy().tolist()
+            y_true = np.array(labels[i] == labels[i:]).astype(np.int32).tolist()
+            metric.add(y_true, score)
+        tprs, fprs, thresholds, eer, index = metric.calculate()
+        tpr, fpr, threshold = tprs[index], fprs[index], thresholds[index]
+        if save_image_path:
+            import matplotlib.pyplot as plt
+            plt.plot(thresholds, tprs, color='blue', linestyle='-', label='tpr')
+            plt.plot(thresholds, fprs, color='red', linestyle='-', label='fpr')
+            plt.plot(threshold, tpr, 'bo-')
+            plt.text(threshold, tpr, (threshold, round(tpr, 5)), color='blue')
+            plt.plot(threshold, fpr, 'ro-')
+            plt.text(threshold, fpr, (threshold, round(fpr, 5)), color='red')
+            plt.xlabel('threshold')
+            plt.title('tpr and fpr')
+            plt.grid(True)  # 显示网格线
+            # 保存图像
+            os.makedirs(save_image_path, exist_ok=True)
+            plt.savefig(os.path.join(save_image_path, 'result.png'))
+        return tpr, fpr, eer, threshold
 
-        if cal_threshold:
-            scores, y_true = [], []
-            labels = labels.astype(np.int32)
-            print('开始两两对比音频特征...')
-            for i in tqdm(range(len(features))):
-                feature_1 = features[i]
-                feature_1 = np.expand_dims(feature_1, 0).repeat(len(features) - i, axis=0)
-                feature_2 = features[i:]
-                feature_1 = torch.tensor(feature_1, dtype=torch.float32)
-                feature_2 = torch.tensor(feature_2, dtype=torch.float32)
-                score = torch.nn.functional.cosine_similarity(feature_1, feature_2, dim=-1).data.cpu().numpy().tolist()
-                scores.extend(score)
-                y_true.extend(np.array(labels[i] == labels[i:]).astype(np.int32))
-            print('找出最优的阈值和对应的准确率...')
-            best_acc, threshold = cal_accuracy_threshold(scores, y_true)
-            print(f'当阈值为{threshold:.2f}, 两两对比准确率最大，准确率为：{best_acc:.5f}')
-        return loss, acc, np.mean(precision), np.mean(recall), np.mean(f1_score)
-
-    def export(self, save_model_path='models/', resume_model='models/ecapa_tdnn_spectrogram/best_model/'):
+    def export(self, save_model_path='models/', resume_model='models/ecapa_tdnn_MelSpectrogram/best_model/'):
         """
         导出预测模型
         :param save_model_path: 模型保存的路径
