@@ -27,10 +27,9 @@
   <th align="center">预处理方法</th>
   <th align="center">数据集</th>
   <th align="center">类别数量</th>
-  <th align="center">分类准确率</th>
-  <th align="center">两两对比准确率</th>
-  <th align="center">精准率</th>
-  <th align="center">召回率</th>
+  <th align="center">tpr</th>
+  <th align="center">fpr</th>
+  <th align="center">eer</th>
   <th align="center">模型下载地址</th>
 </tr>
 <tr>
@@ -38,10 +37,9 @@
   <td align="center">MelSpectrogram</td>
   <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
   <td align="center">3242</td>
-  <td align="center">0.95971</td>
-  <td align="center">0.99985</td>
-  <td align="center">0.96294</td>
-  <td align="center">0.95817</td>
+  <td align="center">0.99092</td>
+  <td align="center">0.00892</td>
+  <td align="center">0.01800</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87153070">点击下载</a></td>
 </tr>
 <tr>
@@ -49,10 +47,9 @@
   <td align="center">Spectrogram</td>
   <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
   <td align="center">3242</td>
-  <td align="center">0.95795</td>
-  <td align="center">0.99984</td>
-  <td align="center">0.96290</td>
-  <td align="center">0.95786</td>
+  <td align="center">0.98793</td>
+  <td align="center">0.00630</td>
+  <td align="center">0.01837</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87015334">点击下载</a></td>
 </tr>
 <tr>
@@ -60,10 +57,9 @@
   <td align="center">MFCC</td>
   <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
   <td align="center">3242</td>
-  <td align="center">0.97142</td>
-  <td align="center">0.99988</td>
-  <td align="center">0.97131</td>
-  <td align="center">0.96721</td>
+  <td align="center">0.99212</td>
+  <td align="center">0.00460</td>
+  <td align="center">0.01248</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87523304">点击下载</a></td>
 </tr>
 <tr>
@@ -71,10 +67,9 @@
   <td align="center">MelSpectrogram</td>
   <td align="center">更大的数据集</td>
   <td align="center">6355</td>
-  <td align="center">0.90020</td>
-  <td align="center">0.99992</td>
-  <td align="center">0.83658</td>
-  <td align="center">0.85483</td>
+  <td align="center">0.97881</td>
+  <td align="center">0.00788</td>
+  <td align="center">0.02907</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/86987829">点击下载</a></td>
 </tr>
 <tr>
@@ -82,10 +77,9 @@
   <td align="center">MelSpectrogram</td>
   <td align="center">超大的数据集</td>
   <td align="center">13718</td>
-  <td align="center">0.92042</td>
-  <td align="center">0.99995</td>
-  <td align="center">0.87236</td>
-  <td align="center">0.89033</td>
+  <td align="center"></td>
+  <td align="center"></td>
+  <td align="center"></td>
   <td align="center">即将提供下载，着急可以使用旧分支<a href="https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle/tree/release/1.0">release/1.0</a></td>
 </tr>
 </table>
