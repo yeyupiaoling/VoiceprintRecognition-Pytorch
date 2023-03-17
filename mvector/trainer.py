@@ -165,7 +165,7 @@ class MVectorTrainer(object):
 
     def __load_checkpoint(self, save_model_path, resume_model):
         last_epoch = -1
-        best_acc = 0
+        best_acc = 1
         last_model_dir = os.path.join(save_model_path,
                                       f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                       'last_model')
