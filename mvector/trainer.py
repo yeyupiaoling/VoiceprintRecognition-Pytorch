@@ -110,13 +110,13 @@ class MVectorTrainer(object):
     def __setup_model(self, input_size, is_train=False):
         use_loss = self.configs.get('use_loss', 'AAMLoss')
         # 获取模型
-        if self.configs.use_model == 'ecapa_tdnn':
+        if self.configs.use_model == 'EcapaTdnn' or self.configs.use_model == 'ecapa_tdnn':
             backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf)
-        elif self.configs.use_model == 'res2net':
+        elif self.configs.use_model == 'Res2Net':
             backbone = Res2Net(input_size=input_size, **self.configs.model_conf)
-        elif self.configs.use_model == 'resnet_se':
+        elif self.configs.use_model == 'ResNetSE':
             backbone = ResNetSE(input_size=input_size, **self.configs.model_conf)
-        elif self.configs.use_model == 'tdnn':
+        elif self.configs.use_model == 'TDNN':
             backbone = TDNN(input_size=input_size, **self.configs.model_conf)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
