@@ -22,8 +22,12 @@ from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
 from mvector.metric.metrics import TprAtFpr
-from mvector.models.ecapa_tdnn import EcapaTdnn, SpeakerIdetification
-from mvector.models.loss import AAMLoss
+from mvector.models.ecapa_tdnn import EcapaTdnn
+from mvector.models.fc import SpeakerIdetification
+from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss
+from mvector.models.res2net import Res2Net
+from mvector.models.resnet_se import ResNetSE
+from mvector.models.tdnn import TDNN
 from mvector.utils.logger import setup_logger
 from mvector.utils.utils import dict_to_object, print_arguments
 
@@ -104,18 +108,36 @@ class MVectorTrainer(object):
                                       num_workers=self.configs.dataset_conf.num_workers)
 
     def __setup_model(self, input_size, is_train=False):
+        use_loss = self.configs.get('use_loss', 'AAMLoss')
         # 获取模型
         if self.configs.use_model == 'ecapa_tdnn':
-            self.ecapa_tdnn = EcapaTdnn(input_size=input_size, **self.configs.model_conf)
-            self.model = SpeakerIdetification(backbone=self.ecapa_tdnn,
-                                              num_class=self.configs.dataset_conf.num_speakers)
+            backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf)
+        elif self.configs.use_model == 'res2net':
+            backbone = Res2Net(input_size=input_size, **self.configs.model_conf)
+        elif self.configs.use_model == 'resnet_se':
+            backbone = ResNetSE(input_size=input_size, **self.configs.model_conf)
+        elif self.configs.use_model == 'tdnn':
+            backbone = TDNN(input_size=input_size, **self.configs.model_conf)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
+
+        self.model = SpeakerIdetification(backbone=backbone,
+                                          num_class=self.configs.dataset_conf.num_speakers,
+                                          loss_type=use_loss)
         self.model.to(self.device)
         summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
         # print(self.model)
         # 获取损失函数
-        self.loss = AAMLoss()
+        if use_loss == 'AAMLoss':
+            self.loss = AAMLoss()
+        elif use_loss == 'AMLoss':
+            self.loss = AMLoss()
+        elif use_loss == 'ARMLoss':
+            self.loss = ARMLoss()
+        elif use_loss == 'CELoss':
+            self.loss = CELoss()
+        else:
+            raise Exception(f'没有{use_loss}损失函数！')
         if is_train:
             # 获取优化方法
             optimizer = self.configs.optimizer_conf.optimizer
@@ -165,7 +187,7 @@ class MVectorTrainer(object):
 
     def __load_checkpoint(self, save_model_path, resume_model):
         last_epoch = -1
-        best_acc = 1
+        best_eer = 1
         last_model_dir = os.path.join(save_model_path,
                                       f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                       'last_model')
@@ -184,9 +206,9 @@ class MVectorTrainer(object):
             with open(os.path.join(resume_model, 'model.state'), 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
                 last_epoch = json_data['last_epoch'] - 1
-                best_acc = json_data['accuracy']
+                best_eer = json_data['eer']
             logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
-        return last_epoch, best_acc
+        return last_epoch, best_eer
 
     # 保存模型
     def __save_checkpoint(self, save_model_path, epoch_id, best_eer=0., best_model=False):

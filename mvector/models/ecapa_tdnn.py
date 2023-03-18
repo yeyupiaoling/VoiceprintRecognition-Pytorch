@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn import Parameter
+
+from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling
+from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooling
 
 
 class Res2Conv1dReluBn(nn.Module):
@@ -72,25 +74,8 @@ def SE_Res2Block(channels, kernel_size, stride, padding, dilation, scale):
     )
 
 
-class AttentiveStatsPool(nn.Module):
-    def __init__(self, in_dim, bottleneck_dim):
-        super().__init__()
-        # Use Conv1d with stride == 1 rather than Linear, then we don't need to transpose inputs.
-        self.linear1 = nn.Conv1d(in_dim, bottleneck_dim, kernel_size=1)  # equals W and b in the paper
-        self.linear2 = nn.Conv1d(bottleneck_dim, in_dim, kernel_size=1)  # equals V and k in the paper
-
-    def forward(self, x):
-        # DON'T use ReLU here! In experiments, I find ReLU hard to converge.
-        alpha = torch.tanh(self.linear1(x))
-        alpha = torch.softmax(self.linear2(alpha), dim=2)
-        mean = torch.sum(alpha * x, dim=2)
-        residuals = torch.sum(alpha * x ** 2, dim=2) - mean ** 2
-        std = torch.sqrt(residuals.clamp(min=1e-9))
-        return torch.cat([mean, std], dim=1)
-
-
 class EcapaTdnn(nn.Module):
-    def __init__(self, input_size=80, channels=512, embd_dim=192):
+    def __init__(self, input_size=80, channels=512, embd_dim=192, pooling_type="ASP"):
         super().__init__()
         self.layer1 = Conv1dReluBn(input_size, channels, kernel_size=5, padding=2, dilation=1)
         self.layer2 = SE_Res2Block(channels, kernel_size=3, stride=1, padding=2, dilation=2, scale=8)
@@ -98,13 +83,30 @@ class EcapaTdnn(nn.Module):
         self.layer4 = SE_Res2Block(channels, kernel_size=3, stride=1, padding=4, dilation=4, scale=8)
 
         cat_channels = channels * 3
-        out_channels = cat_channels * 2
         self.emb_size = embd_dim
         self.conv = nn.Conv1d(cat_channels, cat_channels, kernel_size=1)
-        self.pooling = AttentiveStatsPool(cat_channels, 128)
-        self.bn1 = nn.BatchNorm1d(out_channels)
-        self.linear = nn.Linear(out_channels, embd_dim)
-        self.bn2 = nn.BatchNorm1d(embd_dim)
+        if pooling_type == "ASP":
+            self.pooling = AttentiveStatsPool(cat_channels, 128)
+            self.bn1 = nn.BatchNorm1d(cat_channels * 2)
+            self.linear = nn.Linear(cat_channels * 2, embd_dim)
+            self.bn2 = nn.BatchNorm1d(embd_dim)
+        elif pooling_type == "SAP":
+            self.pooling = SelfAttentivePooling(cat_channels, 128)
+            self.bn1 = nn.BatchNorm1d(cat_channels)
+            self.linear = nn.Linear(cat_channels, embd_dim)
+            self.bn2 = nn.BatchNorm1d(embd_dim)
+        elif pooling_type == "TAP":
+            self.pooling = TemporalAveragePooling()
+            self.bn1 = nn.BatchNorm1d(cat_channels)
+            self.linear = nn.Linear(cat_channels, embd_dim)
+            self.bn2 = nn.BatchNorm1d(embd_dim)
+        elif pooling_type == "TSP":
+            self.pooling = TemporalStatisticsPooling()
+            self.bn1 = nn.BatchNorm1d(cat_channels * 2)
+            self.linear = nn.Linear(cat_channels * 2, embd_dim)
+            self.bn2 = nn.BatchNorm1d(embd_dim)
+        else:
+            raise Exception(f'没有{pooling_type}池化层！')
 
     def forward(self, x):
         """
@@ -127,68 +129,3 @@ class EcapaTdnn(nn.Module):
         out = self.bn1(self.pooling(out))
         out = self.bn2(self.linear(out))
         return out
-
-
-class SpeakerIdetification(nn.Module):
-    def __init__(
-            self,
-            backbone,
-            num_class=1,
-            lin_blocks=0,
-            lin_neurons=192,
-            dropout=0.1, ):
-        """The speaker identification model, which includes the speaker backbone network
-           and the a linear transform to speaker class num in training
-
-        Args:
-            backbone (Paddle.nn.Layer class): the speaker identification backbone network model
-            num_class (_type_): the speaker class num in the training dataset
-            lin_blocks (int, optional): the linear layer transform between the embedding and the final linear layer. Defaults to 0.
-            lin_neurons (int, optional): the output dimension of final linear layer. Defaults to 192.
-            dropout (float, optional): the dropout factor on the embedding. Defaults to 0.1.
-        """
-        super(SpeakerIdetification, self).__init__()
-        # speaker idenfication backbone network model
-        # the output of the backbond network is the target embedding
-        self.backbone = backbone
-        if dropout > 0:
-            self.dropout = nn.Dropout(dropout)
-        else:
-            self.dropout = None
-
-        # construct the speaker classifer
-        input_size = self.backbone.emb_size
-        self.blocks = list()
-        for i in range(lin_blocks):
-            self.blocks.extend([
-                nn.BatchNorm1d(input_size),
-                nn.Linear(in_features=input_size, out_features=lin_neurons),
-            ])
-            input_size = lin_neurons
-
-        # the final layer
-        self.weight = Parameter(torch.FloatTensor(num_class, input_size), requires_grad=True)
-        nn.init.xavier_normal_(self.weight, gain=1)
-
-    def forward(self, x):
-        """Do the speaker identification model forwrd,
-           including the speaker embedding model and the classifier model network
-
-        Args:
-            x (paddle.Tensor): input audio feats,
-                               shape=[batch, times, dimension]
-
-        Returns:
-            paddle.Tensor: return the logits of the feats
-        """
-        # x.shape: (N, L, C)
-        x = self.backbone(x)  # (N, emb_size)
-        if self.dropout is not None:
-            x = self.dropout(x)
-
-        for fc in self.blocks:
-            x = fc(x)
-
-        logits = F.linear(F.normalize(x), F.normalize(self.weight, dim=-1))
-
-        return logits

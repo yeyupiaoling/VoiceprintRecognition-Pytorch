@@ -50,3 +50,48 @@ class AAMLoss(nn.Module):
         predictions = F.log_softmax(predictions, dim=1)
         loss = self.criterion(predictions, targets) / targets.sum()
         return loss
+
+
+class AMLoss(nn.Module):
+    def __init__(self, margin=0.2, scale=30):
+        super(AMLoss, self).__init__()
+        self.m = margin
+        self.s = scale
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+
+    def forward(self, outputs, targets):
+        label_view = targets.view(-1, 1)
+        delt_costh = torch.zeros(outputs.size(), device=targets.device).scatter_(1, label_view, self.m)
+        costh_m = outputs - delt_costh
+        predictions = self.s * costh_m
+        loss = self.criterion(predictions, targets) / targets.shape[0]
+        return loss
+
+
+class ARMLoss(nn.Module):
+    def __init__(self, margin=0.2, scale=30):
+        super(ARMLoss, self).__init__()
+        self.m = margin
+        self.s = scale
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+
+    def forward(self, outputs, targets):
+        label_view = targets.view(-1, 1)
+        delt_costh = torch.zeros(outputs.size(), device=targets.device).scatter_(1, label_view, self.m)
+        costh_m = outputs - delt_costh
+        costh_m_s = self.s * costh_m
+        delt_costh_m_s = costh_m_s.gather(1, label_view).repeat(1, costh_m_s.size()[1])
+        costh_m_s_reduct = costh_m_s - delt_costh_m_s
+        predictions = torch.where(costh_m_s_reduct < 0.0, torch.zeros_like(costh_m_s), costh_m_s)
+        loss = self.criterion(predictions, targets) / targets.shape[0]
+        return loss
+
+
+class CELoss(nn.Module):
+    def __init__(self):
+        super(CELoss, self).__init__()
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+
+    def forward(self, outputs, targets):
+        loss = self.criterion(outputs, targets) / targets.shape[0]
+        return loss
