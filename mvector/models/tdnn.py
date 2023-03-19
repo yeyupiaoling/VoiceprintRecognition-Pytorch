@@ -63,7 +63,6 @@ class TDNN(nn.Module):
         x = F.relu(self.td_layer4(x))
         x = self.bn4(x)
         x = F.relu(self.td_layer5(x))
-        print(x.shape)
         out = self.bn5(self.pooling(x))
         out = self.bn6(self.linear(out))
         return out
