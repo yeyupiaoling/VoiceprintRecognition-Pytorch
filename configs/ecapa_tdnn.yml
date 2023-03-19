@@ -48,7 +48,7 @@ optimizer_conf:
 model_conf:
   embd_dim: 192
   channels: 512
-#  所使用的池化层，支持ASP、SAP、TSP、TAP
+  # 所使用的池化层，支持ASP、SAP、TSP、TAP
   pooling_type: 'ASP'
 
 train_conf:

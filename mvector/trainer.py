@@ -441,6 +441,7 @@ class MVectorTrainer(object):
             # 保存图像
             os.makedirs(save_image_path, exist_ok=True)
             plt.savefig(os.path.join(save_image_path, 'result.png'))
+            logger.info(f"结果图以保存在：{os.path.join(save_image_path, 'result.png')}")
         return tpr, fpr, eer, threshold
 
     def export(self, save_model_path='models/', resume_model='models/ecapa_tdnn_MelSpectrogram/best_model/'):
