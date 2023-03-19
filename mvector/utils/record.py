@@ -27,7 +27,6 @@ class RecordAudio:
         :param save_path: 录音保存的路径，后缀名为wav
         :return: 录音的文件路径
         """
-        input(f"按下回车键开机录音，录音{record_seconds}秒中：")
         print("开始录音......")
         frames = []
         for i in range(0, int(self.rate / self.chunk * record_seconds)):

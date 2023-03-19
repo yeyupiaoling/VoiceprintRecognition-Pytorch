@@ -28,11 +28,13 @@ record_audio = RecordAudio()
 while True:
     select_fun = int(input("请选择功能，0为注册音频到声纹库，1为执行声纹识别："))
     if select_fun == 0:
+        input(f"按下回车键开机录音，录音{args.record_seconds}秒中：")
         audio_data = record_audio.record(record_seconds=args.record_seconds)
         name = input("请输入该音频用户的名称：")
         if name == '': continue
         predictor.register(user_name=name, audio_data=audio_data)
     elif select_fun == 1:
+        input(f"按下回车键开机录音，录音{args.record_seconds}秒中：")
         audio_data = record_audio.record(record_seconds=args.record_seconds)
         name = predictor.recognition(audio_data)
         if name:

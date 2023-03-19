@@ -209,14 +209,33 @@ class MVectorPredictor:
         feature = self.predictor(audio_feature).data.cpu().numpy()[0]
         return feature
 
-    def predict_batch(self, audios_data):
+    def predict_batch(self, audios_data, sample_rate=16000):
         """预测一批音频的特征
 
         :param audios_data: 需要预测音频的路径
+        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 声纹特征向量
         """
+        audios_data1 = []
+        for audio_data in audios_data:
+            # 加载音频文件，并进行预处理
+            if isinstance(audio_data, str):
+                input_data = AudioSegment.from_file(audio_data)
+            elif isinstance(audio_data, np.ndarray):
+                input_data = AudioSegment.from_ndarray(audio_data, sample_rate)
+            elif isinstance(audio_data, bytes):
+                input_data = AudioSegment.from_wave_bytes(audio_data)
+            else:
+                raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
+            # 重采样
+            if input_data.sample_rate != self.configs.dataset_conf.sample_rate:
+                input_data.resample(self.configs.dataset_conf.sample_rate)
+            # decibel normalization
+            if self.configs.dataset_conf.use_dB_normalization:
+                input_data.normalize(target_db=self.configs.dataset_conf.target_dB)
+            audios_data1.append(input_data.samples)
         # 找出音频长度最长的
-        batch = sorted(audios_data, key=lambda a: a.shape[0], reverse=True)
+        batch = sorted(audios_data1, key=lambda a: a.shape[0], reverse=True)
         max_audio_length = batch[0].shape[0]
         batch_size = len(batch)
         # 以最大的长度创建0张量
@@ -276,7 +295,9 @@ class MVectorPredictor:
         return True, "注册成功"
 
     # 声纹识别
-    def recognition(self, audio_data):
+    def recognition(self, audio_data, threshold=None):
+        if threshold:
+            self.threshold = threshold
         feature = self.predict(audio_data)
         name = self.__retrieval(np_feature=[feature])[0]
         return name
