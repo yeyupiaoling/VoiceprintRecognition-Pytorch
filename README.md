@@ -83,10 +83,10 @@
   <td align="center">MelSpectrogram</td>
   <td align="center">超大的数据集</td>
   <td align="center">13718</td>
-  <td align="center"></td>
-  <td align="center"></td>
-  <td align="center"></td>
-  <td align="center">即将提供下载，着急可以使用旧分支<a href="https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle/tree/release/1.0">release/1.0</a></td>
+  <td align="center">0.98342</td>
+  <td align="center">0.00776</td>
+  <td align="center">0.02434</td>
+  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87131658">点击下载</a>，可能还未审核通过，着急可以使用旧分支<a href="https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle/tree/release/1.0">release/1.0</a></td>
 </tr>
 </table>
 
