@@ -36,7 +36,7 @@ logger = setup_logger(__name__)
 
 class MVectorTrainer(object):
     def __init__(self, configs, use_gpu=True):
-        """ ppvector集成工具类
+        """ mvector集成工具类
 
         :param configs: 配置字典
         :param use_gpu: 是否使用GPU训练模型

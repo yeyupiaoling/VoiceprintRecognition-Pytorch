@@ -29,7 +29,7 @@ class MVectorPredictor:
                  model_path='models/ecapa_tdnn_spectrogram/best_model/',
                  use_gpu=True):
         """
-        语音识别预测工具
+        声纹识别预测工具
         :param configs: 配置参数
         :param threshold: 判断是否为同一个人的阈值
         :param audio_db_path: 声纹库路径
