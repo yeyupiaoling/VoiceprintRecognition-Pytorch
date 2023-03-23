@@ -59,7 +59,7 @@ class VoiceRecognitionGUI:
         self.result_label.config(text="录音结束")
         name = simpledialog.askstring(title="注册", prompt="请输入注册名称")
         if name is not None and name != '':
-            self.predictor.register(user_name=name, audio_data=audio_data)
+            self.predictor.register(user_name=name, audio_data=audio_data, sample_rate=self.record_audio.sample_rate)
             self.result_label.config(text="注册成功")
 
     # 识别
@@ -70,7 +70,7 @@ class VoiceRecognitionGUI:
         self.result_label.config(text="正在录音...")
         audio_data = self.record_audio.record(record_seconds=record_seconds)
         self.result_label.config(text="录音结束")
-        name = self.predictor.recognition(audio_data, threshold)
+        name = self.predictor.recognition(audio_data, threshold, sample_rate=self.record_audio.sample_rate)
         if name:
             self.result_label.config(text=f"说话人为：{name}")
         else:

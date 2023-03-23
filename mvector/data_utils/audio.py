@@ -56,7 +56,7 @@ class AudioSegment(object):
         """从音频文件创建音频段
 
         :param file: 文件路径，或者文件对象
-        :type file: str
+        :type file: str, BufferedReader
         :return: 音频片段实例
         :rtype: AudioSegment
         """
@@ -105,30 +105,35 @@ class AudioSegment(object):
         return cls(data, sample_rate)
 
     @classmethod
-    def from_bytes(cls, bytes):
+    def from_bytes(cls, data):
         """从包含音频样本的字节创建音频段
 
-        :param bytes: 包含音频样本的字节
-        :type bytes: bytes
+        :param data: 包含音频样本的字节
+        :type data: bytes
         :return: 音频部分实例
         :rtype: AudioSegment
         """
-        samples, sample_rate = soundfile.read(io.BytesIO(bytes), dtype='float32')
+        samples, sample_rate = soundfile.read(io.BytesIO(data), dtype='float32')
         return cls(samples, sample_rate)
 
     @classmethod
-    def from_wave_bytes(cls, bytes, sample_rate=16000):
-        """从包含音频样本的字节创建音频段，字节的来源是wave.open或者pyaudio.PyAudio()，
-        音频格式nchannels=1, sampwidth=2(PyAudio的是format=pyaudio.paInt16), framerate=16000
+    def from_pcm_bytes(cls, data, channels=1, samp_width=2, sample_rate=16000):
+        """从包含无格式PCM音频的字节创建音频
 
-        :param bytes: 包含音频样本的字节
-        :type bytes: bytes
+        :param data: 包含音频样本的字节
+        :type data: bytes
+        :param channels: 音频的通道数
+        :type channels: int
+        :param samp_width: 音频采样的宽度，如np.int16为2
+        :type samp_width: int
         :param sample_rate: 音频样本采样率
         :type sample_rate: int
         :return: 音频部分实例
         :rtype: AudioSegment
         """
-        samples = buf_to_float(bytes)
+        samples = buf_to_float(data, n_bytes=samp_width)
+        if channels > 1:
+            samples = samples.reshape(-1, channels)
         return cls(samples, sample_rate)
 
     @classmethod

@@ -1,5 +1,6 @@
 import os
 import pickle
+from io import BufferedReader
 
 import numpy as np
 import torch
@@ -178,30 +179,42 @@ class MVectorPredictor:
             labels.append(max_label)
         return labels
 
+    def _load_audio(self, audio_data, sample_rate=16000):
+        """加载音频
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
+        :return: 识别的文本结果和解码的得分数
+        """
+        # 加载音频文件，并进行预处理
+        if isinstance(audio_data, str):
+            audio_segment = AudioSegment.from_file(audio_data)
+        elif isinstance(audio_data, BufferedReader):
+            audio_segment = AudioSegment.from_file(audio_data)
+        elif isinstance(audio_data, np.ndarray):
+            audio_segment = AudioSegment.from_ndarray(audio_data, sample_rate)
+        elif isinstance(audio_data, bytes):
+            audio_segment = AudioSegment.from_bytes(audio_data)
+        else:
+            raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
+        # 重采样
+        if audio_segment.sample_rate != self.configs.dataset_conf.sample_rate:
+            audio_segment.resample(self.configs.dataset_conf.sample_rate)
+        # decibel normalization
+        if self.configs.dataset_conf.use_dB_normalization:
+            audio_segment.normalize(target_db=self.configs.dataset_conf.target_dB)
+        return audio_segment
+
     def predict(self,
                 audio_data,
                 sample_rate=16000):
         """预测一个音频的特征
 
-        :param audio_data: 需要识别的数据，支持文件路径，字节，numpy
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 声纹特征向量
         """
         # 加载音频文件，并进行预处理
-        if isinstance(audio_data, str):
-            input_data = AudioSegment.from_file(audio_data)
-        elif isinstance(audio_data, np.ndarray):
-            input_data = AudioSegment.from_ndarray(audio_data, sample_rate)
-        elif isinstance(audio_data, bytes):
-            input_data = AudioSegment.from_wave_bytes(audio_data)
-        else:
-            raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
-        # 重采样
-        if input_data.sample_rate != self.configs.dataset_conf.sample_rate:
-            input_data.resample(self.configs.dataset_conf.sample_rate)
-        # decibel normalization
-        if self.configs.dataset_conf.use_dB_normalization:
-            input_data.normalize(target_db=self.configs.dataset_conf.target_dB)
+        input_data = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
         input_data = torch.tensor(input_data.samples, dtype=torch.float32, device=self.device).unsqueeze(0)
         input_len_ratio = torch.tensor([1], dtype=torch.float32, device=self.device)
         audio_feature, _ = self._audio_featurizer(input_data, input_len_ratio)
@@ -212,27 +225,14 @@ class MVectorPredictor:
     def predict_batch(self, audios_data, sample_rate=16000):
         """预测一批音频的特征
 
-        :param audios_data: 需要预测音频的路径
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 声纹特征向量
         """
         audios_data1 = []
         for audio_data in audios_data:
             # 加载音频文件，并进行预处理
-            if isinstance(audio_data, str):
-                input_data = AudioSegment.from_file(audio_data)
-            elif isinstance(audio_data, np.ndarray):
-                input_data = AudioSegment.from_ndarray(audio_data, sample_rate)
-            elif isinstance(audio_data, bytes):
-                input_data = AudioSegment.from_wave_bytes(audio_data)
-            else:
-                raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
-            # 重采样
-            if input_data.sample_rate != self.configs.dataset_conf.sample_rate:
-                input_data.resample(self.configs.dataset_conf.sample_rate)
-            # decibel normalization
-            if self.configs.dataset_conf.use_dB_normalization:
-                input_data.normalize(target_db=self.configs.dataset_conf.target_dB)
+            input_data = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
             audios_data1.append(input_data.samples)
         # 找出音频长度最长的
         batch = sorted(audios_data1, key=lambda a: a.shape[0], reverse=True)
@@ -267,16 +267,24 @@ class MVectorPredictor:
                  user_name,
                  audio_data,
                  sample_rate=16000):
-        # 加载音频文件，并进行预处理
+        """加载音频
+        :param user_name: 注册用户的名字
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
+        :return: 识别的文本结果和解码的得分数
+        """
+        # 加载音频文件
         if isinstance(audio_data, str):
-            input_data = AudioSegment.from_file(audio_data)
+            audio_segment = AudioSegment.from_file(audio_data)
+        elif isinstance(audio_data, BufferedReader):
+            audio_segment = AudioSegment.from_file(audio_data)
         elif isinstance(audio_data, np.ndarray):
-            input_data = AudioSegment.from_ndarray(audio_data, sample_rate)
+            audio_segment = AudioSegment.from_ndarray(audio_data, sample_rate)
         elif isinstance(audio_data, bytes):
-            input_data = AudioSegment.from_wave_bytes(audio_data)
+            audio_segment = AudioSegment.from_bytes(audio_data)
         else:
             raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
-        feature = self.predict(audio_data=input_data.samples, sample_rate=input_data.sample_rate)
+        feature = self.predict(audio_data=audio_segment.samples, sample_rate=audio_segment.sample_rate)
         if self.audio_feature is None:
             self.audio_feature = feature
         else:
@@ -288,16 +296,16 @@ class MVectorPredictor:
             audio_path = os.path.join(self.audio_db_path, user_name,
                                       f'{len(os.listdir(os.path.join(self.audio_db_path, user_name)))}.wav')
         os.makedirs(os.path.dirname(audio_path), exist_ok=True)
-        input_data.to_wav_file(audio_path)
+        audio_segment.to_wav_file(audio_path)
         self.users_audio_path.append(audio_path.replace('\\', '/'))
         self.users_name.append(user_name)
         self.__write_index()
         return True, "注册成功"
 
     # 声纹识别
-    def recognition(self, audio_data, threshold=None):
+    def recognition(self, audio_data, threshold=None, sample_rate=16000):
         if threshold:
             self.threshold = threshold
-        feature = self.predict(audio_data)
+        feature = self.predict(audio_data, sample_rate=sample_rate)
         name = self.__retrieval(np_feature=[feature])[0]
         return name

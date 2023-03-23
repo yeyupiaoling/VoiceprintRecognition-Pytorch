@@ -32,11 +32,11 @@ while True:
         audio_data = record_audio.record(record_seconds=args.record_seconds)
         name = input("请输入该音频用户的名称：")
         if name == '': continue
-        predictor.register(user_name=name, audio_data=audio_data)
+        predictor.register(user_name=name, audio_data=audio_data, sample_rate=record_audio.sample_rate)
     elif select_fun == 1:
         input(f"按下回车键开机录音，录音{args.record_seconds}秒中：")
         audio_data = record_audio.record(record_seconds=args.record_seconds)
-        name = predictor.recognition(audio_data)
+        name = predictor.recognition(audio_data, sample_rate=record_audio.sample_rate)
         if name:
             print(f"识别说话的为：{name}")
         else:

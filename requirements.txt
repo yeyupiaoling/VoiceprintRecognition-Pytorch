@@ -4,7 +4,8 @@ numpy>=1.19.2
 tqdm>=4.59.0
 visualdl>=2.1.1
 resampy==0.2.2
-SoundFile>=0.12.1
+soundfile>=0.12.1
+soundcard>=0.4.2
 pyyaml>=5.4.1
 termcolor>=1.1.0
 typeguard==2.13.3

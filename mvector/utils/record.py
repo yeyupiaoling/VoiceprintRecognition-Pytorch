@@ -1,50 +1,31 @@
 import os
-import wave
 
-import pyaudio
+import soundcard
+import soundfile
 
 
 class RecordAudio:
-    def __init__(self):
+    def __init__(self, channels=1, sample_rate=16000):
         # 录音参数
-        self.chunk = 1024
-        self.format = pyaudio.paInt16
-        self.channels = 1
-        self.rate = 16000
+        self.channels = channels
+        self.sample_rate = sample_rate
 
-        # 打开录音
-        self.p = pyaudio.PyAudio()
-        self.stream = self.p.open(format=self.format,
-                                  channels=self.channels,
-                                  rate=self.rate,
-                                  input=True,
-                                  frames_per_buffer=self.chunk)
+        # 获取麦克风
+        self.default_mic = soundcard.default_microphone()
 
     def record(self, record_seconds=3, save_path=None):
         """录音
 
         :param record_seconds: 录音时间，默认3秒
         :param save_path: 录音保存的路径，后缀名为wav
-        :return: 录音的文件路径
+        :return: 音频的numpy数据
         """
         print("开始录音......")
-        frames = []
-        for i in range(0, int(self.rate / self.chunk * record_seconds)):
-            data = self.stream.read(self.chunk)
-            frames.append(data)
-
+        num_frames = int(record_seconds * self.sample_rate)
+        data = self.default_mic.record(samplerate=self.sample_rate, numframes=num_frames, channels=self.channels)
+        audio_data = data.squeeze()
         print("录音已结束!")
-        audio_data = b''.join(frames)
         if save_path is not None:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            wf = wave.open(save_path, 'wb')
-            wf.setnchannels(self.channels)
-            wf.setsampwidth(self.p.get_sample_size(self.format))
-            wf.setframerate(self.rate)
-            wf.writeframes(b''.join(frames))
-            wf.close()
+            soundfile.write(save_path, data=data, samplerate=self.sample_rate)
         return audio_data
-
-    def close(self):
-        self.stream.close()
-        self.p.close()
