@@ -43,9 +43,9 @@
   <td align="center">MelSpectrogram</td>
   <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
   <td align="center">3242</td>
-  <td align="center">0.99092</td>
-  <td align="center">0.00892</td>
-  <td align="center">0.01800</td>
+  <td align="center">0.98972</td>
+  <td align="center">0.00730</td>
+  <td align="center">0.01758</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87153070">点击下载</a></td>
 </tr>
 <tr>
@@ -53,9 +53,9 @@
   <td align="center">Spectrogram</td>
   <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
   <td align="center">3242</td>
-  <td align="center">0.98793</td>
-  <td align="center">0.00630</td>
-  <td align="center">0.01837</td>
+  <td align="center">0.99142</td>
+  <td align="center">0.00817</td>
+  <td align="center">0.01675</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87015334">点击下载</a></td>
 </tr>
 <tr>
