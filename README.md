@@ -63,9 +63,9 @@
   <td align="center">MFCC</td>
   <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
   <td align="center">3242</td>
-  <td align="center">0.99212</td>
-  <td align="center">0.00460</td>
-  <td align="center">0.01248</td>
+  <td align="center">0.99431</td>
+  <td align="center">0.00659</td>
+  <td align="center">0.01227</td>
   <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87523304">点击下载</a></td>
 </tr>
 <tr>
