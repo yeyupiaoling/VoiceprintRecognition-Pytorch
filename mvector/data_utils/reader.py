@@ -55,7 +55,7 @@ class CustomDataset(Dataset):
             audio_segment.vad()
         # 数据太短不利于训练
         if self.mode == 'train':
-            if audio_segment.num_samples < int(self.min_duration * audio_segment.sample_rate):
+            if audio_segment.duration < self.min_duration:
                 return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
         # 重采样
         if audio_segment.sample_rate != self._target_sample_rate:
@@ -63,10 +63,10 @@ class CustomDataset(Dataset):
         # decibel normalization
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
-        # 音频增强
-        self._augmentation_pipeline.transform_audio(audio_segment)
         # 裁剪需要的数据
         audio_segment.crop(duration=self.max_duration, mode=self.mode)
+        # 音频增强
+        self._augmentation_pipeline.transform_audio(audio_segment)
         return np.array(audio_segment.samples, dtype=np.float32), np.array(int(label), dtype=np.int64)
 
     def __len__(self):

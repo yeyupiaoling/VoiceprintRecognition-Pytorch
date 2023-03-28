@@ -454,14 +454,11 @@ class AudioSegment(object):
         self._samples = vad(wav=self._samples, top_db=top_db, overlap=overlap)
 
     def crop(self, duration, mode='eval'):
-        num_chunk_samples = int(duration * self.sample_rate)
-        if self.num_samples > num_chunk_samples:
+        if self.duration > duration:
             if mode == 'train':
-                start = random.randint(0, self.num_samples - num_chunk_samples - 1)
-                stop = start + num_chunk_samples
-                self._samples = self._samples[start:stop]
+                self.random_subsegment(duration)
             else:
-                self._samples = self._samples[:num_chunk_samples]
+                self.subsegment(end_sec=duration)
 
     @property
     def samples(self):

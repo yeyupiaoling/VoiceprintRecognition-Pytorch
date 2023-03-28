@@ -36,14 +36,14 @@ class NoisePerturbAugmentor(AugmentorBase):
         Note that this is an in-place transformation.
 
         :param audio_segment: Audio segment to add effects to.
-        :type audio_segment: AudioSegmenet|SpeechSegment
+        :type audio_segment: AudioSegmenet
         """
         if len(self.noises_path) > 0:
             for _ in range(random.randint(1, self.repetition)):
                 noise_path = random.sample(self.noises_path, 1)[0]
                 noise_segment = AudioSegment.from_file(noise_path)
                 snr_dB = random.uniform(self._min_snr_dB, self._max_snr_dB)
-                if noise_segment.samples.shape[0] < audio_segment.samples.shape[0]:
-                    diff_duration = audio_segment.samples.shape[0] - noise_segment.samples.shape[0]
+                if noise_segment.duration < audio_segment.duration:
+                    diff_duration = audio_segment.num_samples - noise_segment.num_samples
                     noise_segment._samples = np.pad(noise_segment.samples, (0, diff_duration), 'wrap')
                 audio_segment.add_noise(noise_segment, snr_dB, allow_downsampling=True)
