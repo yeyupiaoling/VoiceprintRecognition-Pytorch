@@ -73,10 +73,13 @@ class MVectorTrainer(object):
             if augment_conf_path is not None and not os.path.exists(augment_conf_path):
                 logger.info('数据增强配置文件{}不存在'.format(augment_conf_path))
             augmentation_config = '{}'
+        # 兼容旧的配置文件
+        if 'max_duration' not in self.configs.dataset_conf:
+            self.configs.dataset_conf.max_duration = self.configs.dataset_conf.chunk_duration
         if is_train:
             self.train_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.train_list,
                                                do_vad=self.configs.dataset_conf.do_vad,
-                                               chunk_duration=self.configs.dataset_conf.chunk_duration,
+                                               max_duration=self.configs.dataset_conf.max_duration,
                                                min_duration=self.configs.dataset_conf.min_duration,
                                                augmentation_config=augmentation_config,
                                                sample_rate=self.configs.dataset_conf.sample_rate,
@@ -96,7 +99,7 @@ class MVectorTrainer(object):
         # 获取测试数据
         self.test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.test_list,
                                           do_vad=self.configs.dataset_conf.do_vad,
-                                          chunk_duration=self.configs.dataset_conf.chunk_duration,
+                                          max_duration=self.configs.dataset_conf.max_duration,
                                           min_duration=self.configs.dataset_conf.min_duration,
                                           sample_rate=self.configs.dataset_conf.sample_rate,
                                           use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
@@ -376,11 +379,11 @@ class MVectorTrainer(object):
                 # 保存模型
                 self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer)
 
-    def evaluate(self, resume_model='models/ecapa_tdnn_MelSpectrogram/best_model/', save_image_path=None):
+    def evaluate(self, resume_model='models/EcapaTdnn_MelSpectrogram/best_model/', save_image_path=None):
         """
         评估模型
         :param resume_model: 所使用的模型
-        :param save_matrix_path: 保存混合矩阵的路径
+        :param save_image_path: 保存混合矩阵的路径
         :return: 评估结果
         """
         if self.test_loader is None:
@@ -444,7 +447,7 @@ class MVectorTrainer(object):
             logger.info(f"结果图以保存在：{os.path.join(save_image_path, 'result.png')}")
         return tpr, fpr, eer, threshold
 
-    def export(self, save_model_path='models/', resume_model='models/ecapa_tdnn_MelSpectrogram/best_model/'):
+    def export(self, save_model_path='models/', resume_model='models/EcapaTdnn_MelSpectrogram/best_model/'):
         """
         导出预测模型
         :param save_model_path: 模型保存的路径

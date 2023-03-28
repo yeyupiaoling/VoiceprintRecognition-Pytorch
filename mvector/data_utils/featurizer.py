@@ -2,16 +2,14 @@ import torch
 from torch import nn
 from torchaudio.transforms import MelSpectrogram, Spectrogram, MFCC
 
-from mvector.data_utils.utils import make_pad_mask
-
 
 class AudioFeaturizer(nn.Module):
     """音频特征器
 
+    :param feature_method: 所使用的预处理方法
+    :type feature_method: str
     :param feature_conf: 预处理方法的参数
     :type feature_conf: dict
-    :param sample_rate: 用于训练的音频的采样率
-    :type sample_rate: int
     """
 
     def __init__(self, feature_method='MelSpectrogram', feature_conf={}):
@@ -38,7 +36,7 @@ class AudioFeaturizer(nn.Module):
         :param waveforms: Audio segment to extract features from.
         :type waveforms: AudioSegment
         :param input_lens_ratio: input length ratio
-        :type input_lens_ratio: list
+        :type input_lens_ratio: tensor
         :return: Spectrogram audio feature in 2darray.
         :rtype: ndarray
         """
@@ -48,11 +46,18 @@ class AudioFeaturizer(nn.Module):
         mean = torch.mean(feature, 1, keepdim=True)
         std = torch.std(feature, 1, keepdim=True)
         feature = (feature - mean) / (std + 1e-5)
-        input_lens = input_lens_ratio * feature.shape[1]
+        # 对掩码比例进行扩展
+        input_lens = (input_lens_ratio * feature.shape[1])
+        mask_lens = torch.round(input_lens).long()
+        mask_lens = mask_lens.unsqueeze(1)
         input_lens = input_lens.int()
-        masks = ~make_pad_mask(input_lens).int().unsqueeze(-1)
-        feature = feature * masks
-        return feature, input_lens
+        # 生成掩码张量
+        idxs = torch.arange(feature.shape[1], device=feature.device).repeat(feature.shape[0], 1)
+        mask = idxs < mask_lens
+        mask = mask.unsqueeze(-1)
+        # 对特征进行掩码操作
+        feature_masked = torch.where(mask, feature, torch.zeros_like(feature))
+        return feature_masked, input_lens
 
     @property
     def feature_dim(self):

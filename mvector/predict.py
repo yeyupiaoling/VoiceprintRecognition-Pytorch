@@ -52,6 +52,8 @@ class MVectorPredictor:
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
             print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
+        assert 'max_duration' in self.configs.dataset_conf, \
+            '【警告】，您貌似使用了旧的配置文件，如果你同时使用了旧的模型，这是错误的，请重新下载或者重新训练，否则只能回滚代码。'
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self._audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
         self._audio_featurizer.to(self.device)
@@ -196,6 +198,8 @@ class MVectorPredictor:
             audio_segment = AudioSegment.from_bytes(audio_data)
         else:
             raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
+        assert audio_segment.duration >= self.configs.dataset_conf.min_duration, \
+            f'音频太短，最小应该为{self.configs.dataset_conf.min_duration}s，当前音频为{audio_segment.duration}s'
         # 重采样
         if audio_segment.sample_rate != self.configs.dataset_conf.sample_rate:
             audio_segment.resample(self.configs.dataset_conf.sample_rate)
@@ -225,7 +229,7 @@ class MVectorPredictor:
     def predict_batch(self, audios_data, sample_rate=16000):
         """预测一批音频的特征
 
-        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
+        :param audios_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 声纹特征向量
         """

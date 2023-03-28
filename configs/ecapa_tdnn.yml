@@ -8,8 +8,8 @@ dataset_conf:
   num_workers: 4
   # 过滤最短的音频长度
   min_duration: 0.5
-  # 用于训练和评估的音频长度
-  chunk_duration: 3
+  # 最长的音频长度，大于这个长度会裁剪掉
+  max_duration: 3
   # 是否裁剪静音片段
   do_vad: False
   # 音频的采样率
