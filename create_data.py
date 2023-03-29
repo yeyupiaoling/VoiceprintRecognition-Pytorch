@@ -56,6 +56,14 @@ def split_data(list_temp, n):
 
 
 def main(infodata_path, list_path, zhvoice_path, to_wav=True, num_workers=2):
+    if to_wav:
+        text = input(f'音频文件将会转换为wav格式，这个过程可能很长，而且最终文件大小接近100G，是否继续？(y/n)')
+        if text is None or text != 'y':
+            return
+    else:
+        text = input(f'将会直接使用MP3格式文件，但读取速度会比wav格式慢，是否继续？(y/n)')
+        if text is None or text != 'y':
+            return
     data_all = []
     data = get_data_list(infodata_path=infodata_path, zhvoice_path=zhvoice_path)
     if to_wav:
@@ -92,5 +100,5 @@ if __name__ == '__main__':
     main(infodata_path='dataset/zhvoice/text/infodata.json',
          list_path='dataset',
          zhvoice_path='dataset/zhvoice',
-         to_wav=True,
+         to_wav=False,
          num_workers=cpu_count())
