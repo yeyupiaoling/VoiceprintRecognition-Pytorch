@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
 
-VERSION = "0.3.8"
+import mvector
 
+VERSION = mvector.__version__
 
 def readme():
     with open('README.md', encoding='utf-8') as f:

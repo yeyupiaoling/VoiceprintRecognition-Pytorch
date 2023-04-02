@@ -17,7 +17,7 @@ from torchinfo import summary
 from tqdm import tqdm
 from visualdl import LogWriter
 
-from mvector import SUPPORT_MODEL
+from mvector import SUPPORT_MODEL, __version__
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
@@ -231,7 +231,8 @@ class MVectorTrainer(object):
         torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pt'))
         torch.save(state_dict, os.path.join(model_path, 'model.pt'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
-            f.write('{"last_epoch": %d, "eer": %f}' % (epoch_id, best_eer))
+            data = {"last_epoch": epoch_id, "eer": best_eer, "version": __version__}
+            f.write(json.dumps(data))
         if not best_model:
             last_model_path = os.path.join(save_model_path,
                                            f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
