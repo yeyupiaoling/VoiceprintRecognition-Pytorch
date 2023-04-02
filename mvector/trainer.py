@@ -466,7 +466,7 @@ class MVectorTrainer(object):
         logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
         self.model.eval()
         # 获取静态模型
-        infer_model = self.model.export()
+        infer_model = torch.jit.script(self.model.backbone)
         infer_model_path = os.path.join(save_model_path,
                                         f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                         'inference.pt')

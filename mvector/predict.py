@@ -132,12 +132,12 @@ class MVectorPredictor:
             # 如果声纹特征已经在索引就跳过
             if audio_path in self.users_audio_path: continue
             # 读取声纹库音频
-            audio_data = AudioSegment.from_file(audio_path)
+            audio_segment = self._load_audio(audio_path)
             # 获取用户名
             user_name = os.path.basename(os.path.dirname(audio_path))
             self.users_name.append(user_name)
             self.users_audio_path.append(audio_path)
-            input_audios.append(audio_data.samples)
+            input_audios.append(audio_segment.samples)
             # 处理一批数据
             if len(input_audios) == self.configs.dataset_conf.batch_size:
                 features = self.predict_batch(input_audios)
@@ -246,7 +246,7 @@ class MVectorPredictor:
         inputs = np.zeros((batch_size, max_audio_length), dtype='float32')
         input_lens_ratio = []
         for x in range(batch_size):
-            tensor = batch[x]
+            tensor = audios_data1[x]
             seq_length = tensor.shape[0]
             # 将数据插入都0张量中，实现了padding
             inputs[x, :seq_length] = tensor[:]
