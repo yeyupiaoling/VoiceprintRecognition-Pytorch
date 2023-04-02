@@ -134,6 +134,57 @@ dataset/zhvoice/zhmagicdata/5_968/5_968_20170707200554.wav	3240
 dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
 ```
 
+# 修改预处理方法
+配置文件中默认使用的是MelSpectrogram预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。 
+
+1. `MelSpectrogram`预处理方法如下：
+```yaml
+preprocess_conf:
+  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC
+  feature_method: 'MelSpectrogram'
+
+# MelSpectrogram的参数，其他的预处理方法查看对应API设设置参数
+feature_conf:
+  sample_rate: 16000
+  n_fft: 1024
+  hop_length: 320
+  win_length: 1024
+  f_min: 50.0
+  f_max: 14000.0
+  n_mels: 64
+```
+
+1. `pectrogram'`预处理方法如下：
+```yaml
+preprocess_conf:
+  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC
+  feature_method: 'Spectrogram'
+
+# Spectrogram的参数，其他的预处理方法查看对应API设设置参数
+feature_conf:
+  n_fft: 1024
+  hop_length: 320
+  win_length: 1024
+```
+
+3. `MFCC`预处理方法如下：
+```yaml
+preprocess_conf:
+  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC
+  feature_method: 'MFCC'
+
+# MFCC的参数，其他的预处理方法查看对应API设设置参数
+feature_conf:
+  sample_rate: 16000
+  n_fft: 1024
+  hop_length: 320
+  win_length: 1024
+  f_min: 50.0
+  f_max: 14000.0
+  n_mels: 64
+  n_mfcc: 40
+```
+
 # 训练模型
 使用`train.py`训练模型，本项目支持多个音频预处理方式，通过`configs/ecapa_tdnn.yml`配置文件的参数`preprocess_conf.feature_method`可以指定，`MelSpectrogram`为梅尔频谱，`Spectrogram`为语谱图，`MFCC`梅尔频谱倒谱系数。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
 ```shell
@@ -250,7 +301,7 @@ python eval.py
 ------------------------------------------------
 W0425 08:27:32.057426 17654 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/ecapa_tdnn_MelSpectrogram/best_model/model.pdparams
+[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/ecapa_tdnn_MelSpectrogram/best_model/model.pth
 100%|███████████████████████████| 84/84 [00:28<00:00,  2.95it/s]
 开始两两对比音频特征...
 100%|███████████████████████████| 5332/5332 [00:05<00:00, 1027.83it/s]
@@ -265,17 +316,18 @@ python infer_contrast.py --audio_path1=audio/a_1.wav --audio_path2=audio/b_2.wav
 
 输出类似如下：
 ```
------------  Configuration Arguments -----------
-audio_path1: audio/a_1.wav
-audio_path2: audio/b_2.wav
-feature_method: melspectrogram
-resume: models/
-threshold: 0.5
-use_model: ecapa_tdnn
-------------------------------------------------
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path1: dataset/a_1.wav
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path2: dataset/b_2.wav
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - model_path: models/ecapa_tdnn_MelSpectrogram/best_model/
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - threshold: 0.6
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - use_gpu: True
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:16 - ------------------------------------------------
+······································································
 W0425 08:29:10.006249 21121 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:29:10.008555 21121 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-成功加载模型参数和优化方法参数：models/ecapa_tdnn/model.pdparams
+成功加载模型参数和优化方法参数：models/ecapa_tdnn/model.pth
 audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：-0.09565544128417969
 ```
 
@@ -288,16 +340,18 @@ python infer_recognition.py
 
 输出类似如下：
 ```
------------  Configuration Arguments -----------
-audio_db: audio_db
-feature_method: melspectrogram
-resume: models/
-threshold: 0.5
-use_model: ecapa_tdnn
-------------------------------------------------
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - audio_db_path: audio_db/
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - model_path: models/ecapa_tdnn_MelSpectrogram/best_model/
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - record_seconds: 3
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - threshold: 0.6
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - use_gpu: True
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:16 - ------------------------------------------------
+······································································
 W0425 08:30:13.257884 23889 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:30:13.260191 23889 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-成功加载模型参数和优化方法参数：models/ecapa_tdnn/model.pdparams
+成功加载模型参数和优化方法参数：models/ecapa_tdnn/model.pth
 Loaded 沙瑞金 audio.
 Loaded 李达康 audio.
 请选择功能，0为注册音频到声纹库，1为执行声纹识别：0
