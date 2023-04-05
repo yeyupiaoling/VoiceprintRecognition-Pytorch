@@ -39,7 +39,9 @@ class VoiceRecognitionGUI:
         self.register_button = tk.Button(master, text="注册音频到声纹库", command=self.register)
         self.register_button.place(x=90, y=90)
         self.recognize_button = tk.Button(master, text="执行声纹识别", command=self.recognize)
-        self.recognize_button.place(x=240, y=90)
+        self.recognize_button.place(x=210, y=90)
+        self.remove_user_button = tk.Button(master, text="删除用户", command=self.remove_user)
+        self.remove_user_button.place(x=320, y=90)
         self.result_label = tk.Label(master, text="结果显示", font=('Arial', 16))
         self.result_label.place(relx=0.5, y=160, anchor=tk.CENTER)
         # 识别器
@@ -75,6 +77,15 @@ class VoiceRecognitionGUI:
             self.result_label.config(text=f"说话人为：{name}")
         else:
             self.result_label.config(text="没有识别到说话人，可能是没注册。")
+
+    def remove_user(self):
+        name = simpledialog.askstring(title="删除用户", prompt="请输入删除用户名称")
+        if name is not None and name != '':
+            result = self.predictor.remove_user(user_name=name)
+            if result:
+                self.result_label.config(text="删除成功")
+            else:
+                self.result_label.config(text="删除失败")
 
 
 if __name__ == '__main__':

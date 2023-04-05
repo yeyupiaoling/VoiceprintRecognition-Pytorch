@@ -26,7 +26,7 @@ predictor = MVectorPredictor(configs=args.configs,
 record_audio = RecordAudio()
 
 while True:
-    select_fun = int(input("请选择功能，0为注册音频到声纹库，1为执行声纹识别："))
+    select_fun = int(input("请选择功能，0为注册音频到声纹库，1为执行声纹识别，2为删除用户："))
     if select_fun == 0:
         input(f"按下回车键开机录音，录音{args.record_seconds}秒中：")
         audio_data = record_audio.record(record_seconds=args.record_seconds)
@@ -41,5 +41,9 @@ while True:
             print(f"识别说话的为：{name}")
         else:
             print(f"没有识别到说话人，可能是没注册。")
+    elif select_fun == 2:
+        name = input("请输入该音频用户的名称：")
+        if name == '': continue
+        predictor.remove_user(user_name=name)
     else:
         print('请正确选择功能')

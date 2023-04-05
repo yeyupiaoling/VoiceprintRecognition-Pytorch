@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 from io import BufferedReader
 
 import numpy as np
@@ -266,12 +267,11 @@ class MVectorPredictor:
         dist = np.dot(feature1, feature2) / (np.linalg.norm(feature1) * np.linalg.norm(feature2))
         return dist
 
-    # 声纹注册
     def register(self,
                  user_name,
                  audio_data,
                  sample_rate=16000):
-        """加载音频
+        """声纹注册
         :param user_name: 注册用户的名字
         :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
@@ -306,10 +306,33 @@ class MVectorPredictor:
         self.__write_index()
         return True, "注册成功"
 
-    # 声纹识别
     def recognition(self, audio_data, threshold=None, sample_rate=16000):
+        """声纹识别
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        :param threshold: 判断的阈值，如果为None则用创建对象时使用的阈值
+        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
+        :return: 识别的用户名称，如果为None，即没有识别到用户
+        """
         if threshold:
             self.threshold = threshold
         feature = self.predict(audio_data, sample_rate=sample_rate)
         name = self.__retrieval(np_feature=[feature])[0]
         return name
+
+    def remove_user(self, user_name):
+        """删除用户
+
+        :param user_name: 用户名
+        :return:
+        """
+        if user_name in self.users_name:
+            indexes = [i for i in range(len(self.users_name)) if self.users_name[i] == user_name]
+            for index in sorted(indexes, reverse=True):
+                del self.users_name[index]
+                del self.users_audio_path[index]
+                self.audio_feature = np.delete(self.audio_feature, index, axis=0)
+            self.__write_index()
+            shutil.rmtree(os.path.join(self.audio_db_path, user_name))
+            return True
+        else:
+            return False
