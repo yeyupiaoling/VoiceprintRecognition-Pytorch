@@ -94,7 +94,7 @@
 
  - 首先安装的是Pytorch的GPU版本，如果已经安装过了，请跳过。
 ```shell
-conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=10.2 -c pytorch
+conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
 ```
 
  - 安装ppvector库。
