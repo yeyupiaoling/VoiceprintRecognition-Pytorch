@@ -415,7 +415,6 @@ class AudioSegment(object):
     def add_noise(self,
                   noise,
                   snr_dB,
-                  allow_downsampling=False,
                   max_gain_db=300.0):
         """以特定的信噪比添加给定的噪声段。如果噪声段比该噪声段长，则从该噪声段中采样匹配长度的随机子段。
 
@@ -425,21 +424,14 @@ class AudioSegment(object):
         :type noise: AudioSegment
         :param snr_dB: Signal-to-Noise Ratio, in decibels.
         :type snr_dB: float
-        :param allow_downsampling: Whether to allow the noise signal to be
-                                   downsampled to match the base signal sample
-                                   rate.
-        :type allow_downsampling: bool
         :param max_gain_db: Maximum amount of gain to apply to noise signal
                             before adding it in. This is to prevent attempting
                             to apply infinite gain to a zero signal.
         :type max_gain_db: float
         :raises ValueError: If the sample rate does not match between the two
-                            audio segments when downsampling is not allowed, or
-                            if the duration of noise segments is shorter than
-                            original audio segments.
+                            audio segments, or if the duration of noise segments
+                            is shorter than original audio segments.
         """
-        if allow_downsampling and noise.sample_rate > self.sample_rate:
-            noise.resample(self.sample_rate)
         if noise.sample_rate != self.sample_rate:
             raise ValueError("噪声采样率(%d Hz)不等于基信号采样率(%d Hz)" % (noise.sample_rate, self.sample_rate))
         if noise.duration < self.duration:

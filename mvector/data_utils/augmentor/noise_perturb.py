@@ -40,10 +40,18 @@ class NoisePerturbAugmentor(AugmentorBase):
         """
         if len(self.noises_path) > 0:
             for _ in range(random.randint(1, self.repetition)):
+                # 随机选择一个noises_path中的一个
                 noise_path = random.sample(self.noises_path, 1)[0]
+                # 读取噪声音频
                 noise_segment = AudioSegment.from_file(noise_path)
+                # 如果噪声采样率不等于audio_segment的采样率，则重采样
+                if noise_segment.sample_rate != audio_segment.sample_rate:
+                    noise_segment.resample(audio_segment.sample_rate)
+                # 随机生成snr_dB的值
                 snr_dB = random.uniform(self._min_snr_dB, self._max_snr_dB)
+                # 如果噪声的长度小于audio_segment的长度，则将噪声的前面的部分填充噪声末尾补长
                 if noise_segment.duration < audio_segment.duration:
                     diff_duration = audio_segment.num_samples - noise_segment.num_samples
                     noise_segment._samples = np.pad(noise_segment.samples, (0, diff_duration), 'wrap')
-                audio_segment.add_noise(noise_segment, snr_dB, allow_downsampling=True)
+                # 将噪声添加到audio_segment中，并将snr_dB调整到最小值和最大值之间
+                audio_segment.add_noise(noise_segment, snr_dB)
