@@ -41,7 +41,7 @@
 <tr>
   <td align="center">EcapaTdnn</td>
   <td align="center">MelSpectrogram</td>
-  <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
+  <td align="center"><a href="https://aistudio.baidu.com/aistudio/datasetdetail/133922">zhvoice</a></td>
   <td align="center">3242</td>
   <td align="center">0.98972</td>
   <td align="center">0.00730</td>
@@ -51,7 +51,7 @@
 <tr>
   <td align="center">EcapaTdnn</td>
   <td align="center">Spectrogram</td>
-  <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
+  <td align="center"><a href="https://aistudio.baidu.com/aistudio/datasetdetail/133922">zhvoice</a></td>
   <td align="center">3242</td>
   <td align="center">0.99142</td>
   <td align="center">0.00817</td>
@@ -61,7 +61,7 @@
 <tr>
   <td align="center">EcapaTdnn</td>
   <td align="center">MFCC</td>
-  <td align="center"><a href="https://github.com/fighting41love/zhvoice">中文语音语料数据集</a></td>
+  <td align="center"><a href="https://aistudio.baidu.com/aistudio/datasetdetail/133922">zhvoice</a></td>
   <td align="center">3242</td>
   <td align="center">0.99431</td>
   <td align="center">0.00659</td>
@@ -86,7 +86,7 @@
   <td align="center">0.98342</td>
   <td align="center">0.00776</td>
   <td align="center">0.02434</td>
-  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87131658">点击下载</a>，可能还未审核通过，着急可以使用旧分支<a href="https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle/tree/release/1.0">release/1.0</a></td>
+  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87131658">点击下载</a></td>
 </tr>
 </table>
 
@@ -112,11 +112,11 @@ python setup.py install
 ```
 
 # 创建数据
-本教程笔者使用的是[中文语音语料数据集](https://github.com/fighting41love/zhvoice) ，这个数据集一共有3242个人的语音数据，有1130000+条语音数据，下载之前要**全部解压**数据集。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
+本教程笔者使用的是[zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) ，这个数据集一共有3242个人的语音数据，有1130000+条语音数据，下载之前要**全部解压**数据集。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
 
 首先是创建一个数据列表，数据列表的格式为`<语音文件路径\t语音分类标签>`，创建这个列表主要是方便之后的读取，也是方便读取使用其他的语音数据集，语音分类标签是指说话人的唯一ID，不同的语音数据集，可以通过编写对应的生成数据列表的函数，把这些数据集都写在同一个数据列表中。
 
-在`create_data.py`写下以下代码，因为[中文语音语料数据集](https://github.com/fighting41love/zhvoice) 这个数据集是mp3格式的，作者发现这种格式读取速度很慢，所以笔者把全部的mp3格式的音频转换为wav格式，这个过程可能很久。当然也可以不转换，项目也是支持的MP3格式的，只要设置参数`to_wav=False`。执行下面程序完成数据准备。
+在`create_data.py`写下以下代码，因为[zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) 这个数据集是mp3格式的，作者发现这种格式读取速度很慢，所以笔者把全部的mp3格式的音频转换为wav格式，这个过程可能很久。当然也可以不转换，项目也是支持的MP3格式的，只要设置参数`to_wav=False`。执行下面程序完成数据准备。
 ```shell
 python create_data.py
 ```
