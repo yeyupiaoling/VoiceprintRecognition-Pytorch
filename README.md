@@ -372,6 +372,14 @@ Loaded 李达康 audio.
  - Keras：[VoiceprintRecognition-Keras](https://github.com/yeyupiaoling/VoiceprintRecognition-Keras)
 
 
+## 打赏作者
+
+<br/>
+<div align="center">
+<img src="https://yeyupiaoling.cn/reward.png" alt="打赏作者" width="400">
+</div>
+
+
 # 参考资料
 1. https://github.com/PaddlePaddle/PaddleSpeech
 2. https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets
