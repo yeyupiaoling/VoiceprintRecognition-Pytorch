@@ -36,7 +36,7 @@
   <th align="center">tpr</th>
   <th align="center">fpr</th>
   <th align="center">eer</th>
-  <th align="center">模型下载地址</th>
+  <th align="center">模型下载地址(请不要使用淘宝或者公众号等其他途径下载，下载的模型可能不可用)</th>
 </tr>
 <tr>
   <td align="center">EcapaTdnn</td>
