@@ -11,7 +11,7 @@ add_arg('use_gpu',          bool,   True,                       '是否使用GPU
 add_arg('audio_path1',      str,    'dataset/a_1.wav',          '预测第一个音频')
 add_arg('audio_path2',      str,    'dataset/b_2.wav',          '预测第二个音频')
 add_arg('threshold',        float,  0.6,                        '判断是否为同一个人的阈值')
-add_arg('model_path',       str,    'models/ecapa_tdnn_MelSpectrogram/best_model/', '导出的预测模型文件路径')
+add_arg('model_path',       str,    'models/EcapaTdnn_MelSpectrogram/best_model/', '导出的预测模型文件路径')
 args = parser.parse_args()
 print_arguments(args=args)
 

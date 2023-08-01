@@ -21,7 +21,7 @@ dataset_conf:
   # 数据加载器参数
   dataLoader:
     # 训练的批量大小
-    batch_size: 64
+    batch_size: 16
     # 读取数据的线程数量
     num_workers: 4
 
@@ -50,7 +50,7 @@ optimizer_conf:
 model_conf:
   backbone:
     # 所使用的池化层，支持ASP、SAP、TSP、TAP、TSTP
-    pooling_type: 'ASP'
+    pooling_type: 'TSTP'
     embd_dim: 192
   classifier:
     num_blocks: 0
@@ -59,8 +59,8 @@ loss_conf:
   # 所使用的损失函数，支持AAMLoss、AMLoss、ARMLoss、CELoss
   use_loss: 'AAMLoss'
   args:
-    margin: 0.2
-    scale: 30
+    margin: 0.3
+    scale: 32
     easy_margin: False
 
 train_conf:
@@ -69,4 +69,4 @@ train_conf:
   log_interval: 100
 
 # 所使用的模型
-use_model: 'EcapaTdnn'
+use_model: 'ERes2Net'

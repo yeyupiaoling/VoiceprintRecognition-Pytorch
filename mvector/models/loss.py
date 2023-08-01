@@ -2,58 +2,62 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
-class AdditiveAngularMargin(nn.Module):
-    def __init__(self, margin=0.0, scale=1.0, easy_margin=False):
+class AAMLoss(nn.Module):
+    def __init__(self, margin=0.3, scale=33, easy_margin=False):
         """The Implementation of Additive Angular Margin (AAM) proposed
        in the following paper: '''Margin Matters: Towards More Discriminative Deep Neural Network Embeddings for Speaker Recognition'''
        (https://arxiv.org/abs/1906.07317)
 
         Args:
-            margin (float, optional): margin factor. Defaults to 0.0.
-            scale (float, optional): scale factor. Defaults to 1.0.
+            margin (float, optional): margin factor. Defaults to 0.3.
+            scale (float, optional): scale factor. Defaults to 32.0.
             easy_margin (bool, optional): easy_margin flag. Defaults to False.
         """
-        super(AdditiveAngularMargin, self).__init__()
-        self.margin = margin
+        super(AAMLoss, self).__init__()
         self.scale = scale
         self.easy_margin = easy_margin
+        self.criterion = nn.CrossEntropyLoss()
 
-        self.cos_m = math.cos(self.margin)
-        self.sin_m = math.sin(self.margin)
-        self.th = math.cos(math.pi - self.margin)
-        self.mm = math.sin(math.pi - self.margin) * self.margin
+        self.update(margin)
 
-    def forward(self, outputs, targets):
-        cosine = outputs.float()
+    def forward(self, cosine, label):
+        """
+        Args:
+            cosine (torch.Tensor): cosine distance between the two tensors, shape [batch, num_classes].
+            label (torch.Tensor): label of speaker id, shape [batch, ].
+
+        Returns:
+            torch.Tensor: loss value.
+        """
         sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
         phi = cosine * self.cos_m - sine * self.sin_m
         if self.easy_margin:
             phi = torch.where(cosine > 0, phi, cosine)
         else:
-            phi = torch.where(cosine > self.th, phi, cosine - self.mm)
-        outputs = (targets * phi) + ((1.0 - targets) * cosine)
-        return self.scale * outputs
+            phi = torch.where(cosine > self.th, phi, cosine - self.mmm)
 
+        one_hot = torch.zeros(cosine.size()).type_as(cosine)
+        one_hot.scatter_(1, label.unsqueeze(1).long(), 1)
+        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
+        output *= self.scale
 
-class AAMLoss(nn.Module):
-    def __init__(self, margin=0.2, scale=30, easy_margin=False):
-        super(AAMLoss, self).__init__()
-        self.loss_fn = AdditiveAngularMargin(margin=margin, scale=scale, easy_margin=easy_margin)
-        self.criterion = torch.nn.KLDivLoss(reduction="sum")
-
-    def forward(self, outputs, targets):
-        targets = F.one_hot(targets, outputs.shape[1]).float()
-        predictions = self.loss_fn(outputs, targets)
-        predictions = F.log_softmax(predictions, dim=1)
-        loss = self.criterion(predictions, targets) / targets.sum()
+        loss = self.criterion(output, label)
         return loss
+
+    def update(self, margin=0.2):
+        self.margin = margin
+        self.cos_m = math.cos(margin)
+        self.sin_m = math.sin(margin)
+        self.th = math.cos(math.pi - margin)
+        self.mm = math.sin(math.pi - margin) * margin
+        self.m = self.margin
+        self.mmm = 1.0 + math.cos(math.pi - margin)
 
 
 class AMLoss(nn.Module):
-    def __init__(self, margin=0.2, scale=30):
+    def __init__(self, margin=0.3, scale=32):
         super(AMLoss, self).__init__()
         self.m = margin
         self.s = scale
@@ -67,9 +71,12 @@ class AMLoss(nn.Module):
         loss = self.criterion(predictions, targets) / targets.shape[0]
         return loss
 
+    def update(self, margin=0.2):
+        self.margin = margin
+
 
 class ARMLoss(nn.Module):
-    def __init__(self, margin=0.2, scale=30):
+    def __init__(self, margin=0.3, scale=32):
         super(ARMLoss, self).__init__()
         self.m = margin
         self.s = scale
@@ -86,12 +93,18 @@ class ARMLoss(nn.Module):
         loss = self.criterion(predictions, targets) / targets.shape[0]
         return loss
 
+    def update(self, margin=0.2):
+        self.m = margin
+
 
 class CELoss(nn.Module):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super(CELoss, self).__init__()
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, outputs, targets):
         loss = self.criterion(outputs, targets) / targets.shape[0]
         return loss
+
+    def update(self, margin=0.2):
+        pass

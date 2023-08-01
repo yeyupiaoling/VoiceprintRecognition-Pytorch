@@ -73,3 +73,24 @@ class AttentiveStatsPool(nn.Module):
         residuals = torch.sum(alpha * x ** 2, dim=2) - mean ** 2
         std = torch.sqrt(residuals.clamp(min=1e-9))
         return torch.cat([mean, std], dim=1)
+
+
+class TemporalStatsPool(nn.Module):
+    """
+    Temporal statistics pooling, concatenate mean and std, which is used in
+    x-vector
+    Comment: simple concatenation can not make full use of both statistics
+    """
+
+    def __init__(self):
+        super(TemporalStatsPool, self).__init__()
+
+    def forward(self, x):
+        # The last dimension is the temporal axis
+        pooling_mean = x.mean(dim=-1)
+        pooling_std = torch.sqrt(torch.var(x, dim=-1) + 1e-8)
+        pooling_mean = pooling_mean.flatten(start_dim=1)
+        pooling_std = pooling_std.flatten(start_dim=1)
+
+        stats = torch.cat((pooling_mean, pooling_std), 1)
+        return stats

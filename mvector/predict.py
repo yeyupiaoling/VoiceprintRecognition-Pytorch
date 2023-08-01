@@ -5,6 +5,7 @@ from io import BufferedReader
 
 import numpy as np
 import torch
+import torch.nn as nn
 import yaml
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
@@ -13,7 +14,7 @@ from mvector import SUPPORT_MODEL
 from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.fc import SpeakerIdetification
+from mvector.models.eresnet import ERes2Net
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
@@ -53,23 +54,23 @@ class MVectorPredictor:
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
             print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
-        assert 'max_duration' in self.configs.dataset_conf, \
-            '【警告】，您貌似使用了旧的配置文件，如果你同时使用了旧的模型，这是错误的，请重新下载或者重新训练，否则只能回滚代码。'
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self._audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
         self._audio_featurizer.to(self.device)
         # 获取模型
-        if self.configs.use_model == 'EcapaTdnn' or self.configs.use_model == 'ecapa_tdnn':
-            backbone = EcapaTdnn(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
+        if self.configs.use_model == 'ERes2Net':
+            backbone = ERes2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
+        elif self.configs.use_model == 'EcapaTdnn':
+            backbone = EcapaTdnn(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'Res2Net':
-            backbone = Res2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
+            backbone = Res2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'ResNetSE':
-            backbone = ResNetSE(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
+            backbone = ResNetSE(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'TDNN':
-            backbone = TDNN(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf)
+            backbone = TDNN(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
-        model = SpeakerIdetification(backbone=backbone, num_class=self.configs.dataset_conf.num_speakers)
+        model = nn.Sequential(backbone)
         model.to(self.device)
         # 加载模型
         if os.path.isdir(model_path):
@@ -79,10 +80,10 @@ class MVectorPredictor:
             model_state_dict = torch.load(model_path)
         else:
             model_state_dict = torch.load(model_path, map_location='cpu')
-        model.load_state_dict(model_state_dict)
+        model.load_state_dict(model_state_dict, strict=False)
         print(f"成功加载模型参数：{model_path}")
         model.eval()
-        self.predictor = model.backbone
+        self.predictor = model
 
         # 声纹库的声纹特征
         self.audio_feature = None

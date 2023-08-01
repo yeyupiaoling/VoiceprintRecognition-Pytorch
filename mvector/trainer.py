@@ -9,6 +9,7 @@ from datetime import timedelta
 import numpy as np
 import torch
 import torch.distributed as dist
+import torch.nn as nn
 import yaml
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
@@ -23,7 +24,8 @@ from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
 from mvector.metric.metrics import TprAtFpr
 from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.fc import SpeakerIdetification
+from mvector.models.eresnet import ERes2Net
+from mvector.models.fc import SpeakerIdentification
 from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
@@ -56,6 +58,7 @@ class MVectorTrainer(object):
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
+        self.backbone = None
         self.test_loader = None
         # 获取特征器
         self.audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
@@ -93,9 +96,8 @@ class MVectorTrainer(object):
             self.train_loader = DataLoader(dataset=self.train_dataset,
                                            collate_fn=collate_fn,
                                            shuffle=(train_sampler is None),
-                                           batch_size=self.configs.dataset_conf.batch_size,
                                            sampler=train_sampler,
-                                           num_workers=self.configs.dataset_conf.num_workers)
+                                           **self.configs.dataset_conf.dataLoader)
         # 获取测试数据
         self.test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.test_list,
                                           do_vad=self.configs.dataset_conf.do_vad,
@@ -106,42 +108,48 @@ class MVectorTrainer(object):
                                           target_dB=self.configs.dataset_conf.target_dB,
                                           mode='eval')
         self.test_loader = DataLoader(dataset=self.test_dataset,
-                                      batch_size=self.configs.dataset_conf.batch_size,
                                       collate_fn=collate_fn,
-                                      num_workers=self.configs.dataset_conf.num_workers)
+                                      **self.configs.dataset_conf.dataLoader)
 
     def __setup_model(self, input_size, is_train=False):
-        use_loss = self.configs.get('use_loss', 'AAMLoss')
         # 获取模型
-        if self.configs.use_model == 'EcapaTdnn' or self.configs.use_model == 'ecapa_tdnn':
-            backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf)
+        if self.configs.use_model == 'ERes2Net':
+            self.backbone = ERes2Net(input_size=input_size, **self.configs.model_conf.backbone)
+        elif self.configs.use_model == 'EcapaTdnn':
+            self.backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'Res2Net':
-            backbone = Res2Net(input_size=input_size, **self.configs.model_conf)
+            self.backbone = Res2Net(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'ResNetSE':
-            backbone = ResNetSE(input_size=input_size, **self.configs.model_conf)
+            self.backbone = ResNetSE(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'TDNN':
-            backbone = TDNN(input_size=input_size, **self.configs.model_conf)
+            self.backbone = TDNN(input_size=input_size, **self.configs.model_conf.backbone)
         else:
             raise Exception(f'{self.configs.use_model} 模型不存在！')
 
-        self.model = SpeakerIdetification(backbone=backbone,
-                                          num_class=self.configs.dataset_conf.num_speakers,
-                                          loss_type=use_loss)
-        self.model.to(self.device)
-        summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
-        # print(self.model)
-        # 获取损失函数
-        if use_loss == 'AAMLoss':
-            self.loss = AAMLoss()
-        elif use_loss == 'AMLoss':
-            self.loss = AMLoss()
-        elif use_loss == 'ARMLoss':
-            self.loss = ARMLoss()
-        elif use_loss == 'CELoss':
-            self.loss = CELoss()
-        else:
-            raise Exception(f'没有{use_loss}损失函数！')
+        # 获取训练所需的函数
         if is_train:
+            use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
+            # 获取分类器
+            classifier = SpeakerIdentification(input_dim=self.backbone.emb_size,
+                                               loss_type=use_loss,
+                                               num_class=self.configs.dataset_conf.num_speakers,
+                                               **self.configs.model_conf.classifier)
+            # 合并模型
+            self.model = nn.Sequential(self.backbone, classifier)
+            # print(self.model)
+            # 获取损失函数
+            loss_args = self.configs.loss_conf.get('args', {})
+            loss_args = loss_args if loss_args is not None else {}
+            if use_loss == 'AAMLoss':
+                self.loss = AAMLoss(**loss_args)
+            elif use_loss == 'AMLoss':
+                self.loss = AMLoss(**loss_args)
+            elif use_loss == 'ARMLoss':
+                self.loss = ARMLoss(**loss_args)
+            elif use_loss == 'CELoss':
+                self.loss = CELoss(**loss_args)
+            else:
+                raise Exception(f'没有{use_loss}损失函数！')
             # 获取优化方法
             optimizer = self.configs.optimizer_conf.optimizer
             if optimizer == 'Adam':
@@ -160,7 +168,14 @@ class MVectorTrainer(object):
             else:
                 raise Exception(f'不支持优化方法：{optimizer}')
             # 学习率衰减函数
-            self.scheduler = CosineAnnealingLR(self.optimizer, T_max=int(self.configs.train_conf.max_epoch * 1.2))
+            self.scheduler = CosineAnnealingLR(self.optimizer,
+                                               T_max=int(self.configs.train_conf.max_epoch * 1.2))
+        else:
+            # 不训练模型不包含分类器
+            self.model = nn.Sequential(self.backbone)
+            self.model.to(self.device)
+        self.model.to(self.device)
+        summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
 
     def __load_pretrained(self, pretrained_model):
         # 加载预训练模型
@@ -281,7 +296,7 @@ class MVectorTrainer(object):
             # 多卡训练只使用一个进程打印
             if batch_id % self.configs.train_conf.log_interval == 0 and local_rank == 0:
                 # 计算每秒训练数据量
-                train_speed = self.configs.dataset_conf.batch_size / (sum(train_times) / len(train_times) / 1000)
+                train_speed = self.configs.dataset_conf.dataLoader.batch_size / (sum(train_times) / len(train_times) / 1000)
                 # 计算剩余时间
                 eta_sec = (sum(train_times) / len(train_times)) * (
                         sum_batch - (epoch_id - 1) * len(self.train_loader) - batch_id)
@@ -396,7 +411,7 @@ class MVectorTrainer(object):
                 resume_model = os.path.join(resume_model, 'model.pt')
             assert os.path.exists(resume_model), f"{resume_model} 模型不存在！"
             model_state_dict = torch.load(resume_model)
-            self.model.load_state_dict(model_state_dict)
+            self.model.load_state_dict(model_state_dict, strict=False)
             logger.info(f'成功加载模型：{resume_model}')
         self.model.eval()
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
@@ -411,7 +426,7 @@ class MVectorTrainer(object):
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
                 audio_features, _ = self.audio_featurizer(audio, input_lens_ratio)
-                feature = eval_model.backbone(audio_features).data.cpu().numpy()
+                feature = eval_model(audio_features).data.cpu().numpy()
                 label = label.data.cpu().numpy()
                 # 存放特征
                 features = np.concatenate((features, feature)) if features is not None else feature
@@ -466,7 +481,7 @@ class MVectorTrainer(object):
         logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
         self.model.eval()
         # 获取静态模型
-        infer_model = torch.jit.script(self.model.backbone)
+        infer_model = torch.jit.script(self.model)
         infer_model_path = os.path.join(save_model_path,
                                         f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                         'inference.pt')
