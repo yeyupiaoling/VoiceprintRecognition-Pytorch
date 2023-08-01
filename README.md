@@ -1,6 +1,12 @@
-# 前言
+# 基于Pytorch实现的声纹识别系统
 
-本项目使用了EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++等多种模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
+![python version](https://img.shields.io/badge/python-3.8+-orange.svg)
+![GitHub forks](https://img.shields.io/github/forks/yeyupiaoling/VoiceprintRecognition-Pytorch)
+![GitHub Repo stars](https://img.shields.io/github/stars/yeyupiaoling/VoiceprintRecognition-Pytorch)
+![GitHub](https://img.shields.io/github/license/yeyupiaoling/VoiceprintRecognition-Pytorch)
+![支持系统](https://img.shields.io/badge/支持系统-Win/Linux/MAC-9cf)
+
+本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
 
 
 **欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`758170167`，问题答案为博主Github的ID`yeyupiaoling`。
@@ -27,68 +33,14 @@
 
 # 模型下载
 
-<table align="center">
-<tr>
-  <th align="center">模型</th>
-  <th align="center">预处理方法</th>
-  <th align="center">数据集</th>
-  <th align="center">类别数量</th>
-  <th align="center">tpr</th>
-  <th align="center">fpr</th>
-  <th align="center">eer</th>
-  <th align="center">模型下载地址</th>
-</tr>
-<tr>
-  <td align="center">EcapaTdnn</td>
-  <td align="center">MelSpectrogram</td>
-  <td align="center"><a href="https://aistudio.baidu.com/aistudio/datasetdetail/133922">zhvoice</a></td>
-  <td align="center">3242</td>
-  <td align="center">0.98972</td>
-  <td align="center">0.00730</td>
-  <td align="center">0.01758</td>
-  <td align="center"></td>
-</tr>
-<tr>
-  <td align="center">EcapaTdnn</td>
-  <td align="center">Spectrogram</td>
-  <td align="center"><a href="https://aistudio.baidu.com/aistudio/datasetdetail/133922">zhvoice</a></td>
-  <td align="center">3242</td>
-  <td align="center">0.99142</td>
-  <td align="center">0.00817</td>
-  <td align="center">0.01675</td>
-  <td align="center"></td>
-</tr>
-<tr>
-  <td align="center">EcapaTdnn</td>
-  <td align="center">MFCC</td>
-  <td align="center"><a href="https://aistudio.baidu.com/aistudio/datasetdetail/133922">zhvoice</a></td>
-  <td align="center">3242</td>
-  <td align="center">0.99431</td>
-  <td align="center">0.00659</td>
-  <td align="center">0.01227</td>
-  <td align="center"></td>
-</tr>
-<tr>
-  <td align="center">EcapaTdnn</td>
-  <td align="center">MelSpectrogram</td>
-  <td align="center">更大的数据集</td>
-  <td align="center">6355</td>
-  <td align="center">0.97881</td>
-  <td align="center">0.00788</td>
-  <td align="center">0.02907</td>
-  <td align="center"></td>
-</tr>
-<tr>
-  <td align="center">EcapaTdnn</td>
-  <td align="center">MelSpectrogram</td>
-  <td align="center">超大的数据集</td>
-  <td align="center">13718</td>
-  <td align="center">0.98342</td>
-  <td align="center">0.00776</td>
-  <td align="center">0.02434</td>
-  <td align="center"></td>
-</tr>
-</table>
+|    模型     |     预处理方法      |                                 数据集                                 | 训练集说话人数量 | 测试集说话人数量 | tpr | fpr | eer | 模型下载地址 |
+|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------:|:--------:|:---:|:---:|:---:|:------:|
+| EcapaTdnn | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|   TDNN    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|  Res2Net  | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+| ResNetSE  | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+| ERes2Net  | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|   CAM++   | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
 
 ## 安装环境
 

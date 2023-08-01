@@ -88,7 +88,7 @@ def main(infodata_path, list_path, zhvoice_path, to_wav=True, num_workers=2):
     f_test = open(os.path.join(list_path, 'test_list.txt'), 'w')
     for i, d in enumerate(data_all):
         sound_path, label = d
-        if i % 200 == 0:
+        if int(label) >= 3000:
             f_test.write(f'{sound_path}\t{label}\n')
         else:
             f_train.write(f'{sound_path}\t{label}\n')
