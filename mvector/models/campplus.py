@@ -304,6 +304,7 @@ class CAMPPlus(nn.Module):
 
         self.head = FCM(feat_dim=input_size)
         channels = self.head.out_channels
+        self.emb_size = embd_dim
 
         self.xvector = nn.Sequential(
             OrderedDict([('tdnn', TDNNLayer(channels,
