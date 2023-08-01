@@ -63,10 +63,10 @@ class CustomDataset(Dataset):
         # decibel normalization
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
-        # 裁剪需要的数据
-        audio_segment.crop(duration=self.max_duration, mode=self.mode)
         # 音频增强
         self._augmentation_pipeline.transform_audio(audio_segment)
+        # 裁剪需要的数据
+        audio_segment.crop(duration=self.max_duration, mode=self.mode)
         return np.array(audio_segment.samples, dtype=np.float32), np.array(int(label), dtype=np.int64)
 
     def __len__(self):

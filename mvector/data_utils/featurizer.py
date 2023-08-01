@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torchaudio.compliance.kaldi as Kaldi
 from torchaudio.transforms import MelSpectrogram, Spectrogram, MFCC
 
 
@@ -8,25 +9,22 @@ class AudioFeaturizer(nn.Module):
 
     :param feature_method: 所使用的预处理方法
     :type feature_method: str
-    :param feature_conf: 预处理方法的参数
-    :type feature_conf: dict
+    :param method_args: 预处理方法的参数
+    :type method_args: dict
     """
 
-    def __init__(self, feature_method='MelSpectrogram', feature_conf={}):
+    def __init__(self, feature_method='MelSpectrogram', method_args={}):
         super().__init__()
-        self._feature_conf = feature_conf
+        self._method_args = method_args
         self._feature_method = feature_method
         if feature_method == 'MelSpectrogram':
-            self.feat_fun = MelSpectrogram(**feature_conf)
+            self.feat_fun = MelSpectrogram(**method_args)
         elif feature_method == 'Spectrogram':
-            self.feat_fun = Spectrogram(**feature_conf)
+            self.feat_fun = Spectrogram(**method_args)
         elif feature_method == 'MFCC':
-            melkwargs = feature_conf.copy()
-            del melkwargs['sample_rate']
-            del melkwargs['n_mfcc']
-            self.feat_fun = MFCC(sample_rate=self._feature_conf.sample_rate,
-                                 n_mfcc=self._feature_conf.n_mfcc,
-                                 melkwargs=melkwargs)
+            self.feat_fun = MFCC(**method_args)
+        elif feature_method == 'Fbank':
+            self.feat_fun = KaldiFbank(**method_args)
         else:
             raise Exception(f'预处理方法 {self._feature_method} 不存在!')
 
@@ -43,9 +41,7 @@ class AudioFeaturizer(nn.Module):
         feature = self.feat_fun(waveforms)
         feature = feature.transpose(2, 1)
         # 归一化
-        mean = torch.mean(feature, 1, keepdim=True)
-        std = torch.std(feature, 1, keepdim=True)
-        feature = (feature - mean) / (std + 1e-5)
+        feature = feature - feature.mean(1, keepdim=True)
         # 对掩码比例进行扩展
         input_lens = (input_lens_ratio * feature.shape[1])
         mask_lens = torch.round(input_lens).long()
@@ -67,12 +63,39 @@ class AudioFeaturizer(nn.Module):
         :rtype: int
         """
         if self._feature_method == 'LogMelSpectrogram':
-            return self._feature_conf.n_mels
+            return self._method_args.n_mels
         elif self._feature_method == 'MelSpectrogram':
-            return self._feature_conf.n_mels
+            return self._method_args.n_mels
         elif self._feature_method == 'Spectrogram':
-            return self._feature_conf.n_fft // 2 + 1
+            return self._method_args.n_fft // 2 + 1
         elif self._feature_method == 'MFCC':
-            return self._feature_conf.n_mfcc
+            return self._method_args.n_mfcc
+        elif self._feature_method == 'Fbank':
+            return self._method_args.num_mel_bins
         else:
             raise Exception('没有{}预处理方法'.format(self._feature_method))
+
+
+class KaldiFbank(nn.Module):
+    def __init__(self, **kwargs):
+        super(KaldiFbank, self).__init__()
+        self.kwargs = kwargs
+
+    def forward(self, waveforms):
+        """
+        :param waveforms: [Batch, Length]
+        :return: [Batch, Length, Feature]
+        """
+        se = self.kwargs.get('se', None)
+        if se is not None:
+            se.initialize(waveforms)
+        log_fbanks = []
+        for waveform in waveforms:
+            if len(waveform.shape) == 1:
+                waveform = waveform.unsqueeze(0)
+            log_fbank = Kaldi.fbank(waveform, **self.kwargs)
+            log_fbank = log_fbank.transpose(0, 1)
+            log_fbanks.append(log_fbank)
+        log_fbank = torch.stack(log_fbanks)
+        return log_fbank
+

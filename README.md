@@ -1,7 +1,6 @@
 # 前言
-此版本为新版本，相比上一个版本，最大的变化是此版本支持pip安装，以及把预处理使用模型算子实现，这样做的好处就是可以直接使用GPU计算，大幅度提高了预处理的速度，估计预处理速度可在10~20倍。
 
-如想使用使用旧版本，请转到[release/1.0](https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch/tree/release/1.0)，本项目使用了EcapaTdnn模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
+本项目使用了EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++等多种模型实现的声纹识别，不排除以后会支持更多模型，同时本项目也支持了多种数据预处理方法，损失函数参考了人脸识别项目的做法[PaddlePaddle-MobileFaceNets](https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets) ,使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接。
 
 
 **欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`758170167`，问题答案为博主Github的ID`yeyupiaoling`。
@@ -20,10 +19,11 @@
 
 # 项目特性
 
-1. 支持模型：EcapaTdnn、TDNN、Res2Net、ResNetSE
-2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)
+1. 支持模型：EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
+2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(
+   TSTP)
 3. 支持损失函数：AAMLoss、AMLoss、ARMLoss、CELoss
-4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC
+4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank
 
 # 模型下载
 
@@ -46,7 +46,7 @@
   <td align="center">0.98972</td>
   <td align="center">0.00730</td>
   <td align="center">0.01758</td>
-  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87153070">点击下载</a></td>
+  <td align="center"></td>
 </tr>
 <tr>
   <td align="center">EcapaTdnn</td>
@@ -56,7 +56,7 @@
   <td align="center">0.99142</td>
   <td align="center">0.00817</td>
   <td align="center">0.01675</td>
-  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87015334">点击下载</a></td>
+  <td align="center"></td>
 </tr>
 <tr>
   <td align="center">EcapaTdnn</td>
@@ -66,7 +66,7 @@
   <td align="center">0.99431</td>
   <td align="center">0.00659</td>
   <td align="center">0.01227</td>
-  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87523304">点击下载</a></td>
+  <td align="center"></td>
 </tr>
 <tr>
   <td align="center">EcapaTdnn</td>
@@ -76,7 +76,7 @@
   <td align="center">0.97881</td>
   <td align="center">0.00788</td>
   <td align="center">0.02907</td>
-  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/86987829">点击下载</a></td>
+  <td align="center"></td>
 </tr>
 <tr>
   <td align="center">EcapaTdnn</td>
@@ -86,7 +86,7 @@
   <td align="center">0.98342</td>
   <td align="center">0.00776</td>
   <td align="center">0.02434</td>
-  <td align="center"><a href="https://download.csdn.net/download/qq_33200967/87131658">点击下载</a></td>
+  <td align="center"></td>
 </tr>
 </table>
 

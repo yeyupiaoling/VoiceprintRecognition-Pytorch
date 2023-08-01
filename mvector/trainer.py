@@ -25,7 +25,7 @@ from mvector.data_utils.reader import CustomDataset
 from mvector.metric.metrics import TprAtFpr
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.eresnet import ERes2Net
+from mvector.models.eres2net import ERes2Net
 from mvector.models.fc import SpeakerIdentification
 from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss
 from mvector.models.res2net import Res2Net
@@ -62,7 +62,8 @@ class MVectorTrainer(object):
         self.backbone = None
         self.test_loader = None
         # 获取特征器
-        self.audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
+        self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
+                                                method_args=self.configs.preprocess_conf.method_args)
         self.audio_featurizer.to(self.device)
 
         if platform.system().lower() == 'windows':
@@ -299,7 +300,8 @@ class MVectorTrainer(object):
             # 多卡训练只使用一个进程打印
             if batch_id % self.configs.train_conf.log_interval == 0 and local_rank == 0:
                 # 计算每秒训练数据量
-                train_speed = self.configs.dataset_conf.dataLoader.batch_size / (sum(train_times) / len(train_times) / 1000)
+                train_speed = self.configs.dataset_conf.dataLoader.batch_size / (
+                            sum(train_times) / len(train_times) / 1000)
                 # 计算剩余时间
                 eta_sec = (sum(train_times) / len(train_times)) * (
                         sum_batch - (epoch_id - 1) * len(self.train_loader) - batch_id)

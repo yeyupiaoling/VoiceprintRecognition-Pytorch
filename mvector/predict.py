@@ -15,7 +15,7 @@ from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.eresnet import ERes2Net
+from mvector.models.eres2net import ERes2Net
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
@@ -56,7 +56,8 @@ class MVectorPredictor:
             print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
-        self._audio_featurizer = AudioFeaturizer(feature_conf=self.configs.feature_conf, **self.configs.preprocess_conf)
+        self._audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
+                                                 method_args=self.configs.preprocess_conf.method_args)
         self._audio_featurizer.to(self.device)
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
@@ -126,7 +127,7 @@ class MVectorPredictor:
         audios_path = []
         for name in os.listdir(audio_db_path):
             audio_dir = os.path.join(audio_db_path, name)
-            if not os.path.isdir(audio_dir):continue
+            if not os.path.isdir(audio_dir): continue
             for file in os.listdir(audio_dir):
                 audios_path.append(os.path.join(audio_dir, file).replace('\\', '/'))
         # 声纹库没数据就跳过
@@ -255,7 +256,7 @@ class MVectorPredictor:
             seq_length = tensor.shape[0]
             # 将数据插入都0张量中，实现了padding
             inputs[x, :seq_length] = tensor[:]
-            input_lens_ratio.append(seq_length/max_audio_length)
+            input_lens_ratio.append(seq_length / max_audio_length)
         audios_data = torch.tensor(inputs, dtype=torch.float32, device=self.device)
         input_lens_ratio = torch.tensor(input_lens_ratio, dtype=torch.float32, device=self.device)
         audio_feature, _ = self._audio_featurizer(audios_data, input_lens_ratio)
