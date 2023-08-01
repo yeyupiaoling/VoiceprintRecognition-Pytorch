@@ -23,6 +23,7 @@ from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
 from mvector.metric.metrics import TprAtFpr
+from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
 from mvector.models.eresnet import ERes2Net
 from mvector.models.fc import SpeakerIdentification
@@ -115,6 +116,8 @@ class MVectorTrainer(object):
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
             self.backbone = ERes2Net(input_size=input_size, **self.configs.model_conf.backbone)
+        elif self.configs.use_model == 'CAM++':
+            self.backbone = CAMPPlus(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'EcapaTdnn':
             self.backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'Res2Net':

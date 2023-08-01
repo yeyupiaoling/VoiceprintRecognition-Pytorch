@@ -293,8 +293,8 @@ class FCM(nn.Module):
 
 class CAMPPlus(nn.Module):
     def __init__(self,
-                 feat_dim=80,
-                 embedding_size=512,
+                 input_size,
+                 embd_dim=512,
                  growth_rate=32,
                  bn_size=4,
                  init_channels=128,
@@ -302,7 +302,7 @@ class CAMPPlus(nn.Module):
                  memory_efficient=True):
         super(CAMPPlus, self).__init__()
 
-        self.head = FCM(feat_dim=feat_dim)
+        self.head = FCM(feat_dim=input_size)
         channels = self.head.out_channels
 
         self.xvector = nn.Sequential(
@@ -340,7 +340,7 @@ class CAMPPlus(nn.Module):
         self.xvector.add_module('stats', StatsPool())
         self.xvector.add_module(
             'dense',
-            DenseLayer(channels * 2, embedding_size, config_str='batchnorm_'))
+            DenseLayer(channels * 2, embd_dim, config_str='batchnorm_'))
 
         for m in self.modules():
             if isinstance(m, (nn.Conv1d, nn.Linear)):
