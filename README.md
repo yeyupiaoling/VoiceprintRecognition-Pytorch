@@ -32,14 +32,17 @@
 
 # 模型下载
 
-|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | train speakers | test speakers | tpr | fpr | eer | 模型下载地址 |
-|:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------:|:--------:|:---:|:---:|:---:|:------:|
-| EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-|   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-|  Res2Net  |   26.9    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-| ResNetSE  |    13     | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-| ERes2Net  |   54.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-|   CAM++   |    7.5    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | train speakers | tpr | fpr | eer | 模型下载地址 |
+|:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------------:|:---:|:---:|:---:|:------:|
+| EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+|   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+|  Res2Net  |   26.9    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+| ResNetSE  |    13     | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+| ERes2Net  |   54.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+|   CAM++   |    7.5    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+
+说明：
+1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含200个说话人。
 
 ## 安装环境
 
@@ -63,7 +66,7 @@ python setup.py install
 ```
 
 # 创建数据
-本教程笔者使用的是[zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) ，这个数据集一共有3242个人的语音数据，有1130000+条语音数据，下载之前要**全部解压**数据集。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
+本教程笔者使用的是[zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) ，这个数据集一共有3242个人的语音数据，有1130000+条语音数据，下载之前要**全部解压**数据集，另外如果要评估，还需要下载[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
 
 首先是创建一个数据列表，数据列表的格式为`<语音文件路径\t语音分类标签>`，创建这个列表主要是方便之后的读取，也是方便读取使用其他的语音数据集，语音分类标签是指说话人的唯一ID，不同的语音数据集，可以通过编写对应的生成数据列表的函数，把这些数据集都写在同一个数据列表中。
 
@@ -86,54 +89,21 @@ dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
 ```
 
 # 修改预处理方法
-配置文件中默认使用的是MelSpectrogram预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。 
+配置文件中默认使用的是MelSpectrogram预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。如果不清楚如何设置参数，可以直接删除该部分，直接使用默认值。
 
-1. `MelSpectrogram`预处理方法如下：
 ```yaml
 preprocess_conf:
-  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC
+  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
   feature_method: 'MelSpectrogram'
-
-# MelSpectrogram的参数，其他的预处理方法查看对应API设设置参数
-feature_conf:
-  sample_rate: 16000
-  n_fft: 1024
-  hop_length: 320
-  win_length: 1024
-  f_min: 50.0
-  f_max: 14000.0
-  n_mels: 64
-```
-
-1. `pectrogram'`预处理方法如下：
-```yaml
-preprocess_conf:
-  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC
-  feature_method: 'Spectrogram'
-
-# Spectrogram的参数，其他的预处理方法查看对应API设设置参数
-feature_conf:
-  n_fft: 1024
-  hop_length: 320
-  win_length: 1024
-```
-
-3. `MFCC`预处理方法如下：
-```yaml
-preprocess_conf:
-  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC
-  feature_method: 'MFCC'
-
-# MFCC的参数，其他的预处理方法查看对应API设设置参数
-feature_conf:
-  sample_rate: 16000
-  n_fft: 1024
-  hop_length: 320
-  win_length: 1024
-  f_min: 50.0
-  f_max: 14000.0
-  n_mels: 64
-  n_mfcc: 40
+  # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
+  method_args:
+    sample_rate: 16000
+    n_fft: 1024
+    hop_length: 320
+    win_length: 1024
+    f_min: 50.0
+    f_max: 14000.0
+    n_mels: 64
 ```
 
 # 训练模型
@@ -168,13 +138,15 @@ CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 tra
 [2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	test_list: dataset/test_list.txt
 [2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	train_list: dataset/train_list.txt
 [2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	use_dB_normalization: True
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 - feature_conf:
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	hop_length: 160
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	n_fft: 400
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	n_mels: 80
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	sr: 16000
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	win_length: 400
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	window: hann
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - preprocess_conf:
+[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	feature_method: MelSpectrogram
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 -     method_args:
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    hop_length: 160
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    n_fft: 400
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    n_mels: 80
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    sr: 16000
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    win_length: 400
+[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 -     	window: hann
 [2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 - model_conf:
 [2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	channels: [512, 512, 512, 512, 1536]
 [2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	dilations: [1, 2, 3, 4, 1]
@@ -183,8 +155,6 @@ CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 tra
 [2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:21 - optimizer_conf:
 [2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	learning_rate: 0.001
 [2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	weight_decay: 1e-6
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - preprocess_conf:
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	feature_method: MelSpectrogram
 [2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - train_conf:
 [2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	log_interval: 100
 [2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	max_epoch: 30
@@ -215,8 +185,8 @@ I0424 08:57:05.431638  3377 nccl_context.cc:107] init nccl context nranks: 2 loc
 100%|██████████████████████████████| 5332/5332 [00:07<00:00, 749.89it/s]
 [2023-03-16 20:34:29.328638 INFO   ] trainer:train:306 - Test epoch: 1, time/epoch: 0:00:48.881889, threshold: 0.72, tpr: 0.62350, fpr: 0.04601, eer: 0.42250
 [2023-03-16 20:34:29.328840 INFO   ] trainer:train:309 - ======================================================================
-[2023-03-16 20:34:29.728986 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/ecapa_tdnn_MelSpectrogram/best_model
-[2023-03-16 20:34:30.724868 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/ecapa_tdnn_MelSpectrogram/epoch_1
+[2023-03-16 20:34:29.728986 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/EcapaTdnn_MelSpectrogram/best_model
+[2023-03-16 20:34:30.724868 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/EcapaTdnn_MelSpectrogram/epoch_1
 [2023-03-16 20:30:42.559858 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [0/16579], loss: 16.48008, accuracy: 0.01562, learning rate: 0.00000000, speed: 21.27 data/sec, eta: 17 days, 7:38:55
 [2023-03-16 20:31:15.045717 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [100/16579], loss: 16.34529, accuracy: 0.00062, learning rate: 0.00000121, speed: 197.03 data/sec, eta: 1 day, 20:52:05
 [2023-03-16 20:31:47.086451 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [200/16579], loss: 16.31631, accuracy: 0.00054, learning rate: 0.00000241, speed: 199.77 data/sec, eta: 1 day, 20:14:40
@@ -252,7 +222,7 @@ python eval.py
 ------------------------------------------------
 W0425 08:27:32.057426 17654 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/ecapa_tdnn_MelSpectrogram/best_model/model.pth
+[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/EcapaTdnn_MelSpectrogram/best_model/model.pth
 100%|███████████████████████████| 84/84 [00:28<00:00,  2.95it/s]
 开始两两对比音频特征...
 100%|███████████████████████████| 5332/5332 [00:05<00:00, 1027.83it/s]
@@ -271,14 +241,14 @@ python infer_contrast.py --audio_path1=audio/a_1.wav --audio_path2=audio/b_2.wav
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path1: dataset/a_1.wav
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path2: dataset/b_2.wav
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
-[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - model_path: models/ecapa_tdnn_MelSpectrogram/best_model/
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - model_path: models/EcapaTdnn_MelSpectrogram/best_model/
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - threshold: 0.6
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - use_gpu: True
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:16 - ------------------------------------------------
 ······································································
 W0425 08:29:10.006249 21121 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:29:10.008555 21121 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-成功加载模型参数和优化方法参数：models/ecapa_tdnn/model.pth
+成功加载模型参数和优化方法参数：models/EcapaTdnn_MelSpectrogram/best_model/model.pth
 audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：-0.09565544128417969
 ```
 
@@ -294,7 +264,7 @@ python infer_recognition.py
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - audio_db_path: audio_db/
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
-[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - model_path: models/ecapa_tdnn_MelSpectrogram/best_model/
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - model_path: models/EcapaTdnn_MelSpectrogram/best_model/
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - record_seconds: 3
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - threshold: 0.6
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - use_gpu: True

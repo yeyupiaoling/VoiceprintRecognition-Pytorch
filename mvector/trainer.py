@@ -220,7 +220,7 @@ class MVectorTrainer(object):
         return last_epoch, best_eer
 
     # 保存模型
-    def __save_checkpoint(self, save_model_path, epoch_id, best_eer=0., best_model=False):
+    def __save_checkpoint(self, save_model_path, epoch_id, best_eer=None, best_model=False):
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             state_dict = self.model.module.state_dict()
         else:
@@ -237,7 +237,9 @@ class MVectorTrainer(object):
         torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pt'))
         torch.save(state_dict, os.path.join(model_path, 'model.pt'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
-            data = {"last_epoch": epoch_id, "eer": best_eer, "version": __version__}
+            data = {"last_epoch": epoch_id, "version": __version__}
+            if best_eer is not None:
+                data['eer'] = best_eer
             f.write(json.dumps(data))
         if not best_model:
             last_model_path = os.path.join(save_model_path,
@@ -315,12 +317,14 @@ class MVectorTrainer(object):
               save_model_path='models/',
               resume_model=None,
               pretrained_model=None,
+              is_eval=True,
               augment_conf_path='configs/augmentation.json'):
         """
         训练模型
         :param save_model_path: 模型保存的路径
         :param resume_model: 恢复训练，当为None则不使用预训练模型
         :param pretrained_model: 预训练模型的路径，当为None则不使用预训练模型
+        :param is_eval: 训练时是否评估模型
         :param augment_conf_path: 数据增强的配置文件，为json格式
         """
         # 获取有多少张显卡训练
@@ -354,6 +358,7 @@ class MVectorTrainer(object):
             self.optimizer.step()
             [self.scheduler.step() for _ in range(last_epoch)]
 
+        eer = None
         test_step, self.train_step = 0, 0
         last_epoch += 1
         if local_rank == 0:
@@ -366,7 +371,7 @@ class MVectorTrainer(object):
             self.__train_epoch(epoch_id=epoch_id, save_model_path=save_model_path, local_rank=local_rank,
                                writer=writer, nranks=nranks)
             # 多卡训练只使用一个进程执行评估和保存模型
-            if local_rank == 0:
+            if local_rank == 0 and is_eval:
                 logger.info('=' * 70)
                 tpr, fpr, eer, threshold = self.evaluate(resume_model=None)
                 logger.info('Test epoch: {}, time/epoch: {}, threshold: {:.2f}, tpr: {:.5f}, fpr: {:.5f}, '
@@ -384,6 +389,7 @@ class MVectorTrainer(object):
                     best_eer = eer
                     self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer,
                                            best_model=True)
+            if local_rank == 0:
                 # 保存模型
                 self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer)
 
