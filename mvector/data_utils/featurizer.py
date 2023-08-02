@@ -62,16 +62,14 @@ class AudioFeaturizer(nn.Module):
         :return: 特征大小
         :rtype: int
         """
-        if self._feature_method == 'LogMelSpectrogram':
-            return self._method_args.n_mels
-        elif self._feature_method == 'MelSpectrogram':
-            return self._method_args.n_mels
+        if self._feature_method == 'MelSpectrogram':
+            return self._method_args.get('n_mels', 128)
         elif self._feature_method == 'Spectrogram':
-            return self._method_args.n_fft // 2 + 1
+            return self._method_args.get('n_fft', 400) // 2 + 1
         elif self._feature_method == 'MFCC':
-            return self._method_args.n_mfcc
+            return self._method_args.get('n_mfcc', 40)
         elif self._feature_method == 'Fbank':
-            return self._method_args.num_mel_bins
+            return self._method_args.get('num_mel_bins', 23)
         else:
             raise Exception('没有{}预处理方法'.format(self._feature_method))
 

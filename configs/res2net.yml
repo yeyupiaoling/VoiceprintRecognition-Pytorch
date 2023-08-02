@@ -29,7 +29,7 @@ dataset_conf:
 preprocess_conf:
   # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
   feature_method: 'MelSpectrogram'
-  # 设置API参数，更参数查看对应API
+  # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
   method_args:
     sample_rate: 16000
     n_fft: 1024

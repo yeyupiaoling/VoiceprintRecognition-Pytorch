@@ -6,7 +6,7 @@
 ![GitHub](https://img.shields.io/github/license/yeyupiaoling/VoiceprintRecognition-Pytorch)
 ![支持系统](https://img.shields.io/badge/支持系统-Win/Linux/MAC-9cf)
 
-本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
+本分支为1.0版本，如果要使用之前的0.3版本请在[0.x分支](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.x)使用。本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
 
 
 **欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`758170167`，问题答案为博主Github的ID`yeyupiaoling`。
@@ -26,21 +26,20 @@
 # 项目特性
 
 1. 支持模型：EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
-2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(
-   TSTP)
+2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
 3. 支持损失函数：AAMLoss、AMLoss、ARMLoss、CELoss
 4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank
 
 # 模型下载
 
-|    模型     |     预处理方法      |                                 数据集                                 | 训练集说话人数量 | 测试集说话人数量 | tpr | fpr | eer | 模型下载地址 |
-|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------:|:--------:|:---:|:---:|:---:|:------:|
-| EcapaTdnn | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-|   TDNN    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-|  Res2Net  | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-| ResNetSE  | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-| ERes2Net  | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
-|   CAM++   | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | 训练集说话人数量 | 测试集说话人数量 | tpr | fpr | eer | 模型下载地址 |
+|:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------:|:--------:|:---:|:---:|:---:|:------:|
+| EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|  Res2Net  |   26.9    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+| ResNetSE  |    13     | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+| ERes2Net  |   54.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
+|   CAM++   |    7.5    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
 
 ## 安装环境
 

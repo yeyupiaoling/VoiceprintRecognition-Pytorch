@@ -63,7 +63,7 @@ class MVectorTrainer(object):
         self.test_loader = None
         # 获取特征器
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
-                                                method_args=self.configs.preprocess_conf.method_args)
+                                                method_args=self.configs.preprocess_conf.get('method_args', {}))
         self.audio_featurizer.to(self.device)
 
         if platform.system().lower() == 'windows':

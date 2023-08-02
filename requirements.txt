@@ -11,6 +11,6 @@ termcolor>=1.1.0
 typeguard==2.13.3
 scikit-learn>=1.0.2
 pydub>=0.25.1
-torchaudio>=0.12.1
+torchaudio==0.13.1
 torchinfo>=1.7.2
 av>=10.0.0

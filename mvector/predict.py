@@ -30,7 +30,7 @@ class MVectorPredictor:
                  configs,
                  threshold=0.6,
                  audio_db_path=None,
-                 model_path='models/ecapa_tdnn_spectrogram/best_model/',
+                 model_path='models/EcapaTdnn_MelSpectrogram/best_model/',
                  use_gpu=True):
         """
         声纹识别预测工具
@@ -57,7 +57,7 @@ class MVectorPredictor:
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self._audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
-                                                 method_args=self.configs.preprocess_conf.method_args)
+                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
         self._audio_featurizer.to(self.device)
         # 获取模型
         if self.configs.use_model == 'ERes2Net':

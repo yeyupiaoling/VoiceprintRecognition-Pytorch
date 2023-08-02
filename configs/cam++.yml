@@ -28,11 +28,16 @@ dataset_conf:
 # 数据预处理参数
 preprocess_conf:
   # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
-  feature_method: 'Fbank'
-  # 设置API参数，更参数查看对应API
+  feature_method: 'MelSpectrogram'
+  # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
   method_args:
-    sample_frequency: 16000
-    num_mel_bins: 80
+    sample_rate: 16000
+    n_fft: 1024
+    hop_length: 320
+    win_length: 1024
+    f_min: 50.0
+    f_max: 14000.0
+    n_mels: 64
 
 optimizer_conf:
   # 优化方法，支持Adam、AdamW、SGD
