@@ -407,9 +407,9 @@ class MVectorTrainer(object):
             logger.info(f'成功加载模型：{resume_model}')
         self.model.eval()
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-            eval_model = self.model.module
+            eval_model = self.model.module if len(self.model.module) == 1 else self.model.module[0]
         else:
-            eval_model = self.model
+            eval_model = self.model if len(self.model) == 1 else self.model[0]
 
         features, labels = None, None
         with torch.no_grad():

@@ -86,9 +86,6 @@ class KaldiFbank(nn.Module):
         :param waveforms: [Batch, Length]
         :return: [Batch, Length, Feature]
         """
-        se = self.kwargs.get('se', None)
-        if se is not None:
-            se.initialize(waveforms)
         log_fbanks = []
         for waveform in waveforms:
             if len(waveform.shape) == 1:
