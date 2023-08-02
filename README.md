@@ -32,7 +32,7 @@
 
 # 模型下载
 
-|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | 训练集说话人数量 | 测试集说话人数量 | tpr | fpr | eer | 模型下载地址 |
+|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | train speakers | test speakers | tpr | fpr | eer | 模型下载地址 |
 |:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------:|:--------:|:---:|:---:|:---:|:------:|
 | EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
 |   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |   3000   |   242    |     |     |     |
