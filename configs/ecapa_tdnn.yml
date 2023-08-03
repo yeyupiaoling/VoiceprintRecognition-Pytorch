@@ -75,8 +75,8 @@ loss_conf:
   # 所使用的损失函数，支持AAMLoss、AMLoss、ARMLoss、CELoss
   use_loss: 'AAMLoss'
   args:
-    margin: 0.2
-    scale: 30
+    margin: 0.3
+    scale: 32
     easy_margin: False
 
 train_conf:
