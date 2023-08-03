@@ -11,7 +11,6 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torchinfo import summary
@@ -32,6 +31,7 @@ from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
 from mvector.utils.logger import setup_logger
+from mvector.utils.scheduler import WarmupCosineSchedulerLR, MarginScheduler
 from mvector.utils.utils import dict_to_object, print_arguments
 
 logger = setup_logger(__name__)
@@ -71,23 +71,12 @@ class MVectorTrainer(object):
             self.configs.dataset_conf.dataLoader.num_workers = 0
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
 
-    def __setup_dataloader(self, augment_conf_path=None, is_train=False):
-        # 获取训练数据
-        if augment_conf_path is not None and os.path.exists(augment_conf_path) and is_train:
-            augmentation_config = io.open(augment_conf_path, mode='r', encoding='utf8').read()
-        else:
-            if augment_conf_path is not None and not os.path.exists(augment_conf_path):
-                logger.info('数据增强配置文件{}不存在'.format(augment_conf_path))
-            augmentation_config = '{}'
-        # 兼容旧的配置文件
-        if 'max_duration' not in self.configs.dataset_conf:
-            self.configs.dataset_conf.max_duration = self.configs.dataset_conf.chunk_duration
+    def __setup_dataloader(self, is_train=False):
         if is_train:
             self.train_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.train_list,
                                                do_vad=self.configs.dataset_conf.do_vad,
                                                max_duration=self.configs.dataset_conf.max_duration,
                                                min_duration=self.configs.dataset_conf.min_duration,
-                                               augmentation_config=augmentation_config,
                                                sample_rate=self.configs.dataset_conf.sample_rate,
                                                use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
                                                target_dB=self.configs.dataset_conf.target_dB,
@@ -168,6 +157,13 @@ class MVectorTrainer(object):
                 self.loss = CELoss(**loss_args)
             else:
                 raise Exception(f'没有{use_loss}损失函数！')
+            # 损失函数margin调度器
+            self.margin_scheduler = MarginScheduler(criterion=self.loss,
+                                                    increase_start_epoch=int(self.configs.train_conf.max_epoch * 0.3),
+                                                    fix_epoch=int(self.configs.train_conf.max_epoch * 0.7),
+                                                    step_per_epoch=len(self.train_loader),
+                                                    initial_margin=0.0,
+                                                    final_margin=0.3)
             # 获取优化方法
             optimizer = self.configs.optimizer_conf.optimizer
             if optimizer == 'Adam':
@@ -186,8 +182,10 @@ class MVectorTrainer(object):
             else:
                 raise Exception(f'不支持优化方法：{optimizer}')
             # 学习率衰减函数
-            self.scheduler = CosineAnnealingLR(self.optimizer,
-                                               T_max=int(self.configs.train_conf.max_epoch * 1.2))
+            self.scheduler = WarmupCosineSchedulerLR(optimizer=self.optimizer,
+                                                     fix_epoch=self.configs.train_conf.max_epoch,
+                                                     step_per_epoch=len(self.train_loader),
+                                                     **self.configs.optimizer_conf.scheduler_args)
         else:
             # 不训练模型不包含分类器
             self.model = nn.Sequential(self.backbone)
@@ -229,7 +227,8 @@ class MVectorTrainer(object):
             with open(os.path.join(resume_model, 'model.state'), 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
                 last_epoch = json_data['last_epoch'] - 1
-                best_eer = json_data['eer']
+                if 'eer' in json_data.keys():
+                    best_eer = json_data['eer']
             logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
         return last_epoch, best_eer
 
@@ -304,7 +303,7 @@ class MVectorTrainer(object):
             if batch_id % self.configs.train_conf.log_interval == 0 and local_rank == 0:
                 # 计算每秒训练数据量
                 train_speed = self.configs.dataset_conf.dataLoader.batch_size / (
-                            sum(train_times) / len(train_times) / 1000)
+                        sum(train_times) / len(train_times) / 1000)
                 # 计算剩余时间
                 eta_sec = (sum(train_times) / len(train_times)) * (
                         sum_batch - (epoch_id - 1) * len(self.train_loader) - batch_id)
@@ -313,33 +312,32 @@ class MVectorTrainer(object):
                             f'batch: [{batch_id}/{len(self.train_loader)}], '
                             f'loss: {sum(loss_sum) / len(loss_sum):.5f}, '
                             f'accuracy: {sum(accuracies) / len(accuracies):.5f}, '
-                            f'learning rate: {self.scheduler.get_last_lr()[0]:>.8f}, '
+                            f'learning rate: {self.scheduler.get_last_lr():>.8f}, '
                             f'speed: {train_speed:.2f} data/sec, eta: {eta_str}')
                 writer.add_scalar('Train/Loss', sum(loss_sum) / len(loss_sum), self.train_step)
                 writer.add_scalar('Train/Accuracy', (sum(accuracies) / len(accuracies)), self.train_step)
                 # 记录学习率
-                writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], self.train_step)
+                writer.add_scalar('Train/lr', self.scheduler.get_last_lr(), self.train_step)
                 self.train_step += 1
                 train_times = []
             # 固定步数也要保存一次模型
             if batch_id % 10000 == 0 and batch_id != 0 and local_rank == 0:
                 self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id)
             start = time.time()
-        self.scheduler.step()
+            self.scheduler.step()
+            self.margin_scheduler.step()
 
     def train(self,
               save_model_path='models/',
               resume_model=None,
               pretrained_model=None,
-              do_eval=True,
-              augment_conf_path='configs/augmentation.json'):
+              do_eval=True):
         """
         训练模型
         :param save_model_path: 模型保存的路径
         :param resume_model: 恢复训练，当为None则不使用预训练模型
         :param pretrained_model: 预训练模型的路径，当为None则不使用预训练模型
         :param do_eval: 训练时是否评估模型
-        :param augment_conf_path: 数据增强的配置文件，为json格式
         """
         # 获取有多少张显卡训练
         nranks = torch.cuda.device_count()
@@ -354,7 +352,7 @@ class MVectorTrainer(object):
             dist.init_process_group(backend='nccl')
             local_rank = int(os.environ["LOCAL_RANK"])
         # 获取数据
-        self.__setup_dataloader(augment_conf_path=augment_conf_path, is_train=True)
+        self.__setup_dataloader(is_train=True)
         # 获取模型
         self.__setup_model(input_size=self.audio_featurizer.feature_dim, is_train=True)
 
@@ -376,7 +374,7 @@ class MVectorTrainer(object):
         test_step, self.train_step = 0, 0
         last_epoch += 1
         if local_rank == 0:
-            writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], last_epoch)
+            writer.add_scalar('Train/lr', self.scheduler.get_last_lr(), last_epoch)
         # 开始训练
         for epoch_id in range(last_epoch, self.configs.train_conf.max_epoch):
             epoch_id += 1
@@ -466,7 +464,8 @@ class MVectorTrainer(object):
         for i in tqdm(range(len(trials_features))):
             trials_feature = np.expand_dims(trials_features[i], 0).repeat(len(enroll_features), axis=0)
             trials_feature = torch.tensor(trials_feature, dtype=torch.float32)
-            score = torch.nn.functional.cosine_similarity(trials_feature, enroll_features, dim=-1).data.cpu().numpy().tolist()
+            score = torch.nn.functional.cosine_similarity(trials_feature, enroll_features,
+                                                          dim=-1).data.cpu().numpy().tolist()
             trials_label = np.expand_dims(trials_labels[i], 0).repeat(len(enroll_features), axis=0)
             y_true = np.array(enroll_labels == trials_label).astype(np.int32).tolist()
             metric.add(y_true, score)
