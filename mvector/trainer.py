@@ -78,6 +78,9 @@ class MVectorTrainer(object):
                                                max_duration=self.configs.dataset_conf.max_duration,
                                                min_duration=self.configs.dataset_conf.min_duration,
                                                sample_rate=self.configs.dataset_conf.sample_rate,
+                                               speed_perturb=self.configs.dataset_conf.speed_perturb,
+                                               noise_dir=self.configs.dataset_conf.noise_dir,
+                                               num_speakers=self.configs.dataset_conf.num_speakers,
                                                use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
                                                target_dB=self.configs.dataset_conf.target_dB,
                                                mode='train')
@@ -137,9 +140,12 @@ class MVectorTrainer(object):
         if is_train:
             use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
             # 获取分类器
+            num_class = self.configs.dataset_conf.num_speakers
+            # 语速扰动要增加分类数量
+            num_class = num_class * 3 if self.configs.dataset_conf.speed_perturb else num_class
             classifier = SpeakerIdentification(input_dim=self.backbone.emb_size,
                                                loss_type=use_loss,
-                                               num_class=self.configs.dataset_conf.num_speakers,
+                                               num_class=num_class,
                                                **self.configs.model_conf.classifier)
             # 合并模型
             self.model = nn.Sequential(self.backbone, classifier)

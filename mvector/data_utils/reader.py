@@ -18,8 +18,9 @@ class CustomDataset(Dataset):
                  min_duration=0.5,
                  mode='train',
                  sample_rate=16000,
-                 speed_perturb=True,
+                 speed_perturb=False,
                  noise_dir=None,
+                 num_speakers=1000,
                  use_dB_normalization=True,
                  target_dB=-20):
         """音频数据加载器
@@ -31,6 +32,9 @@ class CustomDataset(Dataset):
             min_duration: 过滤最短的音频长度
             mode: 数据集模式。在训练模式下，数据集可能会进行一些数据增强的预处理
             sample_rate: 采样率
+            speed_perturb: 是否使用语速扰动增强
+            noise_dir: 噪声增强的噪声文件夹
+            num_speakers: 总说话人数量
             use_dB_normalization: 是否对音频进行音量归一化
             target_dB: 音量归一化的大小
         """
@@ -43,6 +47,7 @@ class CustomDataset(Dataset):
         self._use_dB_normalization = use_dB_normalization
         self._target_dB = target_dB
         self.speed_perturb = speed_perturb
+        self.num_speakers = num_speakers
         # 获取数据列表
         with open(data_list_path, 'r') as f:
             self.lines = f.readlines()
@@ -54,7 +59,7 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         # 分割音频路径和标签
-        audio_path, label = self.lines[idx].replace('\n', '').split('\t')
+        audio_path, spk_id = self.lines[idx].replace('\n', '').split('\t')
         # 读取音频
         audio_segment = AudioSegment.from_file(audio_path)
         # 裁剪静音
@@ -71,10 +76,11 @@ class CustomDataset(Dataset):
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
         # 音频增强
-        # audio_segment, speed_idx = self.augment_audio(audio_segment)
+        audio_segment, speed_idx = self.augment_audio(audio_segment)
+        spk_id = int(spk_id) + self.num_speakers * speed_idx
         # 裁剪需要的数据
         audio_segment.crop(duration=self.max_duration, mode=self.mode)
-        return np.array(audio_segment.samples, dtype=np.float32), np.array(int(label), dtype=np.int64)
+        return np.array(audio_segment.samples, dtype=np.float32), np.array(spk_id, dtype=np.int64)
 
     def __len__(self):
         return len(self.lines)
