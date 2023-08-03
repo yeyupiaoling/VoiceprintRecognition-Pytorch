@@ -60,14 +60,15 @@ class MVectorTrainer(object):
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
         self.backbone = None
-        self.test_loader = None
+        self.enroll_loader = None
+        self.trials_loader = None
         # 获取特征器
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
         self.audio_featurizer.to(self.device)
 
         if platform.system().lower() == 'windows':
-            self.configs.dataset_conf.num_workers = 0
+            self.configs.dataset_conf.dataLoader.num_workers = 0
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
 
     def __setup_dataloader(self, augment_conf_path=None, is_train=False):
@@ -100,18 +101,31 @@ class MVectorTrainer(object):
                                            shuffle=(train_sampler is None),
                                            sampler=train_sampler,
                                            **self.configs.dataset_conf.dataLoader)
-        # 获取测试数据
-        self.test_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.test_list,
-                                          do_vad=self.configs.dataset_conf.do_vad,
-                                          max_duration=self.configs.dataset_conf.max_duration,
-                                          min_duration=self.configs.dataset_conf.min_duration,
-                                          sample_rate=self.configs.dataset_conf.sample_rate,
-                                          use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                          target_dB=self.configs.dataset_conf.target_dB,
-                                          mode='eval')
-        self.test_loader = DataLoader(dataset=self.test_dataset,
-                                      collate_fn=collate_fn,
-                                      **self.configs.dataset_conf.dataLoader)
+        # 获取评估的注册数据和检验数据
+        self.enroll_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.enroll_list,
+                                            do_vad=self.configs.dataset_conf.do_vad,
+                                            max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                            min_duration=self.configs.dataset_conf.min_duration,
+                                            sample_rate=self.configs.dataset_conf.sample_rate,
+                                            use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                            target_dB=self.configs.dataset_conf.target_dB,
+                                            mode='eval')
+        self.enroll_loader = DataLoader(dataset=self.enroll_dataset,
+                                        collate_fn=collate_fn,
+                                        batch_size=self.configs.dataset_conf.eval_conf.batch_size,
+                                        num_workers=self.configs.dataset_conf.dataLoader.num_workers)
+        self.trials_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.trials_list,
+                                            do_vad=self.configs.dataset_conf.do_vad,
+                                            max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                            min_duration=self.configs.dataset_conf.min_duration,
+                                            sample_rate=self.configs.dataset_conf.sample_rate,
+                                            use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                            target_dB=self.configs.dataset_conf.target_dB,
+                                            mode='eval')
+        self.trials_loader = DataLoader(dataset=self.trials_dataset,
+                                        collate_fn=collate_fn,
+                                        batch_size=self.configs.dataset_conf.eval_conf.batch_size,
+                                        num_workers=self.configs.dataset_conf.dataLoader.num_workers)
 
     def __setup_model(self, input_size, is_train=False):
         # 获取模型
@@ -317,14 +331,14 @@ class MVectorTrainer(object):
               save_model_path='models/',
               resume_model=None,
               pretrained_model=None,
-              is_eval=True,
+              do_eval=True,
               augment_conf_path='configs/augmentation.json'):
         """
         训练模型
         :param save_model_path: 模型保存的路径
         :param resume_model: 恢复训练，当为None则不使用预训练模型
         :param pretrained_model: 预训练模型的路径，当为None则不使用预训练模型
-        :param is_eval: 训练时是否评估模型
+        :param do_eval: 训练时是否评估模型
         :param augment_conf_path: 数据增强的配置文件，为json格式
         """
         # 获取有多少张显卡训练
@@ -371,7 +385,7 @@ class MVectorTrainer(object):
             self.__train_epoch(epoch_id=epoch_id, save_model_path=save_model_path, local_rank=local_rank,
                                writer=writer, nranks=nranks)
             # 多卡训练只使用一个进程执行评估和保存模型
-            if local_rank == 0 and is_eval:
+            if local_rank == 0 and do_eval:
                 logger.info('=' * 70)
                 tpr, fpr, eer, threshold = self.evaluate(resume_model=None)
                 logger.info('Test epoch: {}, time/epoch: {}, threshold: {:.2f}, tpr: {:.5f}, fpr: {:.5f}, '
@@ -400,7 +414,7 @@ class MVectorTrainer(object):
         :param save_image_path: 保存混合矩阵的路径
         :return: 评估结果
         """
-        if self.test_loader is None:
+        if self.enroll_loader is None or self.trials_loader is None:
             self.__setup_dataloader()
         if self.model is None:
             self.__setup_model(input_size=self.audio_featurizer.feature_dim)
@@ -417,9 +431,10 @@ class MVectorTrainer(object):
         else:
             eval_model = self.model if len(self.model) == 1 else self.model[0]
 
-        features, labels = None, None
+        # 获取注册的声纹特征和标签
+        enroll_features, enroll_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.test_loader)):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.enroll_loader)):
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
@@ -427,20 +442,33 @@ class MVectorTrainer(object):
                 feature = eval_model(audio_features).data.cpu().numpy()
                 label = label.data.cpu().numpy()
                 # 存放特征
-                features = np.concatenate((features, feature)) if features is not None else feature
-                labels = np.concatenate((labels, label)) if labels is not None else label
+                enroll_features = np.concatenate((enroll_features, feature)) if enroll_features is not None else feature
+                enroll_labels = np.concatenate((enroll_labels, label)) if enroll_labels is not None else label
+        # 获取检验的声纹特征和标签
+        trials_features, trials_labels = None, None
+        with torch.no_grad():
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.trials_loader)):
+                audio = audio.to(self.device)
+                input_lens_ratio = input_lens_ratio.to(self.device)
+                label = label.to(self.device).long()
+                audio_features, _ = self.audio_featurizer(audio, input_lens_ratio)
+                feature = eval_model(audio_features).data.cpu().numpy()
+                label = label.data.cpu().numpy()
+                # 存放特征
+                trials_features = np.concatenate((trials_features, feature)) if trials_features is not None else feature
+                trials_labels = np.concatenate((trials_labels, label)) if trials_labels is not None else label
         self.model.train()
         metric = TprAtFpr()
-        labels = labels.astype(np.int32)
+        enroll_features = torch.tensor(enroll_features, dtype=torch.float32)
+        enroll_labels = enroll_labels.astype(np.int32)
+        trials_labels = trials_labels.astype(np.int32)
         print('开始两两对比音频特征...')
-        for i in tqdm(range(len(features))):
-            feature_1 = features[i]
-            feature_1 = np.expand_dims(feature_1, 0).repeat(len(features) - i, axis=0)
-            feature_2 = features[i:]
-            feature_1 = torch.tensor(feature_1, dtype=torch.float32)
-            feature_2 = torch.tensor(feature_2, dtype=torch.float32)
-            score = torch.nn.functional.cosine_similarity(feature_1, feature_2, dim=-1).data.cpu().numpy().tolist()
-            y_true = np.array(labels[i] == labels[i:]).astype(np.int32).tolist()
+        for i in tqdm(range(len(trials_features))):
+            trials_feature = np.expand_dims(trials_features[i], 0).repeat(len(enroll_features), axis=0)
+            trials_feature = torch.tensor(trials_feature, dtype=torch.float32)
+            score = torch.nn.functional.cosine_similarity(trials_feature, enroll_features, dim=-1).data.cpu().numpy().tolist()
+            trials_label = np.expand_dims(trials_labels[i], 0).repeat(len(enroll_features), axis=0)
+            y_true = np.array(enroll_labels == trials_label).astype(np.int32).tolist()
             metric.add(y_true, score)
         tprs, fprs, thresholds, eer, index = metric.calculate()
         tpr, fpr, threshold = tprs[index], fprs[index], thresholds[index]

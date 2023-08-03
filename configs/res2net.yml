@@ -16,8 +16,16 @@ dataset_conf:
   target_dB: -20
   # 训练数据的数据列表路径
   train_list: 'dataset/train_list.txt'
-  # 测试数据的数据列表路径
-  test_list: 'dataset/test_list.txt'
+  # 评估注册的数据列表路径
+  enroll_list: 'dataset/enroll_list.txt'
+  # 评估检验的数据列表路径
+  trials_list: 'dataset/trials_list.txt'
+  # 评估的数据要特殊处理
+  eval_conf:
+    # 评估的批量大小
+    batch_size: 1
+    # 最长的音频长度
+    max_duration: 20
   # 数据加载器参数
   dataLoader:
     # 训练的批量大小

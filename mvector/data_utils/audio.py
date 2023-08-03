@@ -445,6 +445,7 @@ class AudioSegment(object):
     def vad(self, top_db=20, overlap=200):
         self._samples = vad(wav=self._samples, top_db=top_db, overlap=overlap)
 
+    # 裁剪音频
     def crop(self, duration, mode='eval'):
         if self.duration > duration:
             if mode == 'train':
