@@ -78,7 +78,7 @@ class MVectorPredictor:
         model.to(self.device)
         # 加载模型
         if os.path.isdir(model_path):
-            model_path = os.path.join(model_path, 'model.pt')
+            model_path = os.path.join(model_path, 'model.pth')
         assert os.path.exists(model_path), f"{model_path} 模型不存在！"
         if torch.cuda.is_available() and use_gpu:
             model_state_dict = torch.load(model_path)

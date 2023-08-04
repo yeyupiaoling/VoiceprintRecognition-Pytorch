@@ -214,7 +214,7 @@ class MVectorTrainer(object):
         # 加载预训练模型
         if pretrained_model is not None:
             if os.path.isdir(pretrained_model):
-                pretrained_model = os.path.join(pretrained_model, 'model.pt')
+                pretrained_model = os.path.join(pretrained_model, 'model.pth')
             assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
             model_state_dict = torch.load(pretrained_model)
             if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
@@ -229,18 +229,18 @@ class MVectorTrainer(object):
         last_model_dir = os.path.join(save_model_path,
                                       f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                       'last_model')
-        if resume_model is not None or (os.path.exists(os.path.join(last_model_dir, 'model.pt'))
-                                        and os.path.exists(os.path.join(last_model_dir, 'optimizer.pt'))):
+        if resume_model is not None or (os.path.exists(os.path.join(last_model_dir, 'model.pth'))
+                                        and os.path.exists(os.path.join(last_model_dir, 'optimizer.pth'))):
             # 自动获取最新保存的模型
             if resume_model is None: resume_model = last_model_dir
-            assert os.path.exists(os.path.join(resume_model, 'model.pt')), "模型参数文件不存在！"
-            assert os.path.exists(os.path.join(resume_model, 'optimizer.pt')), "优化方法参数文件不存在！"
-            state_dict = torch.load(os.path.join(resume_model, 'model.pt'))
+            assert os.path.exists(os.path.join(resume_model, 'model.pth')), "模型参数文件不存在！"
+            assert os.path.exists(os.path.join(resume_model, 'optimizer.pth')), "优化方法参数文件不存在！"
+            state_dict = torch.load(os.path.join(resume_model, 'model.pth'))
             if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
                 self.model.module.load_state_dict(state_dict)
             else:
                 self.model.load_state_dict(state_dict)
-            self.optimizer.load_state_dict(torch.load(os.path.join(resume_model, 'optimizer.pt')))
+            self.optimizer.load_state_dict(torch.load(os.path.join(resume_model, 'optimizer.pth')))
             with open(os.path.join(resume_model, 'model.state'), 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
                 last_epoch = json_data['last_epoch'] - 1
@@ -264,8 +264,8 @@ class MVectorTrainer(object):
                                       f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
                                       'epoch_{}'.format(epoch_id))
         os.makedirs(model_path, exist_ok=True)
-        torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pt'))
-        torch.save(state_dict, os.path.join(model_path, 'model.pt'))
+        torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pth'))
+        torch.save(state_dict, os.path.join(model_path, 'model.pth'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
             data = {"last_epoch": epoch_id, "version": __version__}
             if best_eer is not None:
@@ -435,7 +435,7 @@ class MVectorTrainer(object):
             self.__setup_model(input_size=self.audio_featurizer.feature_dim)
         if resume_model is not None:
             if os.path.isdir(resume_model):
-                resume_model = os.path.join(resume_model, 'model.pt')
+                resume_model = os.path.join(resume_model, 'model.pth')
             assert os.path.exists(resume_model), f"{resume_model} 模型不存在！"
             if torch.cuda.is_available() and self.use_gpu:
                 model_state_dict = torch.load(resume_model)
@@ -521,7 +521,7 @@ class MVectorTrainer(object):
         self.__setup_model(input_size=self.audio_featurizer.feature_dim)
         # 加载预训练模型
         if os.path.isdir(resume_model):
-            resume_model = os.path.join(resume_model, 'model.pt')
+            resume_model = os.path.join(resume_model, 'model.pth')
         assert os.path.exists(resume_model), f"{resume_model} 模型不存在！"
         model_state_dict = torch.load(resume_model)
         self.model.load_state_dict(model_state_dict)
