@@ -192,8 +192,9 @@ class MVectorTrainer(object):
                 raise Exception(f'不支持优化方法：{optimizer}')
             # 学习率衰减函数
             if self.configs.optimizer_conf.scheduler == 'CosineAnnealingLR':
+                max_step = int(self.configs.train_conf.max_epoch * 1.2) * len(self.train_loader)
                 self.scheduler = CosineAnnealingLR(optimizer=self.optimizer,
-                                                   T_max=int(self.configs.train_conf.max_epoch * 1.2),
+                                                   T_max=max_step,
                                                    **self.configs.optimizer_conf.get('scheduler_conf', {}))
             elif self.configs.optimizer_conf.scheduler == 'WarmupCosineSchedulerLR':
                 self.scheduler = WarmupCosineSchedulerLR(optimizer=self.optimizer,
