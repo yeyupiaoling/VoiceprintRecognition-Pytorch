@@ -55,8 +55,8 @@ class MarginScheduler:
             increase_start_epoch,
             fix_epoch,
             step_per_epoch,
-            initial_margin,
-            final_margin,
+            initial_margin=0.0,
+            final_margin=0.3,
             increase_type='exp',
     ):
         assert hasattr(criterion, 'update'), "Loss function not has 'update()' attributes."

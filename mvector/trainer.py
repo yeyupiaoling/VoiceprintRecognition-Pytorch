@@ -167,12 +167,16 @@ class MVectorTrainer(object):
                 raise Exception(f'没有{use_loss}损失函数！')
             # 损失函数margin调度器
             if self.configs.loss_conf.get('use_margin_scheduler', False):
+                margin_scheduler_args = dict(increase_start_epoch=int(self.configs.train_conf.max_epoch * 0.3),
+                                             fix_epoch=int(self.configs.train_conf.max_epoch * 0.7),
+                                             initial_margin=0.0,
+                                             final_margin=0.3)
+                if self.configs.loss_conf.margin_scheduler_args:
+                    for k, v in self.configs.loss_conf.margin_scheduler_args.items():
+                        margin_scheduler_args[k] = v
                 self.margin_scheduler = MarginScheduler(criterion=self.loss,
-                                                        increase_start_epoch=int(self.configs.train_conf.max_epoch * 0.3),
-                                                        fix_epoch=int(self.configs.train_conf.max_epoch * 0.7),
                                                         step_per_epoch=len(self.train_loader),
-                                                        initial_margin=0.0,
-                                                        final_margin=0.3)
+                                                        **margin_scheduler_args)
             # 获取优化方法
             optimizer = self.configs.optimizer_conf.optimizer
             if optimizer == 'Adam':
@@ -191,16 +195,18 @@ class MVectorTrainer(object):
             else:
                 raise Exception(f'不支持优化方法：{optimizer}')
             # 学习率衰减函数
+            scheduler_args = self.configs.optimizer_conf.get('scheduler_args', {}) \
+                if self.configs.optimizer_conf.get('scheduler_args', {}) is not None else {}
             if self.configs.optimizer_conf.scheduler == 'CosineAnnealingLR':
                 max_step = int(self.configs.train_conf.max_epoch * 1.2) * len(self.train_loader)
                 self.scheduler = CosineAnnealingLR(optimizer=self.optimizer,
                                                    T_max=max_step,
-                                                   **self.configs.optimizer_conf.get('scheduler_args', {}))
+                                                   **scheduler_args)
             elif self.configs.optimizer_conf.scheduler == 'WarmupCosineSchedulerLR':
                 self.scheduler = WarmupCosineSchedulerLR(optimizer=self.optimizer,
                                                          fix_epoch=self.configs.train_conf.max_epoch,
                                                          step_per_epoch=len(self.train_loader),
-                                                         **self.configs.optimizer_conf.get('scheduler_args', {}))
+                                                         **scheduler_args)
             else:
                 raise Exception(f'不支持学习率衰减函数：{optimizer}')
         else:
