@@ -76,8 +76,9 @@ class CustomDataset(Dataset):
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
         # 音频增强
-        audio_segment, speed_idx = self.augment_audio(audio_segment)
-        spk_id = int(spk_id) + self.num_speakers * speed_idx
+        if self.mode == 'train':
+            audio_segment, speed_idx = self.augment_audio(audio_segment)
+            spk_id = int(spk_id) + self.num_speakers * speed_idx
         # 裁剪需要的数据
         audio_segment.crop(duration=self.max_duration, mode=self.mode)
         return np.array(audio_segment.samples, dtype=np.float32), np.array(spk_id, dtype=np.int64)

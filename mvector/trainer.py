@@ -1,4 +1,4 @@
-import io
+import json
 import json
 import os
 import platform
@@ -22,7 +22,7 @@ from mvector import SUPPORT_MODEL, __version__
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
-from mvector.metric.metrics import TprAtFpr
+from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
 from mvector.models.eres2net import ERes2Net
@@ -403,14 +403,13 @@ class MVectorTrainer(object):
             # 多卡训练只使用一个进程执行评估和保存模型
             if local_rank == 0 and do_eval:
                 logger.info('=' * 70)
-                tpr, fpr, eer, threshold = self.evaluate(resume_model=None)
-                logger.info('Test epoch: {}, time/epoch: {}, threshold: {:.2f}, tpr: {:.5f}, fpr: {:.5f}, '
-                            'eer: {:.5f}'.format(epoch_id, str(timedelta(
-                    seconds=(time.time() - start_epoch))), threshold, tpr, fpr, eer))
+                eer, min_dcf, threshold = self.evaluate()
+                logger.info('Test epoch: {}, time/epoch: {}, threshold: {:.2f}, EER: {:.5f}, '
+                            'MinDCF: {:.5f}'.format(epoch_id, str(timedelta(
+                    seconds=(time.time() - start_epoch))), threshold, eer, min_dcf))
                 logger.info('=' * 70)
                 writer.add_scalar('Test/threshold', threshold, test_step)
-                writer.add_scalar('Test/tpr', tpr, test_step)
-                writer.add_scalar('Test/fpr', fpr, test_step)
+                writer.add_scalar('Test/min_dcf', min_dcf, test_step)
                 writer.add_scalar('Test/eer', eer, test_step)
                 test_step += 1
                 self.model.train()
@@ -423,7 +422,7 @@ class MVectorTrainer(object):
                 # 保存模型
                 self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer)
 
-    def evaluate(self, resume_model='models/EcapaTdnn_MelSpectrogram/best_model/', save_image_path=None):
+    def evaluate(self, resume_model=None, save_image_path=None):
         """
         评估模型
         :param resume_model: 所使用的模型
@@ -450,7 +449,7 @@ class MVectorTrainer(object):
         # 获取注册的声纹特征和标签
         enroll_features, enroll_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.enroll_loader)):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.enroll_loader, desc="注册音频声纹特征")):
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
@@ -463,7 +462,7 @@ class MVectorTrainer(object):
         # 获取检验的声纹特征和标签
         trials_features, trials_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.trials_loader)):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.trials_loader, desc="验证音频声纹特征")):
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
@@ -474,37 +473,42 @@ class MVectorTrainer(object):
                 trials_features = np.concatenate((trials_features, feature)) if trials_features is not None else feature
                 trials_labels = np.concatenate((trials_labels, label)) if trials_labels is not None else label
         self.model.train()
-        metric = TprAtFpr()
         enroll_features = torch.tensor(enroll_features, dtype=torch.float32)
         enroll_labels = enroll_labels.astype(np.int32)
         trials_labels = trials_labels.astype(np.int32)
-        print('开始两两对比音频特征...')
-        for i in tqdm(range(len(trials_features))):
+        print('开始对比音频特征...')
+        all_score, all_labels = [], []
+        for i in tqdm(range(len(trials_features)), desc='特征对比'):
             trials_feature = np.expand_dims(trials_features[i], 0).repeat(len(enroll_features), axis=0)
             trials_feature = torch.tensor(trials_feature, dtype=torch.float32)
             score = torch.nn.functional.cosine_similarity(trials_feature, enroll_features,
                                                           dim=-1).data.cpu().numpy().tolist()
             trials_label = np.expand_dims(trials_labels[i], 0).repeat(len(enroll_features), axis=0)
             y_true = np.array(enroll_labels == trials_label).astype(np.int32).tolist()
-            metric.add(y_true, score)
-        tprs, fprs, thresholds, eer, index = metric.calculate()
-        tpr, fpr, threshold = tprs[index], fprs[index], thresholds[index]
+            all_score.extend(score)
+            all_labels.extend(y_true)
+        # 计算EER
+        all_score = np.array(all_score)
+        all_labels = np.array(all_labels)
+        fnr, fpr, thresholds = compute_fnr_fpr(all_score, all_labels)
+        eer, threshold = compute_eer(fnr, fpr, all_score)
+        min_dcf = compute_dcf(fnr, fpr)
+
         if save_image_path:
             import matplotlib.pyplot as plt
-            plt.plot(thresholds, tprs, color='blue', linestyle='-', label='tpr')
-            plt.plot(thresholds, fprs, color='red', linestyle='-', label='fpr')
-            plt.plot(threshold, tpr, 'bo-')
-            plt.text(threshold, tpr, (threshold, round(tpr, 5)), color='blue')
-            plt.plot(threshold, fpr, 'ro-')
-            plt.text(threshold, fpr, (threshold, round(fpr, 5)), color='red')
+            index = np.where(np.array(thresholds) == threshold)[0][0]
+            plt.plot(thresholds, fnr, color='blue', linestyle='-', label='fnr')
+            plt.plot(thresholds, fpr, color='red', linestyle='-', label='fpr')
+            plt.plot(threshold, fpr[index], 'ro-')
+            plt.text(threshold, fpr[index], (round(threshold, 3), round(fpr[index], 5)), color='red')
             plt.xlabel('threshold')
-            plt.title('tpr and fpr')
+            plt.title('fnr and fpr')
             plt.grid(True)  # 显示网格线
             # 保存图像
             os.makedirs(save_image_path, exist_ok=True)
             plt.savefig(os.path.join(save_image_path, 'result.png'))
             logger.info(f"结果图以保存在：{os.path.join(save_image_path, 'result.png')}")
-        return tpr, fpr, eer, threshold
+        return eer, min_dcf, threshold
 
     def export(self, save_model_path='models/', resume_model='models/EcapaTdnn_MelSpectrogram/best_model/'):
         """

@@ -5,51 +5,37 @@ from mvector.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-class TprAtFpr(object):
-    def __init__(self, max_fpr=0.01):
-        self.pos_score_list = []
-        self.neg_score_list = []
-        self.max_fpr = max_fpr
+def compute_fnr_fpr(scores, labels, weights=None):
+    sorted_ndx = np.argsort(scores)
+    thresholds = scores[sorted_ndx]
+    labels = labels[sorted_ndx]
+    if weights is not None:
+        weights = weights[sorted_ndx]
+    else:
+        weights = np.ones(labels.shape, dtype='f8')
 
-    def add(self, y_labels, y_scores):
-        for y_label, y_score in zip(y_labels, y_scores):
-            if y_label == 0:
-                self.neg_score_list.append(y_score)
-            else:
-                self.pos_score_list.append(y_score)
+    tgt_wghts = weights * (labels == 1).astype('f8')
+    imp_wghts = weights * (labels == 0).astype('f8')
 
-    def reset(self):
-        self.pos_score_list = []
-        self.neg_score_list = []
+    fnr = np.cumsum(tgt_wghts) / np.sum(tgt_wghts)
+    fpr = 1 - np.cumsum(imp_wghts) / np.sum(imp_wghts)
+    return fnr, fpr, thresholds
 
-    def calculate_eer(self, tprs, fprs):
-        n = len(tprs)
-        eer = 1.0
-        index = 0
-        for i in range(n):
-            if fprs[i] + (1 - tprs[i]) < eer:
-                eer = fprs[i] + (1 - tprs[i])
-                index = i
-        return eer, index
 
-    def calculate(self):
-        tprs, fprs, thresholds = [], [], []
-        pos_score_list = np.array(self.pos_score_list)
-        neg_score_list = np.array(self.neg_score_list)
-        if len(pos_score_list) == 0:
-            msg = f"The number of positive samples is 0, please add positive samples."
-            logger.warning(msg)
-            return tprs, fprs, thresholds, None, None
-        if len(neg_score_list) == 0:
-            msg = f"The number of negative samples is 0, please add negative samples."
-            logger.warning(msg)
-            return tprs, fprs, thresholds, None, None
-        for i in range(0, 100):
-            threshold = i / 100.
-            tpr = np.sum(pos_score_list > threshold) / len(pos_score_list)
-            fpr = np.sum(neg_score_list > threshold) / len(neg_score_list)
-            tprs.append(tpr)
-            fprs.append(fpr)
-            thresholds.append(threshold)
-        eer, index = self.calculate_eer(fprs=fprs, tprs=tprs)
-        return tprs, fprs, thresholds, eer, index
+def compute_eer(fnr, fpr, scores=None):
+    diff_pm_fa = fnr - fpr
+    x1 = np.flatnonzero(diff_pm_fa >= 0)[0]
+    x2 = np.flatnonzero(diff_pm_fa < 0)[-1]
+    a = (fnr[x1] - fpr[x1]) / (fpr[x2] - fpr[x1] - (fnr[x2] - fnr[x1]))
+
+    if scores is not None:
+        score_sort = np.sort(scores)
+        return fnr[x1] + a * (fnr[x2] - fnr[x1]), score_sort[x1]
+
+    return fnr[x1] + a * (fnr[x2] - fnr[x1])
+
+
+def compute_dcf(fnr, fpr, p_target=0.01, c_miss=1, c_fa=1):
+    c_det = min(c_miss * fnr * p_target + c_fa * fpr * (1 - p_target))
+    c_def = min(c_miss * p_target, c_fa * (1 - p_target))
+    return c_det / c_def

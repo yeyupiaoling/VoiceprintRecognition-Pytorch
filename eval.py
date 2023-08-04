@@ -19,7 +19,7 @@ trainer = MVectorTrainer(configs=args.configs, use_gpu=args.use_gpu)
 
 # 开始评估
 start = time.time()
-tpr, fpr, eer, threshold = trainer.evaluate(resume_model=args.resume_model, save_image_path=args.save_image_path)
+eer, min_dcf, threshold = trainer.evaluate(resume_model=args.resume_model, save_image_path=args.save_image_path)
 end = time.time()
-print('评估消耗时间：{}s，threshold：{:.2f}，tpr：{:.5f}, fpr: {:.5f}, eer: {:.5f}'
-      .format(int(end - start), threshold, tpr, fpr, eer))
+print('评估消耗时间：{}s，threshold：{:.2f}，EER: {:.5f}, MinDCF: {:.5f}'
+      .format(int(end - start), threshold, eer, min_dcf))

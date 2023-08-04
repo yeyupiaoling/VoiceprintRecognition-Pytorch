@@ -93,4 +93,3 @@ class KaldiFbank(nn.Module):
             log_fbanks.append(log_fbank)
         log_fbank = torch.stack(log_fbanks)
         return log_fbank
-

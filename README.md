@@ -32,14 +32,14 @@
 
 # 模型下载
 
-|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | train speakers | tpr | fpr | eer | 模型下载地址 |
-|:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------------:|:---:|:---:|:---:|:------:|
-| EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
-|   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
-|  Res2Net  |   26.9    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
-| ResNetSE  |    13     | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
-| ERes2Net  |   54.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
-|   CAM++   |    7.5    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |     |     |
+|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | train speakers | EER | MinDCF | 模型下载地址 |
+|:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------------:|:---:|:------:|:------:|
+| EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
+|   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
+|  Res2Net  |   26.9    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
+| ResNetSE  |    13     | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
+| ERes2Net  |   54.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
+|   CAM++   |    7.5    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
 
 说明：
 1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
@@ -306,3 +306,4 @@ Loaded 李达康 audio.
 1. https://github.com/PaddlePaddle/PaddleSpeech
 2. https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets
 3. https://github.com/yeyupiaoling/PPASR
+4. https://github.com/alibaba-damo-academy/3D-Speaker
