@@ -82,7 +82,7 @@ loss_conf:
   use_margin_scheduler: True
   # margin调度器参数
   margin_scheduler_args:
-    final_margin: 0.2
+    final_margin: 0.3
 
 train_conf:
   # 训练的轮数
