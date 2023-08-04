@@ -1,4 +1,5 @@
 import math
+from typing import List
 
 
 class WarmupCosineSchedulerLR:
@@ -43,8 +44,8 @@ class WarmupCosineSchedulerLR:
         else:
             return self.min_lr
 
-    def get_last_lr(self):
-        return self.clr(self.current_step)
+    def get_last_lr(self) -> List[float]:
+        return [self.clr(self.current_step)]
 
 
 class MarginScheduler:

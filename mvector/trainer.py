@@ -11,6 +11,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torchinfo import summary
@@ -62,6 +63,7 @@ class MVectorTrainer(object):
         self.backbone = None
         self.enroll_loader = None
         self.trials_loader = None
+        self.margin_scheduler = None
         # 获取特征器
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
@@ -164,12 +166,13 @@ class MVectorTrainer(object):
             else:
                 raise Exception(f'没有{use_loss}损失函数！')
             # 损失函数margin调度器
-            self.margin_scheduler = MarginScheduler(criterion=self.loss,
-                                                    increase_start_epoch=int(self.configs.train_conf.max_epoch * 0.3),
-                                                    fix_epoch=int(self.configs.train_conf.max_epoch * 0.7),
-                                                    step_per_epoch=len(self.train_loader),
-                                                    initial_margin=0.0,
-                                                    final_margin=0.3)
+            if self.configs.loss_conf.get('use_margin_scheduler', False):
+                self.margin_scheduler = MarginScheduler(criterion=self.loss,
+                                                        increase_start_epoch=int(self.configs.train_conf.max_epoch * 0.3),
+                                                        fix_epoch=int(self.configs.train_conf.max_epoch * 0.7),
+                                                        step_per_epoch=len(self.train_loader),
+                                                        initial_margin=0.0,
+                                                        final_margin=0.3)
             # 获取优化方法
             optimizer = self.configs.optimizer_conf.optimizer
             if optimizer == 'Adam':
@@ -188,10 +191,17 @@ class MVectorTrainer(object):
             else:
                 raise Exception(f'不支持优化方法：{optimizer}')
             # 学习率衰减函数
-            self.scheduler = WarmupCosineSchedulerLR(optimizer=self.optimizer,
-                                                     fix_epoch=self.configs.train_conf.max_epoch,
-                                                     step_per_epoch=len(self.train_loader),
-                                                     **self.configs.optimizer_conf.scheduler_args)
+            if self.configs.optimizer_conf.scheduler == 'CosineAnnealingLR':
+                self.scheduler = CosineAnnealingLR(optimizer=self.optimizer,
+                                                   T_max=int(self.configs.train_conf.max_epoch * 1.2),
+                                                   **self.configs.optimizer_conf.get('scheduler_conf', {}))
+            elif self.configs.optimizer_conf.scheduler == 'WarmupCosineSchedulerLR':
+                self.scheduler = WarmupCosineSchedulerLR(optimizer=self.optimizer,
+                                                         fix_epoch=self.configs.train_conf.max_epoch,
+                                                         step_per_epoch=len(self.train_loader),
+                                                         **self.configs.optimizer_conf.get('scheduler_conf', {}))
+            else:
+                raise Exception(f'不支持学习率衰减函数：{optimizer}')
         else:
             # 不训练模型不包含分类器
             self.model = nn.Sequential(self.backbone)
@@ -318,12 +328,12 @@ class MVectorTrainer(object):
                             f'batch: [{batch_id}/{len(self.train_loader)}], '
                             f'loss: {sum(loss_sum) / len(loss_sum):.5f}, '
                             f'accuracy: {sum(accuracies) / len(accuracies):.5f}, '
-                            f'learning rate: {self.scheduler.get_last_lr():>.8f}, '
+                            f'learning rate: {self.scheduler.get_last_lr()[0]:>.8f}, '
                             f'speed: {train_speed:.2f} data/sec, eta: {eta_str}')
                 writer.add_scalar('Train/Loss', sum(loss_sum) / len(loss_sum), self.train_step)
                 writer.add_scalar('Train/Accuracy', (sum(accuracies) / len(accuracies)), self.train_step)
                 # 记录学习率
-                writer.add_scalar('Train/lr', self.scheduler.get_last_lr(), self.train_step)
+                writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], self.train_step)
                 self.train_step += 1
                 train_times = []
             # 固定步数也要保存一次模型
@@ -331,7 +341,8 @@ class MVectorTrainer(object):
                 self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id)
             start = time.time()
             self.scheduler.step()
-            self.margin_scheduler.step()
+            if self.margin_scheduler:
+                self.margin_scheduler.step()
 
     def train(self,
               save_model_path='models/',
@@ -380,7 +391,7 @@ class MVectorTrainer(object):
         test_step, self.train_step = 0, 0
         last_epoch += 1
         if local_rank == 0:
-            writer.add_scalar('Train/lr', self.scheduler.get_last_lr(), last_epoch)
+            writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], last_epoch)
         # 开始训练
         for epoch_id in range(last_epoch, self.configs.train_conf.max_epoch):
             epoch_id += 1

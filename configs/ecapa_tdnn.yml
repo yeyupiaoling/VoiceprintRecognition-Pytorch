@@ -56,12 +56,11 @@ optimizer_conf:
   optimizer: 'Adam'
   # 初始学习率的大小
   learning_rate: 0.001
-  weight_decay: 0001
+  weight_decay: !!float 1e-6
+  # 学习率衰减函数，支持WarmupCosineSchedulerLR、CosineAnnealingLR
+  scheduler: 'CosineAnnealingLR'
   # 学习率衰减函数参数
   scheduler_args:
-    min_lr: !!float 5e-5
-    max_lr: 0.001
-    warmup_epoch: 5
 
 model_conf:
   backbone:
@@ -74,6 +73,8 @@ model_conf:
 loss_conf:
   # 所使用的损失函数，支持AAMLoss、AMLoss、ARMLoss、CELoss
   use_loss: 'AAMLoss'
+  # 是否使用损失函数margin调度器
+  use_margin_scheduler: True
   args:
     margin: 0.3
     scale: 32
