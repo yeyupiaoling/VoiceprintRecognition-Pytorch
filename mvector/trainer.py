@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import platform
 import shutil
@@ -11,6 +10,7 @@ import torch
 import torch.distributed as dist
 import torch.nn as nn
 import yaml
+from sklearn.metrics.pairwise import cosine_similarity
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -437,7 +437,10 @@ class MVectorTrainer(object):
             if os.path.isdir(resume_model):
                 resume_model = os.path.join(resume_model, 'model.pt')
             assert os.path.exists(resume_model), f"{resume_model} 模型不存在！"
-            model_state_dict = torch.load(resume_model)
+            if torch.cuda.is_available() and self.use_gpu:
+                model_state_dict = torch.load(resume_model)
+            else:
+                model_state_dict = torch.load(resume_model, map_location='cpu')
             self.model.load_state_dict(model_state_dict, strict=False)
             logger.info(f'成功加载模型：{resume_model}')
         self.model.eval()
@@ -473,16 +476,13 @@ class MVectorTrainer(object):
                 trials_features = np.concatenate((trials_features, feature)) if trials_features is not None else feature
                 trials_labels = np.concatenate((trials_labels, label)) if trials_labels is not None else label
         self.model.train()
-        enroll_features = torch.tensor(enroll_features, dtype=torch.float32)
         enroll_labels = enroll_labels.astype(np.int32)
         trials_labels = trials_labels.astype(np.int32)
         print('开始对比音频特征...')
         all_score, all_labels = [], []
         for i in tqdm(range(len(trials_features)), desc='特征对比'):
             trials_feature = np.expand_dims(trials_features[i], 0).repeat(len(enroll_features), axis=0)
-            trials_feature = torch.tensor(trials_feature, dtype=torch.float32)
-            score = torch.nn.functional.cosine_similarity(trials_feature, enroll_features,
-                                                          dim=-1).data.cpu().numpy().tolist()
+            score = cosine_similarity(trials_feature, enroll_features).tolist()[0]
             trials_label = np.expand_dims(trials_labels[i], 0).repeat(len(enroll_features), axis=0)
             y_true = np.array(enroll_labels == trials_label).astype(np.int32).tolist()
             all_score.extend(score)
