@@ -245,20 +245,9 @@ VisualDL页面：
 ![VisualDL页面](./docs/images/log.jpg)
 
 
-# 数据增强
-本项目提供了几种音频增强操作，分布是随机裁剪，添加背景噪声，调节语速，调节音量，和SpecAugment。其中后面4种增加的参数可以在`configs/augmentation.json`修改，参数`prob`是指定该增强操作的概率，如果不想使用该增强方式，可以设置为0。要主要的是，添加背景噪声需要把多个噪声音频文件存放在`dataset/noise`，否则会跳过噪声增强
-```yaml
-noise:
-  min_snr_dB: 10
-  max_snr_dB: 30
-  noise_path: "dataset/noise"
-  prob: 0.5
-```
-
-
 
 # 评估模型
-训练结束之后会保存预测模型，我们用预测模型来预测测试集中的音频特征，然后使用音频特征进行两两对比，计算tpr、fpr、eer。
+训练结束之后会保存预测模型，我们用预测模型来预测测试集中的音频特征，然后使用音频特征进行两两对比，计算EER和MinDCF。
 ```shell
 python eval.py
 ```

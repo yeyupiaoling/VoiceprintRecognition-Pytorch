@@ -1,9 +1,5 @@
 import numpy as np
 
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
-
 
 def compute_fnr_fpr(scores, labels, weights=None):
     sorted_ndx = np.argsort(scores)
