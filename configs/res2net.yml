@@ -78,12 +78,16 @@ model_conf:
 loss_conf:
   # 所使用的损失函数，支持AAMLoss、AMLoss、ARMLoss、CELoss
   use_loss: 'AAMLoss'
-  # 是否使用损失函数margin调度器
-  use_margin_scheduler: True
+  # 损失函数参数
   args:
     margin: 0.2
     scale: 32
     easy_margin: False
+  # 是否使用损失函数margin调度器
+  use_margin_scheduler: True
+  # margin调度器参数
+  margin_scheduler_args:
+    final_margin: 0.3
 
 train_conf:
   # 训练的轮数

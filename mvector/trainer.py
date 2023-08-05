@@ -432,7 +432,7 @@ class MVectorTrainer(object):
         """
         评估模型
         :param resume_model: 所使用的模型
-        :param save_image_path: 保存混合矩阵的路径
+        :param save_image_path: 保存图片的路径
         :return: 评估结果
         """
         if self.enroll_loader is None or self.trials_loader is None:
