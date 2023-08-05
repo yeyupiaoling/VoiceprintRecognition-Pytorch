@@ -1,5 +1,6 @@
 import os
 import random
+import time
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -20,6 +21,7 @@ class CustomDataset(Dataset):
                  sample_rate=16000,
                  speed_perturb=False,
                  noise_dir=None,
+                 noise_aug_prob=0.2,
                  num_speakers=1000,
                  use_dB_normalization=True,
                  target_dB=-20):
@@ -34,6 +36,7 @@ class CustomDataset(Dataset):
             sample_rate: 采样率
             speed_perturb: 是否使用语速扰动增强
             noise_dir: 噪声增强的噪声文件夹
+            noise_aug_prob: 噪声增强概率
             num_speakers: 总说话人数量
             use_dB_normalization: 是否对音频进行音量归一化
             target_dB: 音量归一化的大小
@@ -48,6 +51,7 @@ class CustomDataset(Dataset):
         self._target_dB = target_dB
         self.speed_perturb = speed_perturb
         self.num_speakers = num_speakers
+        self.noise_aug_prob = noise_aug_prob
         # 获取数据列表
         with open(data_list_path, 'r') as f:
             self.lines = f.readlines()
@@ -97,12 +101,12 @@ class CustomDataset(Dataset):
             if speed_rate != 1.0:
                 audio_segment.change_speed(speed_rate)
         # 噪声增强
-        if len(self.noises_path) > 0:
+        if len(self.noises_path) > 0 and random.random() < self.noise_aug_prob:
             min_snr_dB, max_snr_dB = 10, 50
             # 随机选择一个noises_path中的一个
             noise_path = random.sample(self.noises_path, 1)[0]
             # 读取噪声音频
-            noise_segment = AudioSegment.from_file(noise_path)
+            noise_segment = AudioSegment.slice_from_file(noise_path)
             # 如果噪声采样率不等于audio_segment的采样率，则重采样
             if noise_segment.sample_rate != audio_segment.sample_rate:
                 noise_segment.resample(audio_segment.sample_rate)
