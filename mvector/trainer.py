@@ -208,7 +208,7 @@ class MVectorTrainer(object):
                                                          step_per_epoch=len(self.train_loader),
                                                          **scheduler_args)
             else:
-                raise Exception(f'不支持学习率衰减函数：{optimizer}')
+                raise Exception(f'不支持学习率衰减函数：{self.configs.optimizer_conf.scheduler}')
         else:
             # 不训练模型不包含分类器
             self.model = nn.Sequential(self.backbone)

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling
+from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling, TemporalStatsPool
 from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooling
 
 
@@ -102,6 +102,11 @@ class EcapaTdnn(nn.Module):
             self.bn2 = nn.BatchNorm1d(embd_dim)
         elif pooling_type == "TSP":
             self.pooling = TemporalStatisticsPooling()
+            self.bn1 = nn.BatchNorm1d(cat_channels * 2)
+            self.linear = nn.Linear(cat_channels * 2, embd_dim)
+            self.bn2 = nn.BatchNorm1d(embd_dim)
+        elif pooling_type == "TSTP":
+            self.pooling = TemporalStatsPool()
             self.bn1 = nn.BatchNorm1d(cat_channels * 2)
             self.linear = nn.Linear(cat_channels * 2, embd_dim)
             self.bn2 = nn.BatchNorm1d(embd_dim)

@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class AAMLoss(nn.Module):
-    def __init__(self, margin=0.3, scale=33, easy_margin=False):
+    def __init__(self, margin=0.2, scale=32, easy_margin=False):
         """The Implementation of Additive Angular Margin (AAM) proposed
        in the following paper: '''Margin Matters: Towards More Discriminative Deep Neural Network Embeddings for Speaker Recognition'''
        (https://arxiv.org/abs/1906.07317)

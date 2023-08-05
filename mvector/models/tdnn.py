@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling
+from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling, TemporalStatsPool
 from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooling
 
 
@@ -37,6 +37,11 @@ class TDNN(nn.Module):
             self.bn6 = nn.BatchNorm1d(embd_dim)
         elif pooling_type == "TSP":
             self.pooling = TemporalStatisticsPooling()
+            self.bn5 = nn.BatchNorm1d(channels * 2)
+            self.linear = nn.Linear(channels * 2, embd_dim)
+            self.bn6 = nn.BatchNorm1d(embd_dim)
+        elif pooling_type == "TSTP":
+            self.pooling = TemporalStatsPool()
             self.bn5 = nn.BatchNorm1d(channels * 2)
             self.linear = nn.Linear(channels * 2, embd_dim)
             self.bn6 = nn.BatchNorm1d(embd_dim)
