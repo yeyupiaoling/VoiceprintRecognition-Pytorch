@@ -32,14 +32,14 @@
 
 # 模型下载
 
-|    模型     | Params(M) |     预处理方法      |                                 数据集                                 | train speakers | EER | MinDCF | 模型下载地址 |
-|:---------:|:---------:|:--------------:|:-------------------------------------------------------------------:|:--------------:|:---:|:------:|:------:|
-| EcapaTdnn |    6.7    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
-|   TDNN    |    3.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
-|  Res2Net  |   26.9    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
-| ResNetSE  |    13     | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
-| ERes2Net  |   54.2    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
-|   CAM++   |    7.5    | MelSpectrogram | [zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) |      3242      |     |        |        |
+|    模型     | Params(M) |     预处理方法      |                数据集                 | train speakers | EER | MinDCF | 模型下载地址 |
+|:---------:|:---------:|:--------------:|:----------------------------------:|:--------------:|:---:|:------:|:------:|
+| EcapaTdnn |    6.7    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+|   TDNN    |    3.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+|  Res2Net  |   26.9    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+| ResNetSE  |    13     | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+| ERes2Net  |   54.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+|   CAM++   |    7.5    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
 
 说明：
 1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
@@ -66,26 +66,30 @@ python setup.py install
 ```
 
 # 创建数据
-本教程笔者使用的是[zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) ，这个数据集一共有3242个人的语音数据，有1130000+条语音数据，下载之前要**全部解压**数据集，另外如果要评估，还需要下载[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
+本教程笔者使用的是[CN-Celeb](http://openslr.org/82/)，这个数据集一共有约3000个人的语音数据，有65W+条语音数据，下载之后要解压数据集到`dataset`目录，另外如果要评估，还需要下载[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
 
 首先是创建一个数据列表，数据列表的格式为`<语音文件路径\t语音分类标签>`，创建这个列表主要是方便之后的读取，也是方便读取使用其他的语音数据集，语音分类标签是指说话人的唯一ID，不同的语音数据集，可以通过编写对应的生成数据列表的函数，把这些数据集都写在同一个数据列表中。
 
-在`create_data.py`写下以下代码，因为[zhvoice](https://aistudio.baidu.com/aistudio/datasetdetail/133922) 这个数据集是mp3格式的，作者发现这种格式读取速度很慢，所以笔者把全部的mp3格式的音频转换为wav格式，这个过程可能很久。当然也可以不转换，项目也是支持的MP3格式的，只要设置参数`to_wav=False`。执行下面程序完成数据准备。
+执行`create_data.py`程序完成数据准备。
 ```shell
 python create_data.py
 ```
 
 执行上面的程序之后，会生成以下的数据格式，如果要自定义数据，参考如下数据列表，前面是音频的相对路径，后面的是该音频对应的说话人的标签，就跟分类一样。**自定义数据集的注意**，测试数据列表的ID可以不用跟训练的ID一样，也就是说测试的数据的说话人可以不用出现在训练集，只要保证测试数据列表中同一个人相同的ID即可。
 ```
-dataset/zhvoice/zhmagicdata/5_895/5_895_20170614203758.wav	3238
-dataset/zhvoice/zhmagicdata/5_895/5_895_20170614214007.wav	3238
-dataset/zhvoice/zhmagicdata/5_941/5_941_20170613151344.wav	3239
-dataset/zhvoice/zhmagicdata/5_941/5_941_20170614221329.wav	3239
-dataset/zhvoice/zhmagicdata/5_941/5_941_20170616153308.wav	3239
-dataset/zhvoice/zhmagicdata/5_968/5_968_20170614162657.wav	3240
-dataset/zhvoice/zhmagicdata/5_968/5_968_20170622194003.wav	3240
-dataset/zhvoice/zhmagicdata/5_968/5_968_20170707200554.wav	3240
-dataset/zhvoice/zhmagicdata/5_970/5_970_20170616000122.wav	3241
+dataset/CN-Celeb2_flac/data/id11999/recitation-03-019.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-10-023.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-06-025.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-04-014.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-06-030.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-10-032.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-06-028.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-10-031.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-05-003.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-04-017.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-10-016.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-09-001.flac      2795
+dataset/CN-Celeb2_flac/data/id11999/recitation-05-010.flac      2795
 ```
 
 # 修改预处理方法
@@ -107,7 +111,7 @@ preprocess_conf:
 ```
 
 # 训练模型
-使用`train.py`训练模型，本项目支持多个音频预处理方式，通过`configs/ecapa_tdnn.yml`配置文件的参数`preprocess_conf.feature_method`可以指定，`MelSpectrogram`为梅尔频谱，`Spectrogram`为语谱图，`MFCC`梅尔频谱倒谱系数。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
+使用`train.py`训练模型，本项目支持多个音频预处理方式，通过`configs/ecapa_tdnn.yml`配置文件的参数`preprocess_conf.feature_method`可以指定，`MelSpectrogram`为梅尔频谱，`Spectrogram`为语谱图，`MFCC`梅尔频谱倒谱系数等等。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
 ```shell
 # 单卡训练
 CUDA_VISIBLE_DEVICES=0 python train.py
@@ -117,81 +121,124 @@ CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 tra
 
 训练输出日志：
 ```
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - augment_conf_path: configs/augmentation.json
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - pretrained_model: None
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - resume_model: None
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - save_model_path: models/
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:15 - use_gpu: True
-[2023-02-25 11:53:53.194706 INFO   ] utils:print_arguments:16 - ------------------------------------------------
-[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:18 - ----------- 配置文件参数 -----------
-[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:21 - dataset_conf:
-[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:28 - 	batch_size: 64
-[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:28 - 	chunk_duration: 3
-[2023-02-25 11:53:53.208669 INFO   ] utils:print_arguments:28 - 	do_vad: False
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	min_duration: 0.5
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	num_speakers: 3242
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	num_workers: 4
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	sample_rate: 16000
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	target_dB: -20
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	test_list: dataset/test_list.txt
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	train_list: dataset/train_list.txt
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	use_dB_normalization: True
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - preprocess_conf:
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	feature_method: MelSpectrogram
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 -     method_args:
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    hop_length: 160
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    n_fft: 400
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    n_mels: 80
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    sr: 16000
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	    win_length: 400
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 -     	window: hann
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:21 - model_conf:
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	channels: [512, 512, 512, 512, 1536]
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	dilations: [1, 2, 3, 4, 1]
-[2023-02-25 11:53:53.209670 INFO   ] utils:print_arguments:28 - 	kernel_sizes: [5, 3, 3, 3, 1]
-[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	lin_neurons: 192
-[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:21 - optimizer_conf:
-[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	learning_rate: 0.001
-[2023-02-25 11:53:53.210667 INFO   ] utils:print_arguments:28 - 	weight_decay: 1e-6
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:21 - train_conf:
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	log_interval: 100
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:28 - 	max_epoch: 30
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:30 - use_model: ecapa_tdnn
-[2023-02-25 11:53:53.220680 INFO   ] utils:print_arguments:31 - ------------------------------------------------
-[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'noise', 'aug_type': 'audio', 'params': {'min_snr_dB': 10, 'max_snr_dB': 50, 'repetition': 2, 'noise_dir': 'dataset/noise/'}, 'prob': 0.0}
-[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'resample', 'aug_type': 'audio', 'params': {'new_sample_rate': [8000, 32000, 44100, 48000]}, 'prob': 0.0}
-[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'speed', 'aug_type': 'audio', 'params': {'min_speed_rate': 0.9, 'max_speed_rate': 1.1, 'num_rates': 3}, 'prob': 0.0}
-[2022-11-05 19:58:31.589525 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'shift', 'aug_type': 'audio', 'params': {'min_shift_ms': -5, 'max_shift_ms': 5}, 'prob': 0.0}
-[2022-11-05 19:58:31.590535 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'volume', 'aug_type': 'audio', 'params': {'min_gain_dBFS': -15, 'max_gain_dBFS': 15}, 'prob': 0.0}
-[2022-11-05 19:58:31.590535 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'specaug', 'aug_type': 'feature', 'params': {'inplace': True, 'max_time_warp': 5, 'max_t_ratio': 0.01, 'n_freq_masks': 2, 'max_f_ratio': 0.05, 'n_time_masks': 2, 'replace_with_zero': False}, 'prob': 0.0}
-[2022-11-05 19:58:31.590535 INFO   ] augmentation:_parse_pipeline_from:126 - 数据增强配置：{'type': 'specsub', 'aug_type': 'feature', 'params': {'max_t': 10, 'num_t_sub': 2}, 'prob': 0.0}
-I0424 08:57:03.707505  3377 nccl_context.cc:74] init nccl context nranks: 2 local rank: 0 gpu id: 0 ring id: 0
-W0424 08:57:03.930370  3377 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
-W0424 08:57:03.932493  3377 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-I0424 08:57:05.431638  3377 nccl_context.cc:107] init nccl context nranks: 2 local rank: 0 gpu id: 0 ring id: 10
+[2023-08-05 09:52:06.497988 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
+[2023-08-05 09:52:06.498094 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
+[2023-08-05 09:52:06.498149 INFO   ] utils:print_arguments:15 - do_eval: True
+[2023-08-05 09:52:06.498191 INFO   ] utils:print_arguments:15 - local_rank: 0
+[2023-08-05 09:52:06.498230 INFO   ] utils:print_arguments:15 - pretrained_model: None
+[2023-08-05 09:52:06.498269 INFO   ] utils:print_arguments:15 - resume_model: None
+[2023-08-05 09:52:06.498306 INFO   ] utils:print_arguments:15 - save_model_path: models/
+[2023-08-05 09:52:06.498342 INFO   ] utils:print_arguments:15 - use_gpu: True
+[2023-08-05 09:52:06.498378 INFO   ] utils:print_arguments:16 - ------------------------------------------------
+[2023-08-05 09:52:06.513761 INFO   ] utils:print_arguments:18 - ----------- 配置文件参数 -----------
+[2023-08-05 09:52:06.513906 INFO   ] utils:print_arguments:21 - dataset_conf:
+[2023-08-05 09:52:06.513957 INFO   ] utils:print_arguments:24 -         dataLoader:
+[2023-08-05 09:52:06.513995 INFO   ] utils:print_arguments:26 -                 batch_size: 64
+[2023-08-05 09:52:06.514031 INFO   ] utils:print_arguments:26 -                 num_workers: 4
+[2023-08-05 09:52:06.514066 INFO   ] utils:print_arguments:28 -         do_vad: False
+[2023-08-05 09:52:06.514101 INFO   ] utils:print_arguments:28 -         enroll_list: dataset/enroll_list.txt
+[2023-08-05 09:52:06.514135 INFO   ] utils:print_arguments:24 -         eval_conf:
+[2023-08-05 09:52:06.514169 INFO   ] utils:print_arguments:26 -                 batch_size: 1
+[2023-08-05 09:52:06.514203 INFO   ] utils:print_arguments:26 -                 max_duration: 20
+[2023-08-05 09:52:06.514237 INFO   ] utils:print_arguments:28 -         max_duration: 3
+[2023-08-05 09:52:06.514274 INFO   ] utils:print_arguments:28 -         min_duration: 0.5
+[2023-08-05 09:52:06.514308 INFO   ] utils:print_arguments:28 -         noise_aug_prob: 0.2
+[2023-08-05 09:52:06.514342 INFO   ] utils:print_arguments:28 -         noise_dir: dataset/noise
+[2023-08-05 09:52:06.514374 INFO   ] utils:print_arguments:28 -         num_speakers: 3242
+[2023-08-05 09:52:06.514408 INFO   ] utils:print_arguments:28 -         sample_rate: 16000
+[2023-08-05 09:52:06.514441 INFO   ] utils:print_arguments:28 -         speed_perturb: True
+[2023-08-05 09:52:06.514475 INFO   ] utils:print_arguments:28 -         target_dB: -20
+[2023-08-05 09:52:06.514508 INFO   ] utils:print_arguments:28 -         train_list: dataset/train_list.txt
+[2023-08-05 09:52:06.514542 INFO   ] utils:print_arguments:28 -         trials_list: dataset/trials_list.txt
+[2023-08-05 09:52:06.514575 INFO   ] utils:print_arguments:28 -         use_dB_normalization: True
+[2023-08-05 09:52:06.514609 INFO   ] utils:print_arguments:21 - loss_conf:
+[2023-08-05 09:52:06.514643 INFO   ] utils:print_arguments:24 -         args:
+[2023-08-05 09:52:06.514678 INFO   ] utils:print_arguments:26 -                 easy_margin: False
+[2023-08-05 09:52:06.514713 INFO   ] utils:print_arguments:26 -                 margin: 0.2
+[2023-08-05 09:52:06.514746 INFO   ] utils:print_arguments:26 -                 scale: 32
+[2023-08-05 09:52:06.514779 INFO   ] utils:print_arguments:24 -         margin_scheduler_args:
+[2023-08-05 09:52:06.514814 INFO   ] utils:print_arguments:26 -                 final_margin: 0.3
+[2023-08-05 09:52:06.514848 INFO   ] utils:print_arguments:28 -         use_loss: AAMLoss
+[2023-08-05 09:52:06.514882 INFO   ] utils:print_arguments:28 -         use_margin_scheduler: True
+[2023-08-05 09:52:06.514915 INFO   ] utils:print_arguments:21 - model_conf:
+[2023-08-05 09:52:06.514950 INFO   ] utils:print_arguments:24 -         backbone:
+[2023-08-05 09:52:06.514984 INFO   ] utils:print_arguments:26 -                 embd_dim: 192
+[2023-08-05 09:52:06.515017 INFO   ] utils:print_arguments:26 -                 pooling_type: ASP
+[2023-08-05 09:52:06.515050 INFO   ] utils:print_arguments:24 -         classifier:
+[2023-08-05 09:52:06.515084 INFO   ] utils:print_arguments:26 -                 num_blocks: 0
+[2023-08-05 09:52:06.515118 INFO   ] utils:print_arguments:21 - optimizer_conf:
+[2023-08-05 09:52:06.515154 INFO   ] utils:print_arguments:28 -         learning_rate: 0.001
+[2023-08-05 09:52:06.515188 INFO   ] utils:print_arguments:28 -         optimizer: Adam
+[2023-08-05 09:52:06.515221 INFO   ] utils:print_arguments:28 -         scheduler: CosineAnnealingLR
+[2023-08-05 09:52:06.515254 INFO   ] utils:print_arguments:28 -         scheduler_args: None
+[2023-08-05 09:52:06.515289 INFO   ] utils:print_arguments:28 -         weight_decay: 1e-06
+[2023-08-05 09:52:06.515323 INFO   ] utils:print_arguments:21 - preprocess_conf:
+[2023-08-05 09:52:06.515357 INFO   ] utils:print_arguments:28 -         feature_method: MelSpectrogram
+[2023-08-05 09:52:06.515390 INFO   ] utils:print_arguments:24 -         method_args:
+[2023-08-05 09:52:06.515426 INFO   ] utils:print_arguments:26 -                 f_max: 14000.0
+[2023-08-05 09:52:06.515460 INFO   ] utils:print_arguments:26 -                 f_min: 50.0
+[2023-08-05 09:52:06.515493 INFO   ] utils:print_arguments:26 -                 hop_length: 320
+[2023-08-05 09:52:06.515527 INFO   ] utils:print_arguments:26 -                 n_fft: 1024
+[2023-08-05 09:52:06.515560 INFO   ] utils:print_arguments:26 -                 n_mels: 64
+[2023-08-05 09:52:06.515593 INFO   ] utils:print_arguments:26 -                 sample_rate: 16000
+[2023-08-05 09:52:06.515626 INFO   ] utils:print_arguments:26 -                 win_length: 1024
+[2023-08-05 09:52:06.515660 INFO   ] utils:print_arguments:21 - train_conf:
+[2023-08-05 09:52:06.515694 INFO   ] utils:print_arguments:28 -         log_interval: 100
+[2023-08-05 09:52:06.515728 INFO   ] utils:print_arguments:28 -         max_epoch: 30
+[2023-08-05 09:52:06.515761 INFO   ] utils:print_arguments:30 - use_model: EcapaTdnn
+[2023-08-05 09:52:06.515794 INFO   ] utils:print_arguments:31 - ------------------------------------------------
 ······
-[2023-03-16 20:30:42.559858 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [0/16579], loss: 16.48008, accuracy: 0.01562, learning rate: 0.00000000, speed: 21.27 data/sec, eta: 17 days, 7:38:55
-[2023-03-16 20:31:15.045717 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [100/16579], loss: 16.34529, accuracy: 0.00062, learning rate: 0.00000121, speed: 197.03 data/sec, eta: 1 day, 20:52:05
-[2023-03-16 20:31:47.086451 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [200/16579], loss: 16.31631, accuracy: 0.00054, learning rate: 0.00000241, speed: 199.77 data/sec, eta: 1 day, 20:14:40
-[2023-03-16 20:32:19.711337 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [300/16579], loss: 16.30544, accuracy: 0.00047, learning rate: 0.00000362, speed: 196.19 data/sec, eta: 1 day, 21:02:28
-[2023-03-16 20:32:52.853642 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [400/16579], loss: 16.29228, accuracy: 0.00043, learning rate: 0.00000483, speed: 193.14 data/sec, eta: 1 day, 21:44:42
-[2023-03-16 20:33:25.116274 INFO   ] trainer:__train_epoch:232 - Train epoch: [1/30], batch: [500/16579], loss: 16.27346, accuracy: 0.00041, learning rate: 0.00000603, speed: 198.40 data/sec, eta: 1 day, 20:31:18
-······
-[2023-03-16 20:34:09.633572 INFO   ] trainer:train:304 - ======================================================================
-100%|███████████████████████████████████| 84/84 [00:10<00:00,  7.79it/s]
-开始两两对比音频特征...
-100%|██████████████████████████████| 5332/5332 [00:07<00:00, 749.89it/s]
-[2023-03-16 20:34:29.328638 INFO   ] trainer:train:306 - Test epoch: 1, time/epoch: 0:00:48.881889, threshold: 0.72, tpr: 0.62350, fpr: 0.04601, eer: 0.42250
-[2023-03-16 20:34:29.328840 INFO   ] trainer:train:309 - ======================================================================
-[2023-03-16 20:34:29.728986 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/EcapaTdnn_MelSpectrogram/best_model
-[2023-03-16 20:34:30.724868 INFO   ] trainer:__save_checkpoint:203 - 已保存模型：models/EcapaTdnn_MelSpectrogram/epoch_1
-[2023-03-16 20:30:42.559858 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [0/16579], loss: 16.48008, accuracy: 0.01562, learning rate: 0.00000000, speed: 21.27 data/sec, eta: 17 days, 7:38:55
-[2023-03-16 20:31:15.045717 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [100/16579], loss: 16.34529, accuracy: 0.00062, learning rate: 0.00000121, speed: 197.03 data/sec, eta: 1 day, 20:52:05
-[2023-03-16 20:31:47.086451 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [200/16579], loss: 16.31631, accuracy: 0.00054, learning rate: 0.00000241, speed: 199.77 data/sec, eta: 1 day, 20:14:40
-[2023-03-16 20:32:19.711337 INFO   ] trainer:__train_epoch:232 - Train epoch: [2/30], batch: [300/16579], loss: 16.30544, accuracy: 0.00047, learning rate: 0.00000362, speed: 196.19 data/sec, eta: 1 day, 21:02:28
-······
+===============================================================================================
+Layer (type:depth-idx)                        Output Shape              Param #
+===============================================================================================
+Sequential                                    [1, 9726]                 --
+├─EcapaTdnn: 1-1                              [1, 192]                  --
+│    └─Conv1dReluBn: 2-1                      [1, 512, 98]              --
+│    │    └─Conv1d: 3-1                       [1, 512, 98]              163,840
+│    │    └─BatchNorm1d: 3-2                  [1, 512, 98]              1,024
+│    └─Sequential: 2-2                        [1, 512, 98]              --
+│    │    └─Conv1dReluBn: 3-3                 [1, 512, 98]              263,168
+│    │    └─Res2Conv1dReluBn: 3-4             [1, 512, 98]              86,912
+│    │    └─Conv1dReluBn: 3-5                 [1, 512, 98]              263,168
+│    │    └─SE_Connect: 3-6                   [1, 512, 98]              262,912
+│    └─Sequential: 2-3                        [1, 512, 98]              --
+│    │    └─Conv1dReluBn: 3-7                 [1, 512, 98]              263,168
+│    │    └─Res2Conv1dReluBn: 3-8             [1, 512, 98]              86,912
+│    │    └─Conv1dReluBn: 3-9                 [1, 512, 98]              263,168
+│    │    └─SE_Connect: 3-10                  [1, 512, 98]              262,912
+│    └─Sequential: 2-4                        [1, 512, 98]              --
+│    │    └─Conv1dReluBn: 3-11                [1, 512, 98]              263,168
+│    │    └─Res2Conv1dReluBn: 3-12            [1, 512, 98]              86,912
+│    │    └─Conv1dReluBn: 3-13                [1, 512, 98]              263,168
+│    │    └─SE_Connect: 3-14                  [1, 512, 98]              262,912
+│    └─Conv1d: 2-5                            [1, 1536, 98]             2,360,832
+│    └─AttentiveStatsPool: 2-6                [1, 3072]                 --
+│    │    └─Conv1d: 3-15                      [1, 128, 98]              196,736
+│    │    └─Conv1d: 3-16                      [1, 1536, 98]             198,144
+│    └─BatchNorm1d: 2-7                       [1, 3072]                 6,144
+│    └─Linear: 2-8                            [1, 192]                  590,016
+│    └─BatchNorm1d: 2-9                       [1, 192]                  384
+├─SpeakerIdentification: 1-2                  [1, 9726]                 1,867,392
+===============================================================================================
+Total params: 8,012,992
+Trainable params: 8,012,992
+Non-trainable params: 0
+Total mult-adds (M): 468.81
+===============================================================================================
+Input size (MB): 0.03
+Forward/backward pass size (MB): 10.36
+Params size (MB): 32.05
+Estimated Total Size (MB): 42.44
+===============================================================================================
+[2023-08-05 09:52:08.084231 INFO   ] trainer:train:388 - 训练数据：874175
+[2023-08-05 09:52:09.186542 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [0/13659], loss: 11.95824, accuracy: 0.00000, learning rate: 0.00100000, speed: 58.09 data/sec, eta: 5 days, 5:24:08
+[2023-08-05 09:52:22.477905 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [100/13659], loss: 10.35675, accuracy: 0.00278, learning rate: 0.00100000, speed: 481.65 data/sec, eta: 15:07:15
+[2023-08-05 09:52:35.948581 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [200/13659], loss: 10.22089, accuracy: 0.00505, learning rate: 0.00100000, speed: 475.27 data/sec, eta: 15:19:12
+[2023-08-05 09:52:49.249098 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [300/13659], loss: 10.00268, accuracy: 0.00706, learning rate: 0.00100000, speed: 481.45 data/sec, eta: 15:07:11
+[2023-08-05 09:53:03.716015 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [400/13659], loss: 9.76052, accuracy: 0.00830, learning rate: 0.00100000, speed: 442.74 data/sec, eta: 16:26:16
+[2023-08-05 09:53:18.258807 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [500/13659], loss: 9.50189, accuracy: 0.01060, learning rate: 0.00100000, speed: 440.46 data/sec, eta: 16:31:08
+[2023-08-05 09:53:31.618354 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [600/13659], loss: 9.26083, accuracy: 0.01256, learning rate: 0.00100000, speed: 479.50 data/sec, eta: 15:10:12
+[2023-08-05 09:53:45.439642 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [700/13659], loss: 9.03548, accuracy: 0.01449, learning rate: 0.00099999, speed: 463.63 data/sec, eta: 15:41:08
 ```
 
 VisualDL页面：
@@ -226,7 +273,7 @@ W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6
 100%|███████████████████████████| 84/84 [00:28<00:00,  2.95it/s]
 开始两两对比音频特征...
 100%|███████████████████████████| 5332/5332 [00:05<00:00, 1027.83it/s]
-评估消耗时间：65s，threshold：0.26，tpr：0.99391, fpr: 0.00611, eer: 0.01220
+评估消耗时间：65s，threshold：0.26，EER: 0.14739, MinDCF: 0.41999
 ```
 
 # 声纹对比

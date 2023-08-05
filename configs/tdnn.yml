@@ -1,7 +1,7 @@
 # 数据集参数
 dataset_conf:
   # 说话人数量，即分类大小
-  num_speakers: 3242
+  num_speakers: 2796
   # 过滤最短的音频长度
   min_duration: 0.5
   # 最长的音频长度，大于这个长度会裁剪掉
@@ -87,7 +87,7 @@ loss_conf:
 
 train_conf:
   # 训练的轮数
-  max_epoch: 30
+  max_epoch: 60
   log_interval: 100
 
 # 所使用的模型
