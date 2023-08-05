@@ -100,7 +100,7 @@ class ResNetSE(nn.Module):
                  pooling_type="ASP"):
         super(ResNetSE, self).__init__()
         self.inplanes = num_filters[0]
-        self.emb_size = embd_dim
+        self.embd_dim = embd_dim
         self.conv1 = nn.Conv2d(1, num_filters[0], kernel_size=3, stride=(1, 1), padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(num_filters[0])
         self.relu = nn.ReLU(inplace=True)

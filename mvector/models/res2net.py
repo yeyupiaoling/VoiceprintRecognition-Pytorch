@@ -93,7 +93,7 @@ class Res2Net(nn.Module):
         super(Res2Net, self).__init__()
         self.base_width = base_width
         self.scale = scale
-        self.emb_size = embd_dim
+        self.embd_dim = embd_dim
         self.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)

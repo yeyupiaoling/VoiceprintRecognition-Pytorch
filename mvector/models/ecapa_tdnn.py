@@ -83,7 +83,7 @@ class EcapaTdnn(nn.Module):
         self.layer4 = SE_Res2Block(channels, kernel_size=3, stride=1, padding=4, dilation=4, scale=8)
 
         cat_channels = channels * 3
-        self.emb_size = embd_dim
+        self.embd_dim = embd_dim
         self.conv = nn.Conv1d(cat_channels, cat_channels, kernel_size=1)
         if pooling_type == "ASP":
             self.pooling = AttentiveStatsPool(cat_channels, 128)

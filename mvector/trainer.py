@@ -145,7 +145,7 @@ class MVectorTrainer(object):
             num_class = self.configs.dataset_conf.num_speakers
             # 语速扰动要增加分类数量
             num_class = num_class * 3 if self.configs.dataset_conf.speed_perturb else num_class
-            classifier = SpeakerIdentification(input_dim=self.backbone.emb_size,
+            classifier = SpeakerIdentification(input_dim=self.backbone.embd_dim,
                                                loss_type=use_loss,
                                                num_class=num_class,
                                                **self.configs.model_conf.classifier)

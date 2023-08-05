@@ -189,7 +189,7 @@ class ERes2Net(nn.Module):
         super(ERes2Net, self).__init__()
         self.in_planes = m_channels
         self.feat_dim = input_size
-        self.emb_size = embd_dim
+        self.embd_dim = embd_dim
         self.stats_dim = int(input_size / 8) * m_channels * 8
         self.two_emb_layer = two_emb_layer
 
