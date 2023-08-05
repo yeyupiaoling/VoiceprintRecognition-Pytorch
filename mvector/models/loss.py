@@ -63,12 +63,12 @@ class AMLoss(nn.Module):
         self.s = scale
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
-    def forward(self, outputs, targets):
-        label_view = targets.view(-1, 1)
-        delt_costh = torch.zeros(outputs.size(), device=targets.device).scatter_(1, label_view, self.m)
-        costh_m = outputs - delt_costh
+    def forward(self, cosine, label):
+        label_view = label.view(-1, 1)
+        delt_costh = torch.zeros(cosine.size(), device=label.device).scatter_(1, label_view, self.m)
+        costh_m = cosine - delt_costh
         predictions = self.s * costh_m
-        loss = self.criterion(predictions, targets) / targets.shape[0]
+        loss = self.criterion(predictions, label) / label.shape[0]
         return loss
 
     def update(self, margin=0.2):
@@ -82,15 +82,15 @@ class ARMLoss(nn.Module):
         self.s = scale
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
-    def forward(self, outputs, targets):
-        label_view = targets.view(-1, 1)
-        delt_costh = torch.zeros(outputs.size(), device=targets.device).scatter_(1, label_view, self.m)
-        costh_m = outputs - delt_costh
+    def forward(self, cosine, label):
+        label_view = label.view(-1, 1)
+        delt_costh = torch.zeros(cosine.size(), device=label.device).scatter_(1, label_view, self.m)
+        costh_m = cosine - delt_costh
         costh_m_s = self.s * costh_m
         delt_costh_m_s = costh_m_s.gather(1, label_view).repeat(1, costh_m_s.size()[1])
         costh_m_s_reduct = costh_m_s - delt_costh_m_s
         predictions = torch.where(costh_m_s_reduct < 0.0, torch.zeros_like(costh_m_s), costh_m_s)
-        loss = self.criterion(predictions, targets) / targets.shape[0]
+        loss = self.criterion(predictions, label) / label.shape[0]
         return loss
 
     def update(self, margin=0.2):
@@ -102,8 +102,8 @@ class CELoss(nn.Module):
         super(CELoss, self).__init__()
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
-    def forward(self, outputs, targets):
-        loss = self.criterion(outputs, targets) / targets.shape[0]
+    def forward(self, cosine, label):
+        loss = self.criterion(cosine, label) / label.shape[0]
         return loss
 
     def update(self, margin=0.2):
