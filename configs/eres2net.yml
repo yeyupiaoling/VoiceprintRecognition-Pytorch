@@ -1,19 +1,11 @@
 # 数据集参数
 dataset_conf:
-  # 说话人数量，即分类大小
-  num_speakers: 2796
   # 过滤最短的音频长度
   min_duration: 0.5
   # 最长的音频长度，大于这个长度会裁剪掉
   max_duration: 3
   # 是否裁剪静音片段
   do_vad: False
-  # 是否使用语速扰动增强
-  speed_perturb: True
-  # 噪声增强的噪声文件夹
-  noise_dir: 'dataset/noise'
-  # 噪声增强概率
-  noise_aug_prob: 0.2
   # 音频的采样率
   sample_rate: 16000
   # 是否对音频进行音量归一化
@@ -38,6 +30,18 @@ dataset_conf:
     batch_size: 16
     # 读取数据的线程数量
     num_workers: 4
+  # 数据增强参数
+  aug_conf:
+    # 是否使用语速扰动增强，注意使用语速增强分类数量会大三倍
+    speed_perturb: True
+    # 是否使用音量增强
+    volume_perturb: False
+    # 音量增强概率
+    volume_aug_prob: 0.2
+    # 噪声增强的噪声文件夹
+    noise_dir: 'dataset/noise'
+    # 噪声增强概率
+    noise_aug_prob: 0.2
 
 # 数据预处理参数
 preprocess_conf:
@@ -73,6 +77,8 @@ model_conf:
     pooling_type: 'TSTP'
     embd_dim: 192
   classifier:
+    # 说话人数量，即分类大小
+    num_speakers: 2796
     num_blocks: 0
 
 loss_conf:
