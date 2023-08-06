@@ -6,7 +6,7 @@ import torch.nn.functional as F
 class SpeakerIdentification(nn.Module):
     def __init__(self,
                  input_dim,
-                 num_class,
+                 num_speakers,
                  loss_type='AAMLoss',
                  num_blocks=0,
                  inter_dim=512):
@@ -15,7 +15,7 @@ class SpeakerIdentification(nn.Module):
 
         Args:
             input_dim (nn.Module, class): embedding model output dim.
-            num_class (_type_): the speaker class num in the training dataset
+            num_speakers (_type_): the speaker class num in the training dataset
             num_blocks (int, optional): the linear layer transform between the embedding and the final linear layer. Defaults to 0.
             inter_dim (int, optional): the output dimension of dense layer. Defaults to 512.
         """
@@ -27,7 +27,7 @@ class SpeakerIdentification(nn.Module):
             self.blocks.append(DenseLayer(input_dim, inter_dim, config_str='batchnorm'))
             input_dim = inter_dim
 
-        self.weight = nn.Parameter(torch.FloatTensor(num_class, input_dim))
+        self.weight = nn.Parameter(torch.FloatTensor(num_speakers, input_dim))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, x):

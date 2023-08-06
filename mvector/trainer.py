@@ -143,10 +143,11 @@ class MVectorTrainer(object):
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
             # 语速扰动要增加分类数量
-            num_class = num_class * 3 if self.configs.dataset_conf.aug_conf.speed_perturb else num_class
+            self.configs.model_conf.classifier.num_speakers = num_class * 3 \
+                if self.configs.dataset_conf.aug_conf.speed_perturb else num_class
             classifier = SpeakerIdentification(input_dim=self.backbone.embd_dim,
                                                loss_type=use_loss,
-                                               num_class=num_class,
+                                               num_speakers=num_class,
                                                **self.configs.model_conf.classifier)
             # 合并模型
             self.model = nn.Sequential(self.backbone, classifier)
