@@ -258,7 +258,7 @@ python eval.py
 ------------------------------------------------
 W0425 08:27:32.057426 17654 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/EcapaTdnn_MelSpectrogram/best_model/model.pth
+[2023-03-16 20:20:47.195908 INFO   ] trainer:evaluate:341 - 成功加载模型：models/EcapaTdnn_Fbank/best_model/model.pth
 100%|███████████████████████████| 84/84 [00:28<00:00,  2.95it/s]
 开始两两对比音频特征...
 100%|███████████████████████████| 5332/5332 [00:05<00:00, 1027.83it/s]
@@ -277,14 +277,14 @@ python infer_contrast.py --audio_path1=audio/a_1.wav --audio_path2=audio/b_2.wav
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path1: dataset/a_1.wav
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path2: dataset/b_2.wav
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
-[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - model_path: models/EcapaTdnn_MelSpectrogram/best_model/
+[2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - model_path: models/EcapaTdnn_Fbank/best_model/
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - threshold: 0.6
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - use_gpu: True
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:16 - ------------------------------------------------
 ······································································
 W0425 08:29:10.006249 21121 device_context.cc:447] Please NOTE: device: 0, GPU Compute Capability: 7.5, Driver API Version: 11.6, Runtime API Version: 10.2
 W0425 08:29:10.008555 21121 device_context.cc:465] device: 0, cuDNN Version: 7.6.
-成功加载模型参数和优化方法参数：models/EcapaTdnn_MelSpectrogram/best_model/model.pth
+成功加载模型参数和优化方法参数：models/EcapaTdnn_Fbank/best_model/model.pth
 audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：-0.09565544128417969
 ```
 
@@ -300,7 +300,7 @@ python infer_recognition.py
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - audio_db_path: audio_db/
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
-[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - model_path: models/EcapaTdnn_MelSpectrogram/best_model/
+[2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - model_path: models/EcapaTdnn_Fbank/best_model/
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - record_seconds: 3
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - threshold: 0.6
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - use_gpu: True

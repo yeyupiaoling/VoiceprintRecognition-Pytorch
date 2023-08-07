@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('configs',          str,    'configs/ecapa_tdnn.yml',   '配置文件')
 add_arg('use_gpu',          bool,   True,                       '是否使用GPU预测')
-add_arg('model_path',       str,    'models/EcapaTdnn_MelSpectrogram/best_model/', '导出的预测模型文件路径')
+add_arg('model_path',       str,    'models/EcapaTdnn_Fbank/best_model/', '导出的预测模型文件路径')
 args = parser.parse_args()
 print_arguments(args=args)
 

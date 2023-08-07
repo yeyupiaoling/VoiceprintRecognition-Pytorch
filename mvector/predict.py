@@ -30,7 +30,7 @@ class MVectorPredictor:
                  configs,
                  threshold=0.6,
                  audio_db_path=None,
-                 model_path='models/EcapaTdnn_MelSpectrogram/best_model/',
+                 model_path='models/EcapaTdnn_Fbank/best_model/',
                  use_gpu=True):
         """
         声纹识别预测工具

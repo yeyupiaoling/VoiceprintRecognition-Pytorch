@@ -22,6 +22,7 @@ from mvector import SUPPORT_MODEL, __version__
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
+from mvector.data_utils.spec_aug import SpecAug
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
@@ -68,6 +69,9 @@ class MVectorTrainer(object):
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
         self.audio_featurizer.to(self.device)
+        # 特征增强
+        self.spec_aug = SpecAug(**self.configs.dataset_conf.get('spec_aug_args', {}))
+        self.spec_aug.to(self.device)
 
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.dataLoader.num_workers = 0
@@ -147,7 +151,6 @@ class MVectorTrainer(object):
                 if self.configs.dataset_conf.aug_conf.speed_perturb else num_class
             classifier = SpeakerIdentification(input_dim=self.backbone.embd_dim,
                                                loss_type=use_loss,
-                                               num_speakers=num_class,
                                                **self.configs.model_conf.classifier)
             # 合并模型
             self.model = nn.Sequential(self.backbone, classifier)
@@ -305,6 +308,9 @@ class MVectorTrainer(object):
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
             features, _ = self.audio_featurizer(audio, input_lens_ratio)
+            # 特征增强
+            if self.configs.dataset_conf.use_spec_aug:
+                features = self.spec_aug(features)
             output = self.model(features)
             # 计算损失值
             los = self.loss(output, label)
@@ -516,7 +522,7 @@ class MVectorTrainer(object):
             logger.info(f"结果图以保存在：{os.path.join(save_image_path, 'result.png')}")
         return eer, min_dcf, threshold
 
-    def export(self, save_model_path='models/', resume_model='models/EcapaTdnn_MelSpectrogram/best_model/'):
+    def export(self, save_model_path='models/', resume_model='models/EcapaTdnn_Fbank/best_model/'):
         """
         导出预测模型
         :param save_model_path: 模型保存的路径

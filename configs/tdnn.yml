@@ -44,6 +44,14 @@ dataset_conf:
     noise_dir: 'dataset/noise'
     # 噪声增强概率
     noise_aug_prob: 0.2
+  # 是否使用SpecAug
+  use_spec_aug: True
+  # Spec增强参数
+  spec_aug_args:
+    # 随机频谱掩码大小
+    freq_mask_width: [ 0, 8 ]
+    # 随机时间掩码大小
+    time_mask_width: [ 0, 10 ]
 
 # 数据预处理参数
 preprocess_conf:

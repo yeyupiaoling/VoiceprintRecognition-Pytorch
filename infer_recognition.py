@@ -12,7 +12,7 @@ add_arg('use_gpu',          bool,   True,                       '是否使用GPU
 add_arg('audio_db_path',    str,    'audio_db/',                '音频库的路径')
 add_arg('record_seconds',   int,    3,                          '录音长度')
 add_arg('threshold',        float,  0.6,                        '判断是否为同一个人的阈值')
-add_arg('model_path',       str,    'models/EcapaTdnn_MelSpectrogram/best_model/', '导出的预测模型文件路径')
+add_arg('model_path',       str,    'models/EcapaTdnn_Fbank/best_model/', '导出的预测模型文件路径')
 args = parser.parse_args()
 print_arguments(args=args)
 
