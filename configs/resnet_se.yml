@@ -32,8 +32,10 @@ dataset_conf:
     num_workers: 4
   # 数据增强参数
   aug_conf:
-    # 是否使用语速扰动增强，注意使用语速增强分类数量会大三倍
+    # 是否使用语速扰动增强
     speed_perturb: True
+    # 使用语速增强是否分类大小翻三倍
+    speed_perturb_3_class: True
     # 是否使用音量增强
     volume_perturb: False
     # 音量增强概率
@@ -46,16 +48,11 @@ dataset_conf:
 # 数据预处理参数
 preprocess_conf:
   # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
-  feature_method: 'MelSpectrogram'
+  feature_method: 'Fbank'
   # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
   method_args:
-    sample_rate: 16000
-    n_fft: 1024
-    hop_length: 320
-    win_length: 1024
-    f_min: 50.0
-    f_max: 14000.0
-    n_mels: 64
+    sample_frequency: 16000
+    num_mel_bins: 80
 
 optimizer_conf:
   # 优化方法，支持Adam、AdamW、SGD

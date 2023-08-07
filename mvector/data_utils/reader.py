@@ -69,8 +69,7 @@ class CustomDataset(Dataset):
             audio_segment.resample(self._target_sample_rate)
         # 音频增强
         if self.mode == 'train':
-            audio_segment, speed_idx = self.augment_audio(audio_segment, **self.aug_conf)
-            spk_id = spk_id + self.num_speakers * speed_idx
+            audio_segment, spk_id = self.augment_audio(audio_segment, spk_id, **self.aug_conf)
         # decibel normalization
         if self._use_dB_normalization:
             audio_segment.normalize(target_db=self._target_dB)
@@ -84,19 +83,23 @@ class CustomDataset(Dataset):
     # 音频增强
     def augment_audio(self,
                       audio_segment,
+                      spk_id,
                       speed_perturb=False,
+                      speed_perturb_3_class=False,
                       volume_perturb=False,
                       volume_aug_prob=0.2,
                       noise_dir=None,
                       noise_aug_prob=0.2):
-        # 语速增强，注意使用语速增强分类数量会大三倍
-        speed_idx = 0
+        # 语速增强
         if speed_perturb:
             speeds = [1.0, 0.9, 1.1]
             speed_idx = random.randint(0, 2)
             speed_rate = speeds[speed_idx]
             if speed_rate != 1.0:
                 audio_segment.change_speed(speed_rate)
+            # 注意使用语速增强分类数量会大三倍
+            if speed_perturb_3_class:
+                spk_id = spk_id + self.num_speakers * speed_idx
         # 音量增强
         if volume_perturb and random.random() < volume_aug_prob:
             min_gain_dBFS, max_gain_dBFS = -15, 15
@@ -126,4 +129,4 @@ class CustomDataset(Dataset):
                 noise_segment._samples = np.pad(noise_segment.samples, (0, diff_duration), 'wrap')
             # 将噪声添加到audio_segment中，并将snr_dB调整到最小值和最大值之间
             audio_segment.add_noise(noise_segment, snr_dB)
-        return audio_segment, speed_idx
+        return audio_segment, spk_id
