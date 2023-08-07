@@ -23,7 +23,7 @@ from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.reader import CustomDataset
 from mvector.data_utils.spec_aug import SpecAug
-from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf
+from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
 from mvector.models.eres2net import ERes2Net
@@ -143,6 +143,8 @@ class MVectorTrainer(object):
 
         # 获取训练所需的函数
         if is_train:
+            if self.configs.train_conf.enable_amp:
+                self.amp_scaler = torch.cuda.amp.GradScaler(init_scale=1024)
             use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
@@ -311,19 +313,29 @@ class MVectorTrainer(object):
             # 特征增强
             if self.configs.dataset_conf.use_spec_aug:
                 features = self.spec_aug(features)
-            output = self.model(features)
+            # 执行模型计算，是否开启自动混合精度
+            with torch.cuda.amp.autocast(enabled=self.configs.train_conf.enable_amp):
+                output = self.model(features)
             # 计算损失值
             los = self.loss(output, label)
+            # 是否开启自动混合精度
+            if self.configs.train_conf.enable_amp:
+                # loss缩放，乘以系数loss_scaling
+                scaled = self.amp_scaler.scale(los)
+                scaled.backward()
+            else:
+                los.backward()
+            # 是否开启自动混合精度
+            if self.configs.train_conf.enable_amp:
+                self.amp_scaler.unscale_(self.optimizer)
+                self.amp_scaler.step(self.optimizer)
+                self.amp_scaler.update()
+            else:
+                self.optimizer.step()
             self.optimizer.zero_grad()
-            los.backward()
-            self.optimizer.step()
 
             # 计算准确率
-            output = torch.nn.functional.softmax(output, dim=-1)
-            output = output.data.cpu().numpy()
-            output = np.argmax(output, axis=1)
-            label = label.data.cpu().numpy()
-            acc = np.mean((output == label).astype(int))
+            acc = accuracy(output, label)
             accuracies.append(acc)
             loss_sum.append(los)
             train_times.append((time.time() - start) * 1000)

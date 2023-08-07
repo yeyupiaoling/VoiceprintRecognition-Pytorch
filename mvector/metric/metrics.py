@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 def compute_fnr_fpr(scores, labels, weights=None):
@@ -35,3 +36,13 @@ def compute_dcf(fnr, fpr, p_target=0.01, c_miss=1, c_fa=1):
     c_det = min(c_miss * fnr * p_target + c_fa * fpr * (1 - p_target))
     c_def = min(c_miss * p_target, c_fa * (1 - p_target))
     return c_det / c_def
+
+
+# 计算准确率
+def accuracy(output, label):
+    output = torch.nn.functional.softmax(output, dim=-1)
+    output = output.data.cpu().numpy()
+    output = np.argmax(output, axis=1)
+    label = label.data.cpu().numpy()
+    acc = np.mean((output == label).astype(int))
+    return acc

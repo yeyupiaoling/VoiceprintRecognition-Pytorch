@@ -99,6 +99,8 @@ loss_conf:
     final_margin: 0.3
 
 train_conf:
+  # 是否开启自动混合精度
+  enable_amp: False
   # 训练的轮数
   max_epoch: 60
   log_interval: 100
