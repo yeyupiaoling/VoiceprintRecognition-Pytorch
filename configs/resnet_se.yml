@@ -27,7 +27,7 @@ dataset_conf:
   # 数据加载器参数
   dataLoader:
     # 训练的批量大小
-    batch_size: 16
+    batch_size: 32
     # 读取数据的线程数量
     num_workers: 4
   # 数据增强参数
