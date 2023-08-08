@@ -65,6 +65,7 @@ class MVectorTrainer(object):
         self.enroll_loader = None
         self.trials_loader = None
         self.margin_scheduler = None
+        self.amp_scaler = None
         # 获取特征器
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
@@ -220,6 +221,9 @@ class MVectorTrainer(object):
             self.model.to(self.device)
         self.model.to(self.device)
         summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
+        # 使用Pytorch2.0的编译器
+        if self.configs.train_conf.use_compile and torch.__version__ >= "2" and platform.system().lower() == 'windows':
+            self.model = torch.compile(self.model, mode="reduce-overhead")
 
     def __load_pretrained(self, pretrained_model):
         # 加载预训练模型
@@ -252,6 +256,9 @@ class MVectorTrainer(object):
             else:
                 self.model.load_state_dict(state_dict)
             self.optimizer.load_state_dict(torch.load(os.path.join(resume_model, 'optimizer.pth')))
+            # 自动混合精度参数
+            if self.amp_scaler is not None and os.path.exists(os.path.join(resume_model, 'scaler.pth')):
+                self.amp_scaler.load_state_dict(torch.load(os.path.join(resume_model, 'scaler.pth')))
             with open(os.path.join(resume_model, 'model.state'), 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
                 last_epoch = json_data['last_epoch'] - 1
@@ -277,6 +284,9 @@ class MVectorTrainer(object):
         os.makedirs(model_path, exist_ok=True)
         torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pth'))
         torch.save(state_dict, os.path.join(model_path, 'model.pth'))
+        # 自动混合精度参数
+        if self.amp_scaler is not None:
+            torch.save(self.amp_scaler.state_dict(), os.path.join(model_path, 'scaler.pth'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
             data = {"last_epoch": epoch_id, "version": __version__}
             if best_eer is not None:
