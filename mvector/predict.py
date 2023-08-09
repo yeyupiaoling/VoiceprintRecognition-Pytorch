@@ -84,7 +84,7 @@ class MVectorPredictor:
             model_state_dict = torch.load(model_path)
         else:
             model_state_dict = torch.load(model_path, map_location='cpu')
-        model.load_state_dict(model_state_dict, strict=True)
+        model.load_state_dict(model_state_dict, strict=False)
         print(f"成功加载模型参数：{model_path}")
         model.eval()
         self.predictor = model
