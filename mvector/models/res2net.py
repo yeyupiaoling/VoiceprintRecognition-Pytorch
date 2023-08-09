@@ -88,22 +88,23 @@ class Bottle2neck(nn.Module):
 
 class Res2Net(nn.Module):
 
-    def __init__(self, input_size=80, layers=[3, 4, 6, 3], base_width=26, scale=4, embd_dim=192, pooling_type="ASP"):
-        self.inplanes = 64
+    def __init__(self, input_size, m_channels=32, layers=[3, 4, 6, 3], base_width=32, scale=2, embd_dim=192,
+                 pooling_type="ASP"):
+        self.inplanes = m_channels
         super(Res2Net, self).__init__()
         self.base_width = base_width
         self.scale = scale
         self.embd_dim = embd_dim
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
+        self.conv1 = nn.Conv2d(1, m_channels, kernel_size=7, stride=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(m_channels)
         self.relu = nn.ReLU(inplace=True)
         self.max_pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(Bottle2neck, 64, layers[0])
-        self.layer2 = self._make_layer(Bottle2neck, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(Bottle2neck, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(Bottle2neck, 512, layers[3], stride=2)
+        self.layer1 = self._make_layer(Bottle2neck, m_channels, layers[0])
+        self.layer2 = self._make_layer(Bottle2neck, m_channels*2, layers[1], stride=2)
+        self.layer3 = self._make_layer(Bottle2neck, m_channels * 4, layers[2], stride=2)
+        self.layer4 = self._make_layer(Bottle2neck, m_channels * 8, layers[3], stride=2)
 
-        cat_channels = 512 * Bottle2neck.expansion * (input_size // 32)
+        cat_channels = m_channels * 8 * Bottle2neck.expansion * (input_size // base_width)
         if pooling_type == "ASP":
             self.pooling = AttentiveStatsPool(cat_channels, 128)
             self.bn2 = nn.BatchNorm1d(cat_channels * 2)

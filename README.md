@@ -36,9 +36,9 @@
 |:---------:|:---------:|:--------------:|:----------------------------------:|:--------------:|:---:|:------:|:------:|
 | EcapaTdnn |    6.7    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
 |   TDNN    |    3.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
-|  Res2Net  |   26.9    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
-| ResNetSE  |    13     | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
-| ERes2Net  |   54.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+|  Res2Net  |    6.6    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+| ResNetSE  |    9.4    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
+| ERes2Net  |    8.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
 |   CAM++   |    7.5    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |     |        |        |
 
 说明：
