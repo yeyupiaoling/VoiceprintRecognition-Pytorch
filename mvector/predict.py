@@ -62,7 +62,7 @@ class MVectorPredictor:
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
             backbone = ERes2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'CAM++':
+        elif self.configs.use_model == 'CAMPPlus':
             backbone = CAMPPlus(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'EcapaTdnn':
             backbone = EcapaTdnn(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
@@ -84,7 +84,7 @@ class MVectorPredictor:
             model_state_dict = torch.load(model_path)
         else:
             model_state_dict = torch.load(model_path, map_location='cpu')
-        model.load_state_dict(model_state_dict, strict=False)
+        model.load_state_dict(model_state_dict, strict=True)
         print(f"成功加载模型参数：{model_path}")
         model.eval()
         self.predictor = model
