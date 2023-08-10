@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling, TemporalStatsPool
+from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling
 from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooling
 
 
@@ -95,11 +95,6 @@ class ResNetSE(nn.Module):
             self.bn3 = nn.BatchNorm1d(embd_dim)
         elif pooling_type == "TSP":
             self.pooling = TemporalStatisticsPooling()
-            self.bn2 = nn.BatchNorm1d(cat_channels * 2)
-            self.linear = nn.Linear(cat_channels * 2, embd_dim)
-            self.bn3 = nn.BatchNorm1d(embd_dim)
-        elif pooling_type == "TSTP":
-            self.pooling = TemporalStatsPool()
             self.bn2 = nn.BatchNorm1d(cat_channels * 2)
             self.linear = nn.Linear(cat_channels * 2, embd_dim)
             self.bn3 = nn.BatchNorm1d(embd_dim)

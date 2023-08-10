@@ -78,7 +78,7 @@ optimizer_conf:
 
 model_conf:
   backbone:
-    # 所使用的池化层，支持ASP、SAP、TSP、TAP、TSTP
+    # 所使用的池化层，支持ASP、SAP、TSP、TAP
     pooling_type: 'ASP'
     embd_dim: 192
   classifier:

@@ -18,6 +18,8 @@ class TemporalAveragePooling(nn.Module):
             torch.Tensor: Output tensor (#batch, channels)
         """
         x = torch.mean(x, dim=2)
+        # To be compatable with 2D input
+        x = x.flatten(start_dim=1)
         return x
 
 

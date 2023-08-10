@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling, TemporalStatsPool
-from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooling
+from mvector.models.pooling import TemporalAveragePooling, TemporalStatsPool
 
 
 class ReLU(nn.Hardtanh):
@@ -226,14 +225,8 @@ class ERes2Net(nn.Module):
         self.fuse_mode1234 = AFF(channels=m_channels * 16 * mul_channel)
 
         self.n_stats = 1 if pooling_type == 'TAP' else 2
-        if pooling_type == "ASP":
-            self.pooling = AttentiveStatsPool(m_channels, 128)
-        elif pooling_type == "SAP":
-            self.pooling = SelfAttentivePooling(m_channels, 128)
-        elif pooling_type == "TAP":
+        if pooling_type == "TAP":
             self.pooling = TemporalAveragePooling()
-        elif pooling_type == "TSP":
-            self.pooling = TemporalStatisticsPooling()
         elif pooling_type == "TSTP":
             self.pooling = TemporalStatsPool()
         else:
