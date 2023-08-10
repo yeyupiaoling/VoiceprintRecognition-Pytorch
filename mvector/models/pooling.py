@@ -45,6 +45,7 @@ class TemporalStatisticsPooling(nn.Module):
 
 
 class SelfAttentivePooling(nn.Module):
+    """SAP"""
     def __init__(self, in_dim, bottleneck_dim=128):
         # Use Conv1d with stride == 1 rather than Linear, then we don't need to transpose inputs.
         # attention dim = 128
@@ -61,6 +62,7 @@ class SelfAttentivePooling(nn.Module):
 
 
 class AttentiveStatsPool(nn.Module):
+    """ASP"""
     def __init__(self, in_dim, bottleneck_dim=128):
         super().__init__()
         # Use Conv1d with stride == 1 rather than Linear, then we don't need to transpose inputs.
@@ -78,7 +80,7 @@ class AttentiveStatsPool(nn.Module):
 
 
 class TemporalStatsPool(nn.Module):
-    """
+    """TSTP
     Temporal statistics pooling, concatenate mean and std, which is used in
     x-vector
     Comment: simple concatenation can not make full use of both statistics
