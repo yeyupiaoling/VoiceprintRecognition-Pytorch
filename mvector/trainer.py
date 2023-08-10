@@ -129,7 +129,7 @@ class MVectorTrainer(object):
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
             self.backbone = ERes2Net(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'CAM++':
+        elif self.configs.use_model == 'CAMPPlus':
             self.backbone = CAMPPlus(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'EcapaTdnn':
             self.backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf.backbone)
