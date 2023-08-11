@@ -30,6 +30,17 @@
 3. 支持损失函数：AAMLoss、AMLoss、ARMLoss、CELoss
 4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank
 
+**模型论文：**
+
+- EcapaTdnn：[ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification](https://arxiv.org/abs/2005.07143v3)
+- PANNS：[PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition](https://arxiv.org/abs/1912.10211v5)
+- TDNN：[Prediction of speech intelligibility with DNN-based performance measures](https://arxiv.org/abs/2203.09148)
+- Res2Net：[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)
+- ResNetSE：[Squeeze-and-Excitation Networks](https://arxiv.org/abs/1709.01507)
+- CAMPPlus：[CAM++: A Fast and Efficient Network for Speaker Verification Using Context-Aware Masking](https://arxiv.org/abs/2303.00332v3)
+- ERes2Net：[An Enhanced Res2Net with Local and Global Feature Fusion for Speaker Verification](https://arxiv.org/abs/2305.12838v1)
+
+
 # 模型下载
 
 |    模型     | Params(M) |     预处理方法      |                数据集                 | train speakers | threshold |   EER   | MinDCF  | 模型下载地址 |
