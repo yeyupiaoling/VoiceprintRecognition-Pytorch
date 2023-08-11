@@ -145,7 +145,7 @@ class MVectorPredictor:
             self.users_audio_path.append(audio_path)
             input_audios.append(audio_segment.samples)
             # 处理一批数据
-            if len(input_audios) == self.configs.dataset_conf.batch_size:
+            if len(input_audios) == self.configs.dataset_conf.eval_conf.batch_size:
                 features = self.predict_batch(input_audios)
                 if self.audio_feature is None:
                     self.audio_feature = features

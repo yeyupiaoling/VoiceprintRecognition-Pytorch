@@ -43,16 +43,16 @@
 
 # 模型下载
 
-|    模型     | Params(M) |     预处理方法      |                数据集                 | train speakers | threshold |   EER   | MinDCF  | 模型下载地址 |
-|:---------:|:---------:|:--------------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:|:------:|
-| EcapaTdnn |    6.7    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |        |
-|   TDNN    |    3.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        |
-|  Res2Net  |    6.6    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        |
-| ResNetSE  |    9.4    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        |
-| ERes2Net  |    8.2    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        |
-|   CAM++   |    7.5    | MelSpectrogram | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        |
-| ERes2Net  |    8.2    | MelSpectrogram |               其他数据集                |      20W       |   0.29    | 0.04765 | 0.31436 |        |
-|   CAM++   |    7.5    | MelSpectrogram |               其他数据集                |      20W       |   0.36    | 0.02936 | 0.18355 |        |
+|    模型     | Params(M) | 预处理方法 |                数据集                 | train speakers | threshold |   EER   | MinDCF  | 
+|:---------:|:---------:|:-----:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
+| EcapaTdnn |    6.7    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
+|   TDNN    |    3.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
+|  Res2Net  |    6.6    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
+| ResNetSE  |    9.4    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
+| ERes2Net  |    8.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
+|   CAM++   |    7.5    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
+| ERes2Net  |    8.2    | Fbank |               其他数据集                |      20W       |   0.36    | 0.02936 | 0.18355 |        
+|   CAM++   |    7.5    | Fbank |               其他数据集                |      20W       |   0.29    | 0.04765 | 0.31436 |        
 
 说明：
 1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
