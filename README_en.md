@@ -52,8 +52,7 @@ Environment：
 Explain:
 1. [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361), which contains 196 speakers.
 
-## Installation environment
-
+## Installation Environment
 
  - The GPU version of Pytorch will be installed first, please skip it if you already have it installed.
 ```shell
@@ -124,9 +123,9 @@ preprocess_conf:
 
 Using `train.py` to train the model, this project supports multiple audio preprocessing methods, which can be specified by the `preprocess_conf.feature_method` parameter in the `configs/ecapa_tdnn.yml` configuration file. `MelSpectrogram` for MEL spectrum, `Spectrogram` for spectrogram, `MFCC` for MEL spectrum cepstral coefficient, etc. The data augmentation can be specified using the `augment_conf_path` argument. During the training process, VisualDL will be used to save the training logs. You can view the training results at any time by starting VisualDL with the command `visualdl --logdir=log --host 0.0.0.0`
 ```shell
-# 单卡训练
+# Single GPU training
 CUDA_VISIBLE_DEVICES=0 python train.py
-# 多卡训练
+# Multi GPU training
 CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py
 ```
 
