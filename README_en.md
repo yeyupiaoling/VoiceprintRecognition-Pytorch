@@ -38,7 +38,7 @@ Environment：
 
 # Download Model
 
-|    Model     | Params(M) | Preprocessing method |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
+|   Model   | Params(M) | Preprocessing method |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
 |:---------:|:---------:|:--------------------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
 | EcapaTdnn |    6.7    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
 |   TDNN    |    3.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
