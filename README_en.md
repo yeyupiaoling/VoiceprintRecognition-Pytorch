@@ -8,6 +8,9 @@
 ![GitHub](https://img.shields.io/github/license/yeyupiaoling/VoiceprintRecognition-Pytorch)
 ![支持系统](https://img.shields.io/badge/支持系统-Win/Linux/MAC-9cf)
 
+**Disclaimer, this document was obtained through machine translation, please check the original document [here](./README.md).**
+
+
 This branch is version 1.0, if you want to use the previous version 0.3 please [0. X branch](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.x). This project uses a variety of advanced voiceprint recognition models such as EcapaTdnn, ResNetSE, ERes2Net, CAM++, etc. It is not excluded that more models will be supported in the future. At the same time, this project also supports MelSpectrogram, Spectrogram, MFCC, Fbank and other data preprocessing methods, using ArcFace Loss, ArcFace loss: Additive Angular Margin Loss, corresponding to AAMLoss in the project, normalizes the feature vectors and weights, and adds an Angle margin m to θ. The Angle margin has a more direct effect on the Angle than the cosine margin. In addition, Various loss functions such as AMLoss, ARMLoss, CELoss are also supported.
 
 
