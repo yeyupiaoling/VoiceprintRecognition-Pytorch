@@ -1,6 +1,6 @@
-简体中文 | [English](./README_en.md)
+[简体中文](./README.md) | English
 
-# 基于Pytorch实现的声纹识别系统
+# Voiceprint recognition system based on Pytorch
 
 ![python version](https://img.shields.io/badge/python-3.8+-orange.svg)
 ![GitHub forks](https://img.shields.io/github/forks/yeyupiaoling/VoiceprintRecognition-Pytorch)
@@ -8,31 +8,24 @@
 ![GitHub](https://img.shields.io/github/license/yeyupiaoling/VoiceprintRecognition-Pytorch)
 ![支持系统](https://img.shields.io/badge/支持系统-Win/Linux/MAC-9cf)
 
-本分支为1.0版本，如果要使用之前的0.3版本请在[0.x分支](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.x)使用。本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
+This branch is version 1.0, if you want to use the previous version 0.3 please [0. X branch](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.x). This project uses a variety of advanced voiceprint recognition models such as EcapaTdnn, ResNetSE, ERes2Net, CAM++, etc. It is not excluded that more models will be supported in the future. At the same time, this project also supports MelSpectrogram, Spectrogram, MFCC, Fbank and other data preprocessing methods, using ArcFace Loss, ArcFace loss: Additive Angular Margin Loss, corresponding to AAMLoss in the project, normalizes the feature vectors and weights, and adds an Angle margin m to θ. The Angle margin has a more direct effect on the Angle than the cosine margin. In addition, Various loss functions such as AMLoss, ARMLoss, CELoss are also supported.
 
 
-**欢迎大家扫码入QQ群讨论**，或者直接搜索QQ群号`758170167`，问题答案为博主Github的ID`yeyupiaoling`。
-
-<div align="center">
-  <img src="docs/images/qq.png"/>
-</div>
-
-
-使用环境：
+Environment：
 
  - Anaconda 3
  - Python 3.8
  - Pytorch 1.13.1
  - Windows 10 or Ubuntu 18.04
 
-# 项目特性
+# Project Features
 
-1. 支持模型：EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
-2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
-3. 支持损失函数：AAMLoss、AMLoss、ARMLoss、CELoss
-4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank
+1. Supporting models: EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
+2. Supporting pooling: AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
+3. Supporting Loss: AAMLoss、AMLoss、ARMLoss、CELoss
+4. Support preprocessing methods: MelSpectrogram、Spectrogram、MFCC、Fbank
 
-**模型论文：**
+**Model Paper：**
 
 - EcapaTdnn：[ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification](https://arxiv.org/abs/2005.07143v3)
 - PANNS：[PANNs: Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition](https://arxiv.org/abs/1912.10211v5)
@@ -43,54 +36,55 @@
 - ERes2Net：[An Enhanced Res2Net with Local and Global Feature Fusion for Speaker Verification](https://arxiv.org/abs/2305.12838v1)
 
 
-# 模型下载
+# Download Model
 
-|    模型     | Params(M) | 预处理方法 |                数据集                 | train speakers | threshold |   EER   | MinDCF  | 
-|:---------:|:---------:|:-----:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
-| EcapaTdnn |    6.7    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
-|   TDNN    |    3.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
-|  Res2Net  |    6.6    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
-| ResNetSE  |    9.4    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
-| ERes2Net  |    8.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
-|   CAM++   |    7.5    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 |        
-| ERes2Net  |    8.2    | Fbank |               其他数据集                |      20W       |   0.36    | 0.02936 | 0.18355 |        
-|   CAM++   |    7.5    | Fbank |               其他数据集                |      20W       |   0.29    | 0.04765 | 0.31436 |        
+|    Model     | Params(M) | Preprocessing method |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
+|:---------:|:---------:|:--------------------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
+| EcapaTdnn |    6.7    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
+|   TDNN    |    3.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
+|  Res2Net  |    6.6    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
+| ResNetSE  |    9.4    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
+| ERes2Net  |    8.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
+|   CAM++   |    7.5    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 |        
+| ERes2Net  |    8.2    |        Fbank         |               其他数据集                |      20W       |   0.36    | 0.02936 | 0.18355 |        
+|   CAM++   |    7.5    |        Fbank         |               其他数据集                |      20W       |   0.29    | 0.04765 | 0.31436 |        
 
-说明：
-1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
+Explain:
+1. [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361), which contains 196 speakers.
 
-## 安装环境
+## Installation environment
 
- - 首先安装的是Pytorch的GPU版本，如果已经安装过了，请跳过。
+
+ - The GPU version of Pytorch will be installed first, please skip it if you already have it installed.
 ```shell
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
 ```
 
- - 安装ppvector库。
+ - Install ppvector.
  
-使用pip安装，命令如下：
+Install it using pip with the following command:
 ```shell
 python -m pip install mvector -U -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-**建议源码安装**，源码安装能保证使用最新代码。
+**Source installation is recommended**, which ensures that the latest code is used.
 ```shell
 git clone https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch.git
 cd VoiceprintRecognition_Pytorch/
 python setup.py install
 ```
 
-# 创建数据
-本教程笔者使用的是[CN-Celeb](http://openslr.org/82/)，这个数据集一共有约3000个人的语音数据，有65W+条语音数据，下载之后要解压数据集到`dataset`目录，另外如果要评估，还需要下载[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
+# Create Data
+The author used [CN-Celeb](http://openslr.org/82/) for this tutorial. This dataset has a total of about 3000 people's voice data, and there are 65W+ voice data. After downloading, you need to unzip the dataset to the 'dataset' directory. Also need to download [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361). If you have other better datasets, you can mix them up, but it's best to use python's aukit tool module for audio processing, noise reduction, and de-muting.
 
-首先是创建一个数据列表，数据列表的格式为`<语音文件路径\t语音分类标签>`，创建这个列表主要是方便之后的读取，也是方便读取使用其他的语音数据集，语音分类标签是指说话人的唯一ID，不同的语音数据集，可以通过编写对应的生成数据列表的函数，把这些数据集都写在同一个数据列表中。
+The format of the data list is `<voice_file_path\tspeech_classification_label>`. The creation of this list is mainly for the convenience of later reading, but also for the convenience of reading and using other speech data sets. Speech classification label refers to the unique ID of the speaker. Put these data sets in the same data list.
 
-执行`create_data.py`程序完成数据准备。
+Execute `create_data.py` to prepare the data.
 ```shell
 python create_data.py
 ```
 
-执行上面的程序之后，会生成以下的数据格式，如果要自定义数据，参考如下数据列表，前面是音频的相对路径，后面的是该音频对应的说话人的标签，就跟分类一样。**自定义数据集的注意**，测试数据列表的ID可以不用跟训练的ID一样，也就是说测试的数据的说话人可以不用出现在训练集，只要保证测试数据列表中同一个人相同的ID即可。
+After executing the above program, the following data format will be generated, and if you want to customize the data, refer to the following list of data, which is preceded by the relative path of the audio and followed by the label of the speaker for that audio, just like classification. **A note on custom datasets**, the test list ID doesn't have to be the same as the training ID, meaning the test speaker doesn't have to be in the training set, just make sure the test list has the same ID for the same person.
 ```
 dataset/CN-Celeb2_flac/data/id11999/recitation-03-019.flac      2795
 dataset/CN-Celeb2_flac/data/id11999/recitation-10-023.flac      2795
@@ -107,8 +101,9 @@ dataset/CN-Celeb2_flac/data/id11999/recitation-09-001.flac      2795
 dataset/CN-Celeb2_flac/data/id11999/recitation-05-010.flac      2795
 ```
 
-# 修改预处理方法
-配置文件中默认使用的是MelSpectrogram预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。如果不清楚如何设置参数，可以直接删除该部分，直接使用默认值。
+# Change preprocessing methods
+
+By default, the MelSpectrogram preprocessing method is used in the configuration file. If you want to use other preprocessing methods, you can modify the following installation in the configuration file, and the specific value can be modified according to your own situation. If it's not clear how to set the parameters, you can remove that section and just use the default values.
 
 ```yaml
 preprocess_conf:
@@ -125,8 +120,9 @@ preprocess_conf:
     n_mels: 64
 ```
 
-# 训练模型
-使用`train.py`训练模型，本项目支持多个音频预处理方式，通过`configs/ecapa_tdnn.yml`配置文件的参数`preprocess_conf.feature_method`可以指定，`MelSpectrogram`为梅尔频谱，`Spectrogram`为语谱图，`MFCC`梅尔频谱倒谱系数等等。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`
+# Train
+
+Using `train.py` to train the model, this project supports multiple audio preprocessing methods, which can be specified by the `preprocess_conf.feature_method` parameter in the `configs/ecapa_tdnn.yml` configuration file. `MelSpectrogram` for MEL spectrum, `Spectrogram` for spectrogram, `MFCC` for MEL spectrum cepstral coefficient, etc. The data augmentation can be specified using the `augment_conf_path` argument. During the training process, VisualDL will be used to save the training logs. You can view the training results at any time by starting VisualDL with the command `visualdl --logdir=log --host 0.0.0.0`
 ```shell
 # 单卡训练
 CUDA_VISIBLE_DEVICES=0 python train.py
@@ -134,7 +130,7 @@ CUDA_VISIBLE_DEVICES=0 python train.py
 CUDA_VISIBLE_DEVICES=0,1 torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py
 ```
 
-训练输出日志：
+Train log:
 ```
 [2023-08-05 09:52:06.497988 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
 [2023-08-05 09:52:06.498094 INFO   ] utils:print_arguments:15 - configs: configs/ecapa_tdnn.yml
@@ -256,18 +252,18 @@ Estimated Total Size (MB): 42.44
 [2023-08-05 09:53:45.439642 INFO   ] trainer:__train_epoch:334 - Train epoch: [1/30], batch: [700/13659], loss: 9.03548, accuracy: 0.01449, learning rate: 0.00099999, speed: 463.63 data/sec, eta: 15:41:08
 ```
 
-VisualDL页面：
+VisualDL：
 ![VisualDL页面](./docs/images/log.jpg)
 
 
 
-# 评估模型
-训练结束之后会保存预测模型，我们用预测模型来预测测试集中的音频特征，然后使用音频特征进行两两对比，计算EER和MinDCF。
+# Eval
+After training, the prediction model will be saved, and we will use the prediction model to predict the audio features in the test set, and then use the audio features for pairwise comparison to calculate EER and MinDCF.
 ```shell
 python eval.py
 ```
 
-输出类似如下：
+The output will look like this:
 ```
 ······
 ------------------------------------------------
@@ -280,13 +276,14 @@ W0425 08:27:32.065165 17654 device_context.cc:465] device: 0, cuDNN Version: 7.6
 评估消耗时间：65s，threshold：0.26，EER: 0.14739, MinDCF: 0.41999
 ```
 
-# 声纹对比
-下面开始实现声纹对比，创建`infer_contrast.py`程序，编写`infer()`函数，在编写模型的时候，模型是有两个输出的，第一个是模型的分类输出，第二个是音频特征输出。所以在这里要输出的是音频的特征值，有了音频的特征值就可以做声纹识别了。我们输入两个语音，通过预测函数获取他们的特征数据，使用这个特征数据可以求他们的对角余弦值，得到的结果可以作为他们相识度。对于这个相识度的阈值`threshold`，读者可以根据自己项目的准确度要求进行修改。
+# Voiceprint Contrast 
+
+Let's start implementing the voiceprint comparison, create the `infer_contrast.py` program, and write the `infer()` function. When we write the model, the model will have two outputs, the first is the classification output of the model, and the second is the audio feature output. So the output here is the characteristic value of audio, with the characteristic value of audio, you can do voiceprint recognition. We input two voices and get their feature data through the prediction function. Using this feature data, we can find their diagonal cosine value, and the result can be used as their acquaintance degree. This familiarity threshold `threshold` can be modified according to the accuracy requirements of your project.
 ```shell
 python infer_contrast.py --audio_path1=audio/a_1.wav --audio_path2=audio/b_2.wav
 ```
 
-输出类似如下：
+The output will look like this:
 ```
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
 [2023-04-02 18:30:48.009149 INFO   ] utils:print_arguments:15 - audio_path1: dataset/a_1.wav
@@ -303,14 +300,15 @@ W0425 08:29:10.008555 21121 device_context.cc:465] device: 0, cuDNN Version: 7.6
 audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：-0.09565544128417969
 ```
 
-# 声纹识别
-在上面的声纹对比的基础上，我们创建`infer_recognition.py`实现声纹识别。同样是使用上面声纹对比的`infer()`预测函数，通过这两个同样获取语音的特征数据。 不同的是笔者增加了`load_audio_db()`和`register()`，以及`recognition()`，第一个函数是加载声纹库中的语音数据，这些音频就是相当于已经注册的用户，他们注册的语音数据会存放在这里，如果有用户需要通过声纹登录，就需要拿到用户的语音和语音库中的语音进行声纹对比，如果对比成功，那就相当于登录成功并且获取用户注册时的信息数据。第二个函数`register()`其实就是把录音保存在声纹库中，同时获取该音频的特征添加到待对比的数据特征中。最后`recognition()`函数中，这个函数就是将输入的语音和语音库中的语音一一对比。
-有了上面的声纹识别的函数，读者可以根据自己项目的需求完成声纹识别的方式，例如笔者下面提供的是通过录音来完成声纹识别。首先必须要加载语音库中的语音，语音库文件夹为`audio_db`，然后用户回车后录音3秒钟，然后程序会自动录音，并使用录音到的音频进行声纹识别，去匹配语音库中的语音，获取用户的信息。通过这样方式，读者也可以修改成通过服务请求的方式完成声纹识别，例如提供一个API供APP调用，用户在APP上通过声纹登录时，把录音到的语音发送到后端完成声纹识别，再把结果返回给APP，前提是用户已经使用语音注册，并成功把语音数据存放在`audio_db`文件夹中。
+# Voiceprint Recognition
+
+Based on the above voiceprint comparison, we create `infer_recognition.py` for voiceprint recognition. We use the same `infer()` prediction function from the voiceprint comparison above to get the speech feature data from both of them. The difference is that the author added `load_audio_db()` and `register()`, and `recognition()`. The first function is to load the speech data in the voiceprint library. These audio are equivalent to registered users, and their registered speech data will be stored here. If a user needs to log in through voiceprint, it is necessary to get the user's voice and the voice in the speech database for voiceprint comparison. If the comparison is successful, it is equivalent to successful login and obtain the information data of the user registration. The second function, `register()`, saves the recording to the voiceprint library and takes the features of the audio and adds them to the data features to be compared. Finally, the `recognition()` function compares the input speech to the speech in the database.
+With the function of voiceprint recognition above, readers can complete the voiceprint recognition according to the needs of their own projects. For example, the following is provided by the author to complete the voiceprint recognition through recording. First of all, we must load the speech in the speech library, the speech library folder is `audio_db`, and then record for 3 seconds after the user enters the car, and then the program will automatically record, and use the recorded audio for voiceprint recognition to match the speech in the speech library and obtain the user's information. In this way, the reader can also modify to complete the voiceprint recognition through the service request, for example, provide an API for the APP to call, the user logs in through the voiceprint on the APP, send the recorded voice to the back-end to complete the voiceprint recognition, and then return the result to the APP, provided that the user has registered with the voice, And successfully stored the speech data in the `audio_db` folder.
 ```shell
 python infer_recognition.py
 ```
 
-输出类似如下：
+The output will look like this:
 ```
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:13 - ----------- 额外配置参数 -----------
 [2023-04-02 18:31:20.521040 INFO   ] utils:print_arguments:15 - audio_db_path: audio_db/
@@ -338,22 +336,13 @@ Loaded 李达康 audio.
 识别说话的为：夜雨飘零，相似度为：0.920434
 ```
 
-# 其他版本
+# Other Versions
  - Tensorflow：[VoiceprintRecognition-Tensorflow](https://github.com/yeyupiaoling/VoiceprintRecognition-Tensorflow)
  - PaddlePaddle：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
  - Keras：[VoiceprintRecognition-Keras](https://github.com/yeyupiaoling/VoiceprintRecognition-Keras)
 
 
-## 打赏作者
-
-<br/>
-<div align="center">
-<p>打赏一块钱支持一下作者</p>
-<img src="https://yeyupiaoling.cn/reward.png" alt="打赏作者" width="400">
-</div>
-
-
-# 参考资料
+# Reference
 1. https://github.com/PaddlePaddle/PaddleSpeech
 2. https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets
 3. https://github.com/yeyupiaoling/PPASR
