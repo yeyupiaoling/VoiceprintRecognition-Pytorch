@@ -48,8 +48,8 @@
 |    模型     | Params(M) | 预处理方法 |                数据集                 | train speakers | threshold |   EER   | MinDCF  | 
 |:---------:|:---------:|:-----:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
 | EcapaTdnn |    6.7    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
-|   TDNN    |    3.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
-|  Res2Net  |    6.6    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
+|   TDNN    |    3.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.23    | 0.12182 | 0.62141 |     
+|  Res2Net  |    6.6    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.22    | 0.14390 | 0.67961 |     
 | ResNetSE  |    9.4    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
 | ERes2Net  |    8.2    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
 |   CAM++   |    7.5    | Fbank | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 |        
