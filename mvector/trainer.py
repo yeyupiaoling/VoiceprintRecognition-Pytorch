@@ -347,7 +347,7 @@ class MVectorTrainer(object):
             # 计算准确率
             acc = accuracy(output, label)
             accuracies.append(acc)
-            loss_sum.append(los)
+            loss_sum.append(los.data.cpu().numpy())
             train_times.append((time.time() - start) * 1000)
 
             # 多卡训练只使用一个进程打印
