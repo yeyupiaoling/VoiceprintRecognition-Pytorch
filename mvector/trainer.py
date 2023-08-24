@@ -187,17 +187,17 @@ class MVectorTrainer(object):
             optimizer = self.configs.optimizer_conf.optimizer
             if optimizer == 'Adam':
                 self.optimizer = torch.optim.Adam(params=self.model.parameters(),
-                                                  lr=float(self.configs.optimizer_conf.learning_rate),
-                                                  weight_decay=float(self.configs.optimizer_conf.weight_decay))
+                                                  lr=self.configs.optimizer_conf.learning_rate,
+                                                  weight_decay=self.configs.optimizer_conf.weight_decay)
             elif optimizer == 'AdamW':
                 self.optimizer = torch.optim.AdamW(params=self.model.parameters(),
-                                                   lr=float(self.configs.optimizer_conf.learning_rate),
-                                                   weight_decay=float(self.configs.optimizer_conf.weight_decay))
+                                                   lr=self.configs.optimizer_conf.learning_rate,
+                                                   weight_decay=self.configs.optimizer_conf.weight_decay)
             elif optimizer == 'SGD':
                 self.optimizer = torch.optim.SGD(params=self.model.parameters(),
-                                                 momentum=self.configs.optimizer_conf.momentum,
-                                                 lr=float(self.configs.optimizer_conf.learning_rate),
-                                                 weight_decay=float(self.configs.optimizer_conf.weight_decay))
+                                                 momentum=self.configs.optimizer_conf.get('momentum', 0.9),
+                                                 lr=self.configs.optimizer_conf.learning_rate,
+                                                 weight_decay=self.configs.optimizer_conf.weight_decay)
             else:
                 raise Exception(f'不支持优化方法：{optimizer}')
             # 学习率衰减函数

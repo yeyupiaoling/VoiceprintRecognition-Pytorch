@@ -74,8 +74,8 @@ python -m pip install mvector -U -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 **建议源码安装**，源码安装能保证使用最新代码。
 ```shell
-git clone https://github.com/yeyupiaoling/VoiceprintRecognition_Pytorch.git
-cd VoiceprintRecognition_Pytorch/
+git clone https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch.git
+cd VoiceprintRecognition-Pytorch/
 python setup.py install
 ```
 
@@ -107,21 +107,17 @@ dataset/CN-Celeb2_flac/data/id11999/recitation-05-010.flac      2795
 ```
 
 # 修改预处理方法
-配置文件中默认使用的是MelSpectrogram预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。如果不清楚如何设置参数，可以直接删除该部分，直接使用默认值。
+配置文件中默认使用的是Fbank预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。如果不清楚如何设置参数，可以直接删除该部分，直接使用默认值。
 
 ```yaml
+# 数据预处理参数
 preprocess_conf:
   # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
-  feature_method: 'MelSpectrogram'
+  feature_method: 'Fbank'
   # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
   method_args:
-    sample_rate: 16000
-    n_fft: 1024
-    hop_length: 320
-    win_length: 1024
-    f_min: 50.0
-    f_max: 14000.0
-    n_mels: 64
+    sample_frequency: 16000
+    num_mel_bins: 80
 ```
 
 # 训练模型
