@@ -370,7 +370,7 @@ class MVectorTrainer(object):
                 # 记录学习率
                 writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], self.train_step)
                 self.train_step += 1
-                train_times = []
+                train_times, accuracies, loss_sum = [], [], []
             # 固定步数也要保存一次模型
             if batch_id % 10000 == 0 and batch_id != 0 and local_rank == 0:
                 self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id)
