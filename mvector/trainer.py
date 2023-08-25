@@ -266,7 +266,7 @@ class MVectorTrainer(object):
                     best_eer = json_data['eer']
             logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
             self.optimizer.step()
-            self.scheduler.step(last_epoch)
+            self.scheduler.step(last_epoch * len(self.train_loader))
         return last_epoch, best_eer
 
     # 保存模型
@@ -488,7 +488,8 @@ class MVectorTrainer(object):
         # 获取注册的声纹特征和标签
         enroll_features, enroll_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.enroll_loader, desc="注册音频声纹特征")):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(
+                    tqdm(self.enroll_loader, desc="注册音频声纹特征")):
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
@@ -501,7 +502,8 @@ class MVectorTrainer(object):
         # 获取检验的声纹特征和标签
         trials_features, trials_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.trials_loader, desc="验证音频声纹特征")):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(
+                    tqdm(self.trials_loader, desc="验证音频声纹特征")):
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
                 label = label.to(self.device).long()
