@@ -41,16 +41,17 @@ Environment：
 
 # Download Model
 
-|   Model   | Params(M) | Preprocessing method |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
-|:---------:|:---------:|:--------------------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
-| EcapaTdnn |    6.7    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
-|   TDNN    |    3.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
-|  Res2Net  |    6.6    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |     
-| ResNetSE  |    9.4    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
-| ERes2Net  |    8.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         |        
-|   CAM++   |    7.5    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 |        
-| ERes2Net  |    8.2    |        Fbank         |               其他数据集                |      20W       |   0.36    | 0.02936 | 0.18355 |        
-|   CAM++   |    7.5    |        Fbank         |               其他数据集                |      20W       |   0.29    | 0.04765 | 0.31436 |        
+|    Model    |  Params(M)  | Preprocessing method |               Dataset                |  train speakers  |  threshold  |    EER    |  MinDCF   | 
+|:-----------:|:-----------:|:--------------------:|:------------------------------------:|:----------------:|:-----------:|:---------:|:---------:| 
+| :---------: | :---------: |       :-----:        | :----------------------------------: | :--------------: | :---------: | :-------: | :-------: | 
+|    CAM++    |     7.5     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.26     |  0.09557  |  0.53516  |        
+|  ERes2Net   |     8.2     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.19     |  0.09980  |  0.52352  |        
+|  ResNetSE   |     9.4     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.20     |  0.10149  |  0.55185  |        
+|  EcapaTdnn  |     6.7     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.24     |  0.10163  |  0.56543  |   
+|    TDNN     |     3.2     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.23     |  0.12182  |  0.62141  |     
+|   Res2Net   |     6.6     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.22     |  0.14390  |  0.67961  |     
+|  ERes2Net   |     8.2     |        Fbank         |                其他数据集                 |       20W        |    0.36     |  0.02936  |  0.18355  |        
+|    CAM++    |     7.5     |        Fbank         |                其他数据集                 |       20W        |    0.29     |  0.04765  |  0.31436  |        
 
 Explain:
 1. [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361), which contains 196 speakers.
