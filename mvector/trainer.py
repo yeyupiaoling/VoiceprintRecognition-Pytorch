@@ -266,7 +266,7 @@ class MVectorTrainer(object):
                     best_eer = json_data['eer']
             logger.info('成功恢复模型参数和优化方法参数：{}'.format(resume_model))
             self.optimizer.step()
-            self.scheduler.step(last_epoch * len(self.train_loader))
+            [self.scheduler.step() for _ in range(last_epoch * len(self.train_loader))]
         return last_epoch, best_eer
 
     # 保存模型
