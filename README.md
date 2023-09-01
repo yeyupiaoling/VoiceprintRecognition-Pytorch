@@ -76,7 +76,7 @@ python -m pip install mvector -U -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```shell
 git clone https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch.git
 cd VoiceprintRecognition-Pytorch/
-python setup.py install
+pip install .
 ```
 
 # 创建数据
