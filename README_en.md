@@ -50,6 +50,7 @@ Environment：
 |  EcapaTdnn  |     6.7     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.24     |  0.10163  |  0.56543  |   
 |    TDNN     |     3.2     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.23     |  0.12182  |  0.62141  |     
 |   Res2Net   |     6.6     |        Fbank         |  [CN-Celeb](http://openslr.org/82/)  |       2796       |    0.22     |  0.14390  |  0.67961  |     
+|    CAM++    |     7.5     |        Fbank         |                更大数据集                 |       2W+        |    0.33     |  0.07874  |  0.52524  |                               
 |  ERes2Net   |     8.2     |        Fbank         |                其他数据集                 |       20W        |    0.36     |  0.02936  |  0.18355  |        
 |    CAM++    |     7.5     |        Fbank         |                其他数据集                 |       20W        |    0.29     |  0.04765  |  0.31436  |        
 
