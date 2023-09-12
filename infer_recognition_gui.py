@@ -1,24 +1,22 @@
 import argparse
 import functools
-import queue
 import threading
 import tkinter as tk
 from tkinter import simpledialog
-from collections import deque
 
 import numpy as np
+import soundcard as sc
 
 from mvector.predict import MVectorPredictor
 from mvector.utils.record import RecordAudio
 from mvector.utils.utils import add_arguments, print_arguments
 
-
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
-add_arg('configs',          str,    'configs/ecapa_tdnn.yml',   '配置文件')
+add_arg('configs',          str,    'configs/cam++.yml',   '配置文件')
 add_arg('use_gpu',          bool,   True,                       '是否使用GPU预测')
 add_arg('audio_db_path',    str,    'audio_db/',                '音频库的路径')
-add_arg('model_path',       str,    'models/EcapaTdnn_Fbank/best_model/', '导出的预测模型文件路径')
+add_arg('model_path',       str,    'models/CAMPPlus_Fbank/best_model/', '导出的预测模型文件路径')
 args = parser.parse_args()
 print_arguments(args=args)
 
@@ -27,10 +25,16 @@ class VoiceRecognitionGUI:
     def __init__(self, master):
         master.title("夜雨飘零声纹识别")
         master.geometry('400x200')
-        self.max_len = 3
+        # 识别使用时间，单位秒
+        self.infer_time = 2
+        # 录音采样率
+        self.samplerate = 16000
+        # 录音块大小
+        self.numframes = 1024
+        # 模型输入长度
+        self.infer_len = int(self.samplerate * self.infer_time / self.numframes)
         self.recognizing = False
-        self.q = queue.Queue(maxsize=2)
-        self.data_deque = deque(maxlen=self.max_len)
+        self.record_data = []
         self.record_audio = RecordAudio()
         # 录音长度标签和输入框
         self.record_seconds_label = tk.Label(master, text="录音长度(s):")
@@ -100,9 +104,6 @@ class VoiceRecognitionGUI:
                 self.result_label.config(text="删除失败")
 
     def recognize_thread(self):
-        self.max_len = int(self.record_seconds.get())
-        self.q = queue.Queue(maxsize=2)
-        self.data_deque = deque(maxlen=self.max_len)
         if not self.recognizing:
             self.recognizing = True
             self.recognize_real_button.config(text="结束声纹识别")
@@ -116,14 +117,12 @@ class VoiceRecognitionGUI:
     def recognize_real(self):
         threshold = float(self.threshold.get())
         while self.recognizing:
-            self.data_deque.append(self.q.get())
-            if len(self.data_deque) != self.max_len: continue
-            audio_data = None
-            for data in self.data_deque:
-                if audio_data is None:
-                    audio_data = data
-                else:
-                    audio_data = np.concatenate((audio_data, data))
+            if len(self.record_data) < self.infer_len: continue
+            # 截取最新的音频数据
+            seg_data = self.record_data[-self.infer_len:]
+            audio_data = np.concatenate(seg_data)
+            # 删除旧的音频数据
+            del self.record_data[:len(self.record_data) - self.infer_len]
             name = self.predictor.recognition(audio_data, threshold, sample_rate=self.record_audio.sample_rate)
             if name:
                 self.result_label.config(text=f"【{name}】正在说话")
@@ -131,9 +130,12 @@ class VoiceRecognitionGUI:
                 self.result_label.config(text="")
 
     def record_real(self):
-        while self.recognizing:
-            audio_data = self.record_audio.record(record_seconds=1)
-            self.q.put(audio_data)
+        self.record_data = []
+        default_mic = sc.default_microphone()
+        with default_mic.recorder(samplerate=self.samplerate, channels=1) as mic:
+            while self.recognizing:
+                data = mic.record(numframes=self.numframes)
+                self.record_data.append(data)
 
 
 if __name__ == '__main__':
