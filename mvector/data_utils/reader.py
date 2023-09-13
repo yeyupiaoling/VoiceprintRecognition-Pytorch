@@ -53,7 +53,7 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         # 分割音频路径和标签
-        audio_path, spk_id = self.lines[idx].replace('\n', '').split('\t')
+        audio_path, spk_id = self.lines[idx].strip().split('\t')
         spk_id = int(spk_id)
         # 读取音频
         audio_segment = AudioSegment.from_file(audio_path)
