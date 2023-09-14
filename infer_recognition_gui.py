@@ -24,7 +24,7 @@ print_arguments(args=args)
 class VoiceRecognitionGUI:
     def __init__(self, master):
         master.title("夜雨飘零声纹识别")
-        master.geometry('400x200')
+        master.geometry('430x200')
         # 识别使用时间，单位秒
         self.infer_time = 2
         # 录音采样率
@@ -54,11 +54,11 @@ class VoiceRecognitionGUI:
         self.register_button = tk.Button(master, text="注册音频到声纹库", command=self.register)
         self.register_button.place(x=90, y=90)
         self.recognize_button = tk.Button(master, text="执行声纹识别", command=self.recognize)
-        self.recognize_button.place(x=210, y=90)
+        self.recognize_button.place(x=200, y=90)
         self.remove_user_button = tk.Button(master, text="删除用户", command=self.remove_user)
-        self.remove_user_button.place(x=320, y=90)
-        self.recognize_real_button = tk.Button(master, text="实时声纹识别", command=self.recognize_thread)
-        self.recognize_real_button.place(x=10, y=140)
+        self.remove_user_button.place(x=290, y=90)
+        self.recognize_real_button = tk.Button(master, text="实时识别", command=self.recognize_thread)
+        self.recognize_real_button.place(x=360, y=90)
         self.result_label = tk.Label(master, text="结果显示", font=('Arial', 16))
         self.result_label.place(relx=0.5, y=160, anchor=tk.CENTER)
         # 识别器
@@ -88,9 +88,9 @@ class VoiceRecognitionGUI:
         self.result_label.config(text="正在录音...")
         audio_data = self.record_audio.record(record_seconds=record_seconds)
         self.result_label.config(text="录音结束")
-        name = self.predictor.recognition(audio_data, threshold, sample_rate=self.record_audio.sample_rate)
+        name, score = self.predictor.recognition(audio_data, threshold, sample_rate=self.record_audio.sample_rate)
         if name:
-            self.result_label.config(text=f"说话人为：{name}")
+            self.result_label.config(text=f"说话人为：{name}，得分：{score}")
         else:
             self.result_label.config(text="没有识别到说话人，可能是没注册。")
 
@@ -123,7 +123,7 @@ class VoiceRecognitionGUI:
             audio_data = np.concatenate(seg_data)
             # 删除旧的音频数据
             del self.record_data[:len(self.record_data) - self.infer_len]
-            name = self.predictor.recognition(audio_data, threshold, sample_rate=self.record_audio.sample_rate)
+            name, score = self.predictor.recognition(audio_data, threshold, sample_rate=self.record_audio.sample_rate)
             if name:
                 self.result_label.config(text=f"【{name}】正在说话")
             else:

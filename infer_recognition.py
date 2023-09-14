@@ -36,9 +36,9 @@ while True:
     elif select_fun == 1:
         input(f"按下回车键开机录音，录音{args.record_seconds}秒中：")
         audio_data = record_audio.record(record_seconds=args.record_seconds)
-        name = predictor.recognition(audio_data, sample_rate=record_audio.sample_rate)
+        name, score = predictor.recognition(audio_data, sample_rate=record_audio.sample_rate)
         if name:
-            print(f"识别说话的为：{name}")
+            print(f"识别说话的为：{name}，得分：{score}")
         else:
             print(f"没有识别到说话人，可能是没注册。")
     elif select_fun == 2:

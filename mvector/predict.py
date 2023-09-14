@@ -180,11 +180,14 @@ class MVectorPredictor:
             candidate_idx = np.delete(candidate_idx, remove_idx)
             # 获取标签最多的值
             candidate_label_list = list(np.array(self.users_name)[candidate_idx])
+            candidate_label_dict = {k: v for k, v in zip(candidate_idx, candidate_label_list)}
             if len(candidate_label_list) == 0:
-                max_label = None
+                max_label, score = None, None
             else:
                 max_label = max(candidate_label_list, key=candidate_label_list.count)
-            labels.append(max_label)
+                scores = [abs_similarity[k] for k, v in candidate_label_dict.items() if v == max_label]
+                score = round(sum(scores) / len(scores), 5)
+            labels.append([max_label, score])
         return labels
 
     def _load_audio(self, audio_data, sample_rate=16000):
