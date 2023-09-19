@@ -222,7 +222,7 @@ class MVectorTrainer(object):
         self.model.to(self.device)
         summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
         # 使用Pytorch2.0的编译器
-        if self.configs.train_conf.use_compile and torch.__version__ >= "2" and platform.system().lower() == 'windows':
+        if self.configs.train_conf.use_compile and torch.__version__ >= "2" and platform.system().lower() != 'windows':
             self.model = torch.compile(self.model, mode="reduce-overhead")
 
     def __load_pretrained(self, pretrained_model):
