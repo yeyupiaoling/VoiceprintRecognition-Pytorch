@@ -12,7 +12,7 @@ def create_cn_celeb(list_path, data_path='dataset/'):
         # 跳过测试集
         if label >= 800:continue
         for file in os.listdir(os.path.join(data_dir, d)):
-            sound_path = os.path.join(data_dir, d, file)
+            sound_path = os.path.join(data_dir, d, file).replace('\\', '/')
             f_train.write(f'{sound_path}\t{label}\n')
     f_train.close()
 
@@ -29,7 +29,7 @@ def create_cn_celeb2(list_path, data_path='dataset/'):
     last_label = 800
     for label, d in enumerate(dirs):
         for file in os.listdir(os.path.join(data_dir, d)):
-            sound_path = os.path.join(data_dir, d, file)
+            sound_path = os.path.join(data_dir, d, file).replace('\\', '/')
             f_train.write(f'{sound_path}\t{label + last_label}\n')
     f_train.close()
 
