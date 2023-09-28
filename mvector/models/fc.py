@@ -8,6 +8,7 @@ class SpeakerIdentification(nn.Module):
                  input_dim,
                  num_speakers,
                  loss_type='AAMLoss',
+                 K=1,
                  num_blocks=0,
                  inter_dim=512):
         """The speaker identification model, which includes the speaker backbone network
@@ -27,7 +28,7 @@ class SpeakerIdentification(nn.Module):
             self.blocks.append(DenseLayer(input_dim, inter_dim, config_str='batchnorm'))
             input_dim = inter_dim
 
-        self.weight = nn.Parameter(torch.FloatTensor(num_speakers, input_dim))
+        self.weight = nn.Parameter(torch.FloatTensor(num_speakers * K, input_dim))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, x):
@@ -36,7 +37,7 @@ class SpeakerIdentification(nn.Module):
             x = layer(x)
 
         # normalized
-        if self.loss_type == 'AAMLoss':
+        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenter':
             logits = F.linear(F.normalize(x), F.normalize(self.weight))
         elif self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
             x_norm = torch.norm(x, p=2, dim=1, keepdim=True).clamp(min=1e-12)

@@ -28,7 +28,7 @@ from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
 from mvector.models.eres2net import ERes2Net
 from mvector.models.fc import SpeakerIdentification
-from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss
+from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenter
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
@@ -163,6 +163,8 @@ class MVectorTrainer(object):
             loss_args = loss_args if loss_args is not None else {}
             if use_loss == 'AAMLoss':
                 self.loss = AAMLoss(**loss_args)
+            elif use_loss == 'SubCenter':
+                self.loss = SubCenter(**loss_args)
             elif use_loss == 'AMLoss':
                 self.loss = AMLoss(**loss_args)
             elif use_loss == 'ARMLoss':
