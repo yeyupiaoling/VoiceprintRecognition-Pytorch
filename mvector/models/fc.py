@@ -30,6 +30,7 @@ class SpeakerIdentification(nn.Module):
 
         self.weight = nn.Parameter(torch.FloatTensor(num_speakers * K, input_dim))
         nn.init.xavier_uniform_(self.weight)
+        self.output = nn.Linear(input_dim, num_speakers)
 
     def forward(self, x):
         # x: [B, dim]
