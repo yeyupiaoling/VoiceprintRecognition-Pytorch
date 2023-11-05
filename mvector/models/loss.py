@@ -110,7 +110,7 @@ class CELoss(nn.Module):
         pass
 
 
-class SubCenter(nn.Module):
+class SubCenterLoss(nn.Module):
     r"""Implement of large margin arc distance with subcenter:
     Reference:Sub-center ArcFace: Boosting Face Recognition byLarge-Scale Noisy
      Web Faces.https://ibug.doc.ic.ac.uk/media/uploads/documents/eccv_1445.pdf
@@ -123,7 +123,7 @@ class SubCenter(nn.Module):
     """
 
     def __init__(self, margin=0.2, scale=32, easy_margin=False, K=3):
-        super(SubCenter, self).__init__()
+        super(SubCenterLoss, self).__init__()
         self.scale = scale
         self.margin = margin
         # subcenter
@@ -148,20 +148,21 @@ class SubCenter(nn.Module):
         self.m = self.margin
         self.mmm = 1.0 + math.cos(math.pi - margin)
 
-    def forward(self, cosine, label):
-        # (batch, out_dim * k)
-        cosine = torch.reshape(cosine, (cosine.shape[0], -1, self.K))
+    def forward(self, input, label):
         # (batch, out_dim, k)
-        cosine, _ = torch.max(cosine, 2)
+        cosine = torch.reshape(input, (-1, input.shape[1] // self.K, self.K))
         # (batch, out_dim)
+        cosine, _ = torch.max(cosine, 2)
         sine = torch.sqrt(1.0 - torch.pow(cosine, 2))
         phi = cosine * self.cos_m - sine * self.sin_m
         if self.easy_margin:
             phi = torch.where(cosine > 0, phi, cosine)
         else:
             phi = torch.where(cosine > self.th, phi, cosine - self.mmm)
-        one_hot = torch.zeros(cosine.size()).type_as(cosine)
-        one_hot.scatter_(1, label.unsqueeze(1).long(), 1)
+
+        one_hot = input.new_zeros(cosine.size())
+        one_hot.scatter_(1, label.view(-1, 1).long(), 1)
+
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         output *= self.scale
 

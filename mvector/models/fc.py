@@ -28,7 +28,7 @@ class SpeakerIdentification(nn.Module):
             self.blocks.append(DenseLayer(input_dim, inter_dim, config_str='batchnorm'))
             input_dim = inter_dim
 
-        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenter' or \
+        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or \
                 self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
             self.weight = nn.Parameter(torch.FloatTensor(num_speakers * K, input_dim))
             nn.init.xavier_uniform_(self.weight)
@@ -41,7 +41,7 @@ class SpeakerIdentification(nn.Module):
             x = layer(x)
 
         # normalized
-        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenter':
+        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss':
             logits = F.linear(F.normalize(x), F.normalize(self.weight))
         elif self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
             x_norm = torch.norm(x, p=2, dim=1, keepdim=True).clamp(min=1e-12)
