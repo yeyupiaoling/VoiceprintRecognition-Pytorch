@@ -350,15 +350,17 @@ class MVectorTrainer(object):
             self.optimizer.zero_grad()
 
             # 计算准确率
-            if use_loss != 'SubCenterLoss':
-                acc = accuracy(output, label)
-                accuracies.append(acc)
+            if use_loss == 'SubCenterLoss':
+                loss_args = self.configs.loss_conf.get('args', {})
+                cosine = torch.reshape(output, (-1, output.shape[1] // loss_args.K, loss_args.K))
+                output, _ = torch.max(cosine, 2)
+            acc = accuracy(output, label)
+            accuracies.append(acc)
             loss_sum.append(los.data.cpu().numpy())
             train_times.append((time.time() - start) * 1000)
 
             # 多卡训练只使用一个进程打印
             if batch_id % self.configs.train_conf.log_interval == 0 and local_rank == 0:
-                log_acc = f'accuracy: {sum(accuracies) / len(accuracies):.5f}, ' if use_loss != 'SubCenterLoss' else ''
                 # 计算每秒训练数据量
                 train_speed = self.configs.dataset_conf.dataLoader.batch_size / (
                         sum(train_times) / len(train_times) / 1000)
@@ -369,12 +371,11 @@ class MVectorTrainer(object):
                 logger.info(f'Train epoch: [{epoch_id}/{self.configs.train_conf.max_epoch}], '
                             f'batch: [{batch_id}/{len(self.train_loader)}], '
                             f'loss: {sum(loss_sum) / len(loss_sum):.5f}, '
-                            f'{log_acc}'
+                            f'accuracy: {sum(accuracies) / len(accuracies):.5f}, '
                             f'learning rate: {self.scheduler.get_last_lr()[0]:>.8f}, '
                             f'speed: {train_speed:.2f} data/sec, eta: {eta_str}')
                 writer.add_scalar('Train/Loss', sum(loss_sum) / len(loss_sum), self.train_step)
-                if use_loss != 'SubCenterLoss':
-                    writer.add_scalar('Train/Accuracy', (sum(accuracies) / len(accuracies)), self.train_step)
+                writer.add_scalar('Train/Accuracy', (sum(accuracies) / len(accuracies)), self.train_step)
                 # 记录学习率
                 writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], self.train_step)
                 self.train_step += 1
