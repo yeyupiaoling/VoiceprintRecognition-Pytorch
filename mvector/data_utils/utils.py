@@ -1,3 +1,4 @@
+import gc
 import io
 import itertools
 
@@ -81,7 +82,7 @@ def decode_audio(file, sample_rate: int = 16000):
     raw_buffer = io.BytesIO()
     dtype = None
 
-    with av.open(file, metadata_errors="ignore") as container:
+    with av.open(file, mode="r", metadata_errors="ignore") as container:
         frames = container.decode(audio=0)
         frames = _ignore_invalid_frames(frames)
         frames = _group_frames(frames, 500000)
@@ -91,6 +92,9 @@ def decode_audio(file, sample_rate: int = 16000):
             array = frame.to_ndarray()
             dtype = array.dtype
             raw_buffer.write(array)
+
+    del resampler
+    gc.collect()
 
     audio = np.frombuffer(raw_buffer.getbuffer(), dtype=dtype)
 
