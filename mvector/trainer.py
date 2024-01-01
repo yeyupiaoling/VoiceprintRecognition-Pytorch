@@ -62,6 +62,10 @@ class MVectorTrainer(object):
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
         self.backbone = None
+        self.model_output_name = '1.weight'
+        self.train_method = None
+        self.original_weight = {}
+        self.old_num_class = None
         self.enroll_loader = None
         self.trials_loader = None
         self.margin_scheduler = None
@@ -150,8 +154,13 @@ class MVectorTrainer(object):
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
             # 语速扰动要增加分类数量
-            self.configs.model_conf.classifier.num_speakers = num_class * 3 \
-                if self.configs.dataset_conf.aug_conf.speed_perturb else num_class
+            if self.configs.dataset_conf.aug_conf.speed_perturb:
+                if self.train_method is not None:
+                    assert not self.configs.dataset_conf.aug_conf.speed_perturb_3_class, \
+                        '增量学习不能使用语速扰动增加分类数量'
+                if self.configs.dataset_conf.aug_conf.speed_perturb_3_class:
+                    self.configs.model_conf.classifier.num_speakers = num_class * 3
+            # 分类器
             classifier = SpeakerIdentification(input_dim=self.backbone.embd_dim,
                                                loss_type=use_loss,
                                                **self.configs.model_conf.classifier)
@@ -227,17 +236,56 @@ class MVectorTrainer(object):
         if self.configs.train_conf.use_compile and torch.__version__ >= "2" and platform.system().lower() != 'windows':
             self.model = torch.compile(self.model, mode="reduce-overhead")
 
+    # 改变分类器输出权重大小
+    def __change_model_output_size(self, model_state_dict, hp_alpha=0.2):
+        if self.model_output_name not in model_state_dict.keys():
+            return model_state_dict
+        self.old_num_class = model_state_dict[self.model_output_name].size(0)
+        new_num_class = self.configs.model_conf.classifier.num_speakers
+        logger.info(f'【增量学习】改变分类器输出权重大小，原分类器输出大小：{self.old_num_class}, 新分类器输出大小：{new_num_class}')
+
+        output = model_state_dict[self.model_output_name]
+        position_ids = torch.LongTensor(list(range(new_num_class)))
+        i = position_ids // self.old_num_class
+        j = position_ids % self.old_num_class
+        base_output = (output - output[0:1] * hp_alpha) / (1 - hp_alpha)
+
+        position_output = hp_alpha * base_output[i] + (1 - hp_alpha) * base_output[j]
+        model_state_dict[self.model_output_name] = position_output
+        return model_state_dict
+
+    # 加载预训练模型
     def __load_pretrained(self, pretrained_model):
-        # 加载预训练模型
+        if self.train_method is not None:
+            assert pretrained_model is not None, '增量学习必须要设置预训练模型!'
         if pretrained_model is not None:
             if os.path.isdir(pretrained_model):
                 pretrained_model = os.path.join(pretrained_model, 'model.pth')
             assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
             model_state_dict = torch.load(pretrained_model)
-            if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-                self.model.module.load_state_dict(model_state_dict, strict=False)
+            # 增量学习改变分类器输出权重大小
+            if self.train_method is not None:
+                model_state_dict = self.__change_model_output_size(model_state_dict)
+                # 获取原始的模型参数，用于计算增量学习损失
+                for param_name, param in model_state_dict.items():
+                    self.original_weight[param_name] = param.data.clone()
             else:
-                self.model.load_state_dict(model_state_dict, strict=False)
+                for param_name, param in self.model.named_parameters():
+                    if param_name in model_state_dict.keys() and model_state_dict[param_name].size() != param.size():
+                        logger.warning(f'模型参数{param_name}的大小不匹配，权重的是{model_state_dict[param_name].size()}, '
+                                       f'模型的是{param.size()}，已忽略！')
+                        del model_state_dict[param_name]
+            # 加载权重
+            if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
+                missing_keys, unexpected_keys = self.model.module.load_state_dict(model_state_dict, strict=False)
+            else:
+                missing_keys, unexpected_keys = self.model.load_state_dict(model_state_dict, strict=False)
+            if len(unexpected_keys) > 0:
+                logger.warning('Unexpected key(s) in state_dict: {}. '
+                               .format(', '.join('"{}"'.format(k) for k in unexpected_keys)))
+            if len(missing_keys) > 0:
+                logger.warning('Missing key(s) in state_dict: {}. '
+                               .format(', '.join('"{}"'.format(k) for k in missing_keys)))
             logger.info('成功加载预训练模型：{}'.format(pretrained_model))
 
     def __load_checkpoint(self, save_model_path, resume_model):
@@ -310,8 +358,8 @@ class MVectorTrainer(object):
                 shutil.rmtree(old_model_path)
         logger.info('已保存模型：{}'.format(model_path))
 
-    def __train_epoch(self, epoch_id, save_model_path, local_rank, writer, nranks=0):
-        train_times, accuracies, loss_sum = [], [], []
+    def __train_epoch(self, epoch_id, save_model_path, local_rank, writer, nranks=0, il_ratio=10.0):
+        train_times, accuracies, loss_sum, il_losses = [], [], [], []
         start = time.time()
         use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
         sum_batch = len(self.train_loader) * self.configs.train_conf.max_epoch
@@ -333,6 +381,20 @@ class MVectorTrainer(object):
                 output = self.model(features)
             # 计算损失值
             los = self.loss(output, label)
+            # 增量学习损失
+            if self.train_method == 'ewc':
+                losses = []
+                for n, p in self.model.named_parameters():
+                    # 每个参数都有mean和fisher
+                    mean = self.original_weight[n.replace("module.", "")]
+                    if self.model_output_name == n:
+                        pass
+                        # losses.append(((p - mean)[:self.old_num_class, :] ** 2).sum())
+                    else:
+                        losses.append(((p - mean) ** 2).sum())
+                ewc_loss = sum(losses)
+                los = los + (ewc_loss * il_ratio)
+                il_losses.append(ewc_loss * il_ratio)
             # 是否开启自动混合精度
             if self.configs.train_conf.enable_amp:
                 # loss缩放，乘以系数loss_scaling
@@ -368,13 +430,16 @@ class MVectorTrainer(object):
                 eta_sec = (sum(train_times) / len(train_times)) * (
                         sum_batch - (epoch_id - 1) * len(self.train_loader) - batch_id)
                 eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
+                il_loss_str = f'il_loss: {sum(il_losses) / len(il_losses):.5f}, ' if self.train_method is not None else ''
                 logger.info(f'Train epoch: [{epoch_id}/{self.configs.train_conf.max_epoch}], '
                             f'batch: [{batch_id}/{len(self.train_loader)}], '
-                            f'loss: {sum(loss_sum) / len(loss_sum):.5f}, '
+                            f'loss: {sum(loss_sum) / len(loss_sum):.5f}, {il_loss_str}'
                             f'accuracy: {sum(accuracies) / len(accuracies):.5f}, '
                             f'learning rate: {self.scheduler.get_last_lr()[0]:>.8f}, '
                             f'speed: {train_speed:.2f} data/sec, eta: {eta_str}')
                 writer.add_scalar('Train/Loss', sum(loss_sum) / len(loss_sum), self.train_step)
+                if self.train_method is not None:
+                    writer.add_scalar('Train/il_loss', sum(il_losses) / len(il_losses), self.train_step)
                 writer.add_scalar('Train/Accuracy', (sum(accuracies) / len(accuracies)), self.train_step)
                 # 记录学习率
                 writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], self.train_step)
@@ -392,14 +457,22 @@ class MVectorTrainer(object):
               save_model_path='models/',
               resume_model=None,
               pretrained_model=None,
-              do_eval=True):
+              do_eval=True,
+              train_method=None,
+              il_ratio=1.0):
         """
         训练模型
         :param save_model_path: 模型保存的路径
         :param resume_model: 恢复训练，当为None则不使用预训练模型
         :param pretrained_model: 预训练模型的路径，当为None则不使用预训练模型
         :param do_eval: 训练时是否评估模型
+        :param train_method: 增量学习方法，为None则不使用增量学习
+        :param il_ratio: 增量学习损失的权重
         """
+        assert train_method in ['ewc', None]
+        self.train_method = train_method
+        if self.train_method is not None:
+            logger.info(f'增量学习，增量学习方法: {train_method}')
         # 获取有多少张显卡训练
         nranks = torch.cuda.device_count()
         local_rank = 0
@@ -416,6 +489,17 @@ class MVectorTrainer(object):
         self.__setup_dataloader(is_train=True)
         # 获取模型
         self.__setup_model(input_size=self.audio_featurizer.feature_dim, is_train=True)
+        # 加载预训练模型
+        self.__load_pretrained(pretrained_model=pretrained_model)
+        # 获取原始的模型参数，用于计算增量学习损失
+        if self.train_method is not None:
+            for param_name, param in self.model.named_parameters():
+                self.original_weight[param_name] = param.data.clone()
+        # 加载恢复模型
+        last_epoch, best_eer = self.__load_checkpoint(save_model_path=save_model_path, resume_model=resume_model)
+        if last_epoch > 0:
+            self.optimizer.step()
+            [self.scheduler.step() for _ in range(last_epoch)]
 
         # 支持多卡训练
         if nranks > 1 and self.use_gpu:
@@ -423,13 +507,6 @@ class MVectorTrainer(object):
             self.audio_featurizer.to(local_rank)
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[local_rank])
         logger.info('训练数据：{}'.format(len(self.train_dataset)))
-
-        self.__load_pretrained(pretrained_model=pretrained_model)
-        # 加载恢复模型
-        last_epoch, best_eer = self.__load_checkpoint(save_model_path=save_model_path, resume_model=resume_model)
-        if last_epoch > 0:
-            self.optimizer.step()
-            [self.scheduler.step() for _ in range(last_epoch)]
 
         eer = None
         test_step, self.train_step = 0, 0
@@ -442,7 +519,7 @@ class MVectorTrainer(object):
             start_epoch = time.time()
             # 训练一个epoch
             self.__train_epoch(epoch_id=epoch_id, save_model_path=save_model_path, local_rank=local_rank,
-                               writer=writer, nranks=nranks)
+                               writer=writer, nranks=nranks, il_ratio=il_ratio)
             # 多卡训练只使用一个进程执行评估和保存模型
             if local_rank == 0 and do_eval:
                 logger.info('=' * 70)
