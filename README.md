@@ -47,7 +47,7 @@
   <td align="center">0.98972</td>
   <td align="center">0.00730</td>
   <td align="center">0.01758</td>
-  <td align="center" rowspan="5">加入知识星球获取/<a href="https://download.csdn.net/download/qq_33200967/88205893">全部下载</a>(不建议)</td>
+  <td align="center" rowspan="5">加入知识星球获取</td>
 </tr>
 <tr>
   <td align="center">EcapaTdnn</td>
