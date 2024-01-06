@@ -561,7 +561,10 @@ class MVectorTrainer(object):
                 model_state_dict = torch.load(resume_model)
             else:
                 model_state_dict = torch.load(resume_model, map_location='cpu')
-            self.model.load_state_dict(model_state_dict, strict=False)
+            # 删除最后的分类层参数
+            if self.model_output_name in model_state_dict.keys():
+                del model_state_dict[self.model_output_name]
+            self.model.load_state_dict(model_state_dict, strict=True)
             logger.info(f'成功加载模型：{resume_model}')
         self.model.eval()
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
@@ -632,7 +635,7 @@ class MVectorTrainer(object):
             logger.info(f"结果图以保存在：{os.path.join(save_image_path, 'result.png')}")
         return eer, min_dcf, threshold
 
-    def export(self, save_model_path='models/', resume_model='models/EcapaTdnn_Fbank/best_model/'):
+    def export(self, save_model_path='models/', resume_model='models/CAMPPlus_Fbank/best_model/'):
         """
         导出预测模型
         :param save_model_path: 模型保存的路径
