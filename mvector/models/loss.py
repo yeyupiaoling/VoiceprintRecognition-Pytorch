@@ -114,10 +114,8 @@ class SphereFace2(nn.Module):
         target_mask = torch.zeros(cosine.size()).type_as(cosine)
         target_mask.scatter_(1, label.view(-1, 1).long(), 1.0)
         nontarget_mask = 1 - target_mask
-        cos1 = (cosine - self.margin) * target_mask + cosine * nontarget_mask
-        output = self.scale * cos1  # for computing the accuracy
         loss = (target_mask * cos_p_theta + nontarget_mask * cos_n_theta).sum(1).mean()
-        return output, loss
+        return loss
 
     def update(self, margin=0.2):
         self.margin = margin

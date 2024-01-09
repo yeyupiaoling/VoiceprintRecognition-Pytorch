@@ -267,8 +267,14 @@ class MVectorPredictor:
         features = self.predictor(audio_feature).data.cpu().numpy()
         return features
 
-    # 声纹对比
     def contrast(self, audio_data1, audio_data2):
+        """声纹对比
+
+        param audio_data1: 需要对比的音频1，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        param audio_data2: 需要对比的音频2，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+
+        return: 两个音频的相似度
+        """
         feature1 = self.predict(audio_data1)
         feature2 = self.predict(audio_data2)
         # 对角余弦值
@@ -276,12 +282,12 @@ class MVectorPredictor:
         return dist
 
     def register(self,
-                 user_name,
                  audio_data,
+                 user_name: str,
                  sample_rate=16000):
         """声纹注册
-        :param user_name: 注册用户的名字
         :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        :param user_name: 注册用户的名字
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 识别的文本结果和解码的得分数
         """
@@ -326,6 +332,13 @@ class MVectorPredictor:
         feature = self.predict(audio_data, sample_rate=sample_rate)
         name = self.__retrieval(np_feature=[feature])[0]
         return name
+
+    def get_users(self):
+        """获取所有用户
+
+        return: 所有用户
+        """
+        return self.users_name
 
     def remove_user(self, user_name):
         """删除用户
