@@ -17,15 +17,15 @@ This branch is version 1.0, if you want to use the previous version 0.3 please [
 Environment：
 
  - Anaconda 3
- - Python 3.8
- - Pytorch 1.13.1
+ - Python 3.11
+ - Pytorch 2.0.1
  - Windows 10 or Ubuntu 18.04
 
 # Project Features
 
 1. Supporting models: EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
 2. Supporting pooling: AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
-3. Supporting Loss: AAMLoss、AMLoss、ARMLoss、CELoss
+3. Supporting Loss: AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss
 4. Support preprocessing methods: MelSpectrogram、Spectrogram、MFCC、Fbank
 
 **Model Paper：**
@@ -61,7 +61,7 @@ Explain:
 
  - The GPU version of Pytorch will be installed first, please skip it if you already have it installed.
 ```shell
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
+conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 
  - Install ppvector.
@@ -351,3 +351,4 @@ Loaded 李达康 audio.
 2. https://github.com/yeyupiaoling/PaddlePaddle-MobileFaceNets
 3. https://github.com/yeyupiaoling/PPASR
 4. https://github.com/alibaba-damo-academy/3D-Speaker
+5. https://github.com/wenet-e2e/wespeaker
