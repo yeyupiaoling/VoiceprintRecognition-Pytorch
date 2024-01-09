@@ -71,7 +71,7 @@
 |   CAM++   |    6.8    | Fbank | VoxCeleb1&2 |      7205      |   0.23    | 0.02659 | 0.18604 | 加入知识星球获取 |
 | ERes2Net  |    6.6    | Fbank | VoxCeleb1&2 |      7205      |           |         |         | 加入知识星球获取 |
 | ResNetSE  |    7.8    | Fbank | VoxCeleb1&2 |      7205      |           |         |         | 加入知识星球获取 |
-| EcapaTdnn |    6.1    | Fbank | VoxCeleb1&2 |      7205      |           |         |         | 加入知识星球获取 |
+| EcapaTdnn |    6.1    | Fbank | VoxCeleb1&2 |      7205      |   0.26    | 0.02610 | 0.18008 | 加入知识星球获取 |
 |   TDNN    |    2.6    | Fbank | VoxCeleb1&2 |      7205      |   0.26    | 0.03963 | 0.31433 | 加入知识星球获取 |
 |  Res2Net  |    5.0    | Fbank | VoxCeleb1&2 |      7205      |   0.20    | 0.04290 | 0.41416 | 加入知识星球获取 |
 |   CAM++   |    6.8    | Fbank |    更大数据集    |      2W+       |   0.28    | 0.03182 | 0.23731 | 加入知识星球获取 |
