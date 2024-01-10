@@ -107,7 +107,7 @@ pip install .
 ```
 
 # 创建数据
-本教程笔者使用的是[CN-Celeb](http://openslr.org/82/)，这个数据集一共有约3000个人的语音数据，有65W+条语音数据，下载之后要解压数据集到`dataset`目录，另外如果要评估，还需要下载[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
+本教程笔者使用的是[CN-Celeb](https://openslr.elda.org/resources/82)，这个数据集一共有约3000个人的语音数据，有65W+条语音数据，下载之后要解压数据集到`dataset`目录，另外如果要评估，还需要下载[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)。如果读者有其他更好的数据集，可以混合在一起使用，但最好是要用python的工具模块aukit处理音频，降噪和去除静音。
 
 首先是创建一个数据列表，数据列表的格式为`<语音文件路径\t语音分类标签>`，创建这个列表主要是方便之后的读取，也是方便读取使用其他的语音数据集，语音分类标签是指说话人的唯一ID，不同的语音数据集，可以通过编写对应的生成数据列表的函数，把这些数据集都写在同一个数据列表中。
 

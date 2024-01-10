@@ -79,7 +79,7 @@ python setup.py install
 ```
 
 # Create Data
-The author used [CN-Celeb](http://openslr.org/82/) for this tutorial. This dataset has a total of about 3000 people's voice data, and there are 65W+ voice data. After downloading, you need to unzip the dataset to the 'dataset' directory. Also need to download [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361). If you have other better datasets, you can mix them up, but it's best to use python's aukit tool module for audio processing, noise reduction, and de-muting.
+The author used [CN-Celeb](https://openslr.elda.org/resources/82) for this tutorial. This dataset has a total of about 3000 people's voice data, and there are 65W+ voice data. After downloading, you need to unzip the dataset to the 'dataset' directory. Also need to download [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361). If you have other better datasets, you can mix them up, but it's best to use python's aukit tool module for audio processing, noise reduction, and de-muting.
 
 The format of the data list is `<voice_file_path\tspeech_classification_label>`. The creation of this list is mainly for the convenience of later reading, but also for the convenience of reading and using other speech data sets. Speech classification label refers to the unique ID of the speaker. Put these data sets in the same data list.
 
