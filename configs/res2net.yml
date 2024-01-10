@@ -87,7 +87,7 @@ model_conf:
     num_blocks: 0
 
 loss_conf:
-  # 所使用的损失函数，支持AAMLoss、AMLoss、ARMLoss、CELoss
+  # 所使用的损失函数，支持AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss
   use_loss: 'AAMLoss'
   # 损失函数参数
   args:

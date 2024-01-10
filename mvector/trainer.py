@@ -28,7 +28,7 @@ from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
 from mvector.models.eres2net import ERes2Net
 from mvector.models.fc import SpeakerIdentification
-from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenterLoss
+from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenterLoss, SphereFace2
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
@@ -172,6 +172,8 @@ class MVectorTrainer(object):
             loss_args = loss_args if loss_args is not None else {}
             if use_loss == 'AAMLoss':
                 self.loss = AAMLoss(**loss_args)
+            elif use_loss == 'SphereFace2':
+                self.loss = SphereFace2(**loss_args)
             elif use_loss == 'SubCenterLoss':
                 self.loss = SubCenterLoss(**loss_args)
             elif use_loss == 'AMLoss':
@@ -320,7 +322,7 @@ class MVectorTrainer(object):
         return last_epoch, best_eer
 
     # 保存模型
-    def __save_checkpoint(self, save_model_path, epoch_id, best_eer=None, best_model=False):
+    def __save_checkpoint(self, save_model_path, epoch_id, eer=None, min_dcf=None, threshold=None, best_model=False):
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             state_dict = self.model.module.state_dict()
         else:
@@ -341,8 +343,10 @@ class MVectorTrainer(object):
             torch.save(self.amp_scaler.state_dict(), os.path.join(model_path, 'scaler.pth'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
             data = {"last_epoch": epoch_id, "version": __version__}
-            if best_eer is not None:
-                data['eer'] = best_eer
+            if eer is not None:
+                data['threshold'] = threshold
+                data['eer'] = eer
+                data['min_dcf'] = min_dcf
             f.write(json.dumps(data, ensure_ascii=False))
         if not best_model:
             last_model_path = os.path.join(save_model_path,
@@ -508,7 +512,7 @@ class MVectorTrainer(object):
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[local_rank])
         logger.info('训练数据：{}'.format(len(self.train_dataset)))
 
-        eer = None
+        eer, min_dcf, threshold = None, None, None
         test_step, self.train_step = 0, 0
         last_epoch += 1
         if local_rank == 0:
@@ -536,11 +540,12 @@ class MVectorTrainer(object):
                 # # 保存最优模型
                 if eer <= best_eer:
                     best_eer = eer
-                    self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer,
-                                           best_model=True)
+                    self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, eer=eer, min_dcf=min_dcf,
+                                           threshold=threshold, best_model=True)
             if local_rank == 0:
                 # 保存模型
-                self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, best_eer=eer)
+                self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, eer=eer, min_dcf=min_dcf,
+                                       threshold=threshold)
 
     def evaluate(self, resume_model=None, save_image_path=None):
         """

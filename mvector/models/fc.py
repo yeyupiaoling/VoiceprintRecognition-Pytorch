@@ -29,7 +29,7 @@ class SpeakerIdentification(nn.Module):
             input_dim = inter_dim
 
         if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or \
-                self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
+                self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss' or self.loss_type == 'SphereFace2':
             self.weight = nn.Parameter(torch.FloatTensor(num_speakers * K, input_dim))
             nn.init.xavier_uniform_(self.weight)
         else:
@@ -41,7 +41,7 @@ class SpeakerIdentification(nn.Module):
             x = layer(x)
 
         # normalized
-        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss':
+        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or self.loss_type == 'SphereFace2':
             logits = F.linear(F.normalize(x), F.normalize(self.weight))
         elif self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
             x_norm = torch.norm(x, p=2, dim=1, keepdim=True).clamp(min=1e-12)
