@@ -1,4 +1,5 @@
 import os
+import time
 
 import soundcard
 import soundfile
@@ -22,7 +23,11 @@ class RecordAudio:
         """
         print("开始录音......")
         num_frames = int(record_seconds * self.sample_rate)
+        start_time = time.time()
         data = self.default_mic.record(samplerate=self.sample_rate, numframes=num_frames, channels=self.channels)
+        if int(time.time() - start_time) < record_seconds:
+            raise Exception('录音错误，请检查录音设备，或者卸载soundfile，使用命令重新安装：'
+                            'pip install git+https://github.com/bastibe/SoundCard.git')
         audio_data = data.squeeze()
         print("录音已结束!")
         if save_path is not None:
