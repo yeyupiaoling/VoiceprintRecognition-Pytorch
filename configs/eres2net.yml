@@ -66,14 +66,14 @@ optimizer_conf:
   # 优化方法，支持Adam、AdamW、SGD
   optimizer: 'Adam'
   # 初始学习率的大小
-  learning_rate: 0.001
+  learning_rate: 0.0005
   weight_decay: !!float 1e-5
   # 学习率衰减函数，支持WarmupCosineSchedulerLR、CosineAnnealingLR
   scheduler: 'WarmupCosineSchedulerLR'
   # 学习率衰减函数参数
   scheduler_args:
-    min_lr: !!float 5e-5
-    max_lr: 0.001
+    min_lr: !!float 5e-6
+    max_lr: 0.0005
     warmup_epoch: 5
 
 model_conf:

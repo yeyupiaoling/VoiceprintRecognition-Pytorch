@@ -46,12 +46,12 @@ class VoiceContrastGUI:
         self.predictor = MVectorPredictor(configs=args.configs, model_path=args.model_path, use_gpu=args.use_gpu)
 
     def select_audio1(self):
-        filename = filedialog.askopenfilename()
+        filename = filedialog.askopenfilename(initialdir='./dataset')
         self.entry_audio1.delete(0, tk.END)
         self.entry_audio1.insert(tk.END, filename)
 
     def select_audio2(self):
-        filename = filedialog.askopenfilename()
+        filename = filedialog.askopenfilename(initialdir='./dataset')
         self.entry_audio2.delete(0, tk.END)
         self.entry_audio2.insert(tk.END, filename)
 
