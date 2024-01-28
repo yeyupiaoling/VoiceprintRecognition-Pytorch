@@ -439,7 +439,7 @@ class MVectorTrainer(object):
                             f'batch: [{batch_id}/{len(self.train_loader)}], '
                             f'loss: {sum(loss_sum) / len(loss_sum):.5f}, {il_loss_str}'
                             f'accuracy: {sum(accuracies) / len(accuracies):.5f}, '
-                            f'learning rate: {self.scheduler.get_last_lr()[0]:>.8f}, '
+                            f'learning rate: {self.scheduler.get_last_lr()[0]:.8f}, '
                             f'speed: {train_speed:.2f} data/sec, eta: {eta_str}')
                 writer.add_scalar('Train/Loss', sum(loss_sum) / len(loss_sum), self.train_step)
                 if self.train_method is not None:

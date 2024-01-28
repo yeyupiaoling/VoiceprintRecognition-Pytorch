@@ -30,6 +30,8 @@ dataset_conf:
     batch_size: 32
     # 读取数据的线程数量
     num_workers: 4
+    # 是否丢弃最后一个样本
+    drop_last: True
   # 数据增强参数
   aug_conf:
     # 是否使用语速扰动增强
