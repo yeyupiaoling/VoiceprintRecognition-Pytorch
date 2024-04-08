@@ -23,8 +23,11 @@ def create_cn_celeb(list_path, data_path='dataset/'):
 # 下载分包3地址：https://openslr.elda.org/resources/82/cn-celeb2_v2.tar.gzac
 # 下载并解压到dataset目录，合并压缩包命令：cat cn-celeb2_v2.tar.gza* > cn-celeb2_v2.tar.gz，解压命令：tar -zxvf cn-celeb2_v2.tar.gz
 def create_cn_celeb2(list_path, data_path='dataset/'):
-    f_train = open(list_path, 'a', encoding='utf-8')
     data_dir = os.path.join(data_path, 'CN-Celeb2_flac/data/')
+    if not os.path.exists(data_dir):
+        print('CN-Celeb2数据集不存在，请先下载并解压到dataset目录，目前忽略，你也可继续正常训练')
+        return
+    f_train = open(list_path, 'a', encoding='utf-8')
     dirs = sorted(os.listdir(data_dir))
     last_label = 800
     for label, d in enumerate(dirs):
