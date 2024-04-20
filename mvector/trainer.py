@@ -458,7 +458,7 @@ class MVectorTrainer(object):
                 # 记录学习率
                 writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], self.train_log_step)
                 if self.margin_scheduler:
-                    writer.add_scalar('Train/margin', self.margin_scheduler.get_margin(), self.train_step)
+                    writer.add_scalar('Train/margin', self.margin_scheduler.get_margin(), self.train_log_step)
                 self.train_log_step += 1
                 train_times, accuracies, loss_sum = [], [], []
             # 固定步数也要保存一次模型
@@ -597,8 +597,7 @@ class MVectorTrainer(object):
         # 获取注册的声纹特征和标签
         enroll_features, enroll_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(
-                    tqdm(self.enroll_loader, desc="注册音频声纹特征")):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.enroll_loader, desc="注册音频声纹特征")):
                 if self.stop_eval: break
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
@@ -612,8 +611,7 @@ class MVectorTrainer(object):
         # 获取检验的声纹特征和标签
         trials_features, trials_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(
-                    tqdm(self.trials_loader, desc="验证音频声纹特征")):
+            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.trials_loader, desc="验证音频声纹特征")):
                 if self.stop_eval: break
                 audio = audio.to(self.device)
                 input_lens_ratio = input_lens_ratio.to(self.device)
