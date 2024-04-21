@@ -82,6 +82,7 @@ class MVectorTrainer(object):
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
         self.max_step, self.train_step = None, None
         self.train_loss, self.train_acc = None, None
+        self.train_eta_sec = None
         self.eval_eer, self.eval_min_dcf, self.eval_threshold = None, None, None
         self.test_log_step, self.train_log_step = 0, 0
         self.stop_train, self.stop_eval = False, False
@@ -444,8 +445,8 @@ class MVectorTrainer(object):
                 train_speed = self.configs.dataset_conf.dataLoader.batch_size / (
                         sum(train_times) / len(train_times) / 1000)
                 # 计算剩余时间
-                eta_sec = (sum(train_times) / len(train_times)) * (self.max_step - self.train_step)
-                eta_str = str(timedelta(seconds=int(eta_sec / 1000)))
+                self.train_eta_sec = (sum(train_times) / len(train_times)) * (self.max_step - self.train_step) / 1000
+                eta_str = str(timedelta(seconds=int(self.train_eta_sec)))
                 self.train_loss = sum(loss_sum) / len(loss_sum)
                 self.train_acc = sum(accuracies) / len(accuracies)
                 logger.info(f'Train epoch: [{epoch_id}/{self.configs.train_conf.max_epoch}], '
