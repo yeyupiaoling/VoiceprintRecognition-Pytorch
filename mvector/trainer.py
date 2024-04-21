@@ -544,6 +544,7 @@ class MVectorTrainer(object):
                                writer=writer, nranks=nranks, il_ratio=il_ratio)
             # 多卡训练只使用一个进程执行评估和保存模型
             if local_rank == 0 and do_eval:
+                if self.stop_eval: continue
                 logger.info('=' * 70)
                 self.eval_eer, self.eval_min_dcf, self.eval_threshold = self.evaluate()
                 logger.info('Test epoch: {}, time/epoch: {}, threshold: {:.2f}, EER: {:.5f}, '
