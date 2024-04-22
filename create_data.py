@@ -2,7 +2,7 @@ import os
 
 
 # 制作CN-Celeb数据集列表
-# 下载地址：https://openslr.elda.org/resources/82/cn-celeb_v2.tar.gz
+# 下载地址：https://openslr.trmal.net/resources/82/cn-celeb_v2.tar.gz
 # 下载并解压到dataset目录，解压命令：tar -zxvf cn-celeb_v2.tar.gz
 def create_cn_celeb(list_path, data_path='dataset/'):
     f_train = open(list_path, 'w', encoding='utf-8')
@@ -18,9 +18,9 @@ def create_cn_celeb(list_path, data_path='dataset/'):
 
 
 # 制作CN-Celeb2数据集列表
-# 下载分包1地址：https://openslr.elda.org/resources/82/cn-celeb2_v2.tar.gzaa
-# 下载分包2地址：https://openslr.elda.org/resources/82/cn-celeb2_v2.tar.gzab
-# 下载分包3地址：https://openslr.elda.org/resources/82/cn-celeb2_v2.tar.gzac
+# 下载分包1地址：https://openslr.trmal.net/resources/82/cn-celeb2_v2.tar.gzaa
+# 下载分包2地址：https://openslr.trmal.net/resources/82/cn-celeb2_v2.tar.gzab
+# 下载分包3地址：https://openslr.trmal.net/resources/82/cn-celeb2_v2.tar.gzac
 # 下载并解压到dataset目录，合并压缩包命令：cat cn-celeb2_v2.tar.gza* > cn-celeb2_v2.tar.gz，解压命令：tar -zxvf cn-celeb2_v2.tar.gz
 def create_cn_celeb2(list_path, data_path='dataset/'):
     data_dir = os.path.join(data_path, 'CN-Celeb2_flac/data/')
