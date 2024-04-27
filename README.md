@@ -396,46 +396,6 @@ Loaded 李达康 audio.
 <img src="./docs/images/recognition.jpg" alt="声纹识别界面">
 
 
-# 增量学习 (效果不好)
-
-增量学习是为了克服在训练新数据的时候对旧数据出现灾难性遗忘，如果在声纹识别模型中只单纯微调新数据，直接修改模型的输出大小，反而会导致整个模型性能下降，甚至完全不可用。为了避免这种情况出现，本项目提供了增量学习的方法，即使在没有原数据集的情况下，也可以训练私有数据，在提高私有数据集准确率的情况下，也不会严重影响模型本身的性能。
-
-1. 首先要确保网络结构是一样的，除了最后的分类大小不一样，其他都一样。也就是说跟模型权重配套的配置文件中，模型参数只允许修改`num_speakers`参数，其他的`model_conf`参数不能修改。
-2. 增量学习中，不能使用语速增强增加说话人数量，也就是说`speed_perturb_3_class`参数必须为False。
-3. 在生成数据列表的时候，开始的标签必须是原模型的分类大小，而不是0，如果不知道原模型的分类大小，可以参考下面代码输出模型大小。
-4. 加载的是预训练模型，而不是恢复模型。
-
-
-获取输出模型大小代码：
-```python
-import torch
-
-static_model = torch.load('model.pth')
-
-old_num_class = static_model['1.weight'].size(0)
-print(f'原分类器输出大小：{old_num_class}')
-```
-
-增量学习训练启动命令，只需要指定`train_method`参数为`ewc`，并且指定预训练模型路径即可：
-```shell
-python train.py --train_method=ewc --pretrained_model=models/CAMPPlus_Fbank/best_model/model.pth
-```
-
- ### 增量学习实验记录表
-
-|         模型         | epoch |  原始数据集   |   EER   | MinDCF  |  增量学习数据集  | speakers id |   EER   | MinDCF  |
-|:------------------:|:-----:|:--------:|:-------:|:-------:|:---------:|:-----------:|:-------:|:-------:|
-| CAM++（训练VoxCeleb1） |  60   | CN-Celeb | 0.19002 | 0.75617 | VoxCeleb1 |   0-1211    | 0.02333 | 0.33096 |
-| CAM++（训练CN-Celeb）  |  60   | CN-Celeb | 0.09557 | 0.53516 | VoxCeleb1 |      -      | 0.11157 | 0.80615 |
-|    CAM++（直接微调）     |  30   | CN-Celeb | 0.15579 | 0.65516 | VoxCeleb1 |   0-1211    | 0.02255 | 0.28629 |
-|    CAM++（增量学习）     |  30   | CN-Celeb | 0.16547 | 0.77772 | VoxCeleb1 |  8388-9598  | 0.09597 | 0.72813 |
-
-说明：
-
-1. CN-Celeb的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。 
-2. VoxCeleb1的测试集为[VoxCeleb1测试集](https://aistudio.baidu.com/aistudio/datasetdetail/254693)，包含40个说话人。
-3. 用于微调和增量学习的模型，原始模型分类大小为8388，CN-Celeb有2796个说话人，语速增强增加了3倍。
-
 # 其他版本
  - Tensorflow：[VoiceprintRecognition-Tensorflow](https://github.com/yeyupiaoling/VoiceprintRecognition-Tensorflow)
  - PaddlePaddle：[VoiceprintRecognition-PaddlePaddle](https://github.com/yeyupiaoling/VoiceprintRecognition-PaddlePaddle)
