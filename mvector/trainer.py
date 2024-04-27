@@ -62,6 +62,7 @@ class MVectorTrainer(object):
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self.model = None
         self.backbone = None
+        self.model_output_name = '1.weight'
         self.enroll_loader = None
         self.trials_loader = None
         self.margin_scheduler = None
