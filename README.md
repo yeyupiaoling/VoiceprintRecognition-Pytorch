@@ -133,7 +133,8 @@ dataset/CN-Celeb2_flac/data/id11999/recitation-09-001.flac      2795
 dataset/CN-Celeb2_flac/data/id11999/recitation-05-010.flac      2795
 ```
 
-# 修改预处理方法
+# 修改预处理方法（可选）
+
 配置文件中默认使用的是Fbank预处理方法，如果要使用其他预处理方法，可以修改配置文件中的安装下面方式修改，具体的值可以根据自己情况修改。如果不清楚如何设置参数，可以直接删除该部分，直接使用默认值。
 
 ```yaml
@@ -146,6 +147,19 @@ preprocess_conf:
     sample_frequency: 16000
     num_mel_bins: 80
 ```
+
+# 提取特征（可选）
+
+在训练过程中，首先是要读取音频数据，然后提取特征，最后再进行训练。其中读取音频数据、提取特征也是比较消耗时间的，所以我们可以选择提前提取好取特征，训练模型的是就可以直接加载提取好的特征，这样训练速度会更快。这个提取特征是可选择，如果没有提取好的特征，训练模型的时候就会从读取音频数据，然后提取特征开始。提取特征步骤如下：
+
+1. 执行`extract_features.py`，提取特征，特征会保存在`dataset/features`目录下，并生成新的数据列表`train_list_features.txt`、`enroll_list_features.txt`和`trials_list_features.txt`。
+
+```shell
+python extract_features.py --configs=configs/cam++.yml --save_dir=dataset/features
+```
+
+2. 修改配置文件，将`dataset_conf.train_list`、`dataset_conf.enroll_list`和`dataset_conf.trials_list`修改为`train_list_features.txt`、`enroll_list_features.txt`和`trials_list_features.txt`。
+
 
 # 训练模型
 使用`train.py`训练模型，本项目支持多个音频预处理方式，通过`configs/ecapa_tdnn.yml`配置文件的参数`preprocess_conf.feature_method`可以指定，`MelSpectrogram`为梅尔频谱，`Spectrogram`为语谱图，`MFCC`梅尔频谱倒谱系数等等。通过参数`augment_conf_path`可以指定数据增强方式。训练过程中，会使用VisualDL保存训练日志，通过启动VisualDL可以随时查看训练结果，启动命令`visualdl --logdir=log --host 0.0.0.0`

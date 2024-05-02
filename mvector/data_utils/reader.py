@@ -2,17 +2,20 @@ import os
 import random
 
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 from mvector.data_utils.audio import AudioSegment
+from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-class CustomDataset(Dataset):
+class MVectorDataset(Dataset):
     def __init__(self,
                  data_list_path,
+                 audio_featurizer: AudioFeaturizer,
                  do_vad=True,
                  max_duration=3,
                  min_duration=0.5,
@@ -26,6 +29,7 @@ class CustomDataset(Dataset):
 
         Args:
             data_list_path: 包含音频路径和标签的数据列表文件的路径
+            audio_featurizer: 声纹特征提取器
             do_vad: 是否对音频进行语音活动检测（VAD）来裁剪静音部分
             max_duration: 最长的音频长度，大于这个长度会裁剪掉
             min_duration: 过滤最短的音频长度
@@ -36,7 +40,8 @@ class CustomDataset(Dataset):
             use_dB_normalization: 是否对音频进行音量归一化
             target_dB: 音量归一化的大小
         """
-        super(CustomDataset, self).__init__()
+        super(MVectorDataset, self).__init__()
+        assert mode in ['train', 'eval', 'create_data', 'extract_feature']
         self.do_vad = do_vad
         self.max_duration = max_duration
         self.min_duration = min_duration
@@ -47,38 +52,61 @@ class CustomDataset(Dataset):
         self.aug_conf = aug_conf
         self.num_speakers = num_speakers
         self.noises_path = None
+        # 获取特征器
+        self.audio_featurizer = audio_featurizer
+        # 获取特征裁剪的大小
+        self.max_feature_len = self.get_crop_feature_len()
         # 获取数据列表
         with open(data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
 
     def __getitem__(self, idx):
-        # 分割音频路径和标签
-        audio_path, spk_id = self.lines[idx].strip().split('\t')
+        # 分割数据文件路径和标签
+        data_path, spk_id = self.lines[idx].replace('\n', '').split('\t')
         spk_id = int(spk_id)
-        # 读取音频
-        audio_segment = AudioSegment.from_file(audio_path)
-        # 裁剪静音
-        if self.do_vad:
-            audio_segment.vad()
-        # 数据太短不利于训练
-        if self.mode == 'train':
-            if audio_segment.duration < self.min_duration:
-                return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
-        # 重采样
-        if audio_segment.sample_rate != self._target_sample_rate:
-            audio_segment.resample(self._target_sample_rate)
-        # 音频增强
-        if self.mode == 'train':
-            audio_segment, spk_id = self.augment_audio(audio_segment, spk_id, **self.aug_conf)
-        # decibel normalization
-        if self._use_dB_normalization:
-            audio_segment.normalize(target_db=self._target_dB)
-        # 裁剪需要的数据
-        audio_segment.crop(duration=self.max_duration, mode=self.mode)
-        return np.array(audio_segment.samples, dtype=np.float32), np.array(spk_id, dtype=np.int64)
+        # 如果后缀名为.npy的文件，那么直接读取
+        if data_path.endswith('.npy'):
+            feature = np.load(data_path)
+            if feature.shape[0] > self.max_feature_len:
+                crop_start = random.randint(0, feature.shape[0] - self.max_feature_len) if self.mode == 'eval' else 0
+                feature = feature[crop_start:crop_start + self.max_feature_len, :]
+            feature = torch.tensor(feature, dtype=torch.float32)
+        else:
+            # 读取音频
+            audio_segment = AudioSegment.from_file(data_path)
+            # 裁剪静音
+            if self.do_vad:
+                audio_segment.vad()
+            # 数据太短不利于训练
+            if self.mode == 'train':
+                if audio_segment.duration < self.min_duration:
+                    return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
+            # 重采样
+            if audio_segment.sample_rate != self._target_sample_rate:
+                audio_segment.resample(self._target_sample_rate)
+            # 音频增强
+            if self.mode == 'train':
+                audio_segment, spk_id = self.augment_audio(audio_segment, spk_id, **self.aug_conf)
+            # decibel normalization
+            if self._use_dB_normalization:
+                audio_segment.normalize(target_db=self._target_dB)
+            # 裁剪需要的数据
+            if self.mode != 'extract_feature' and audio_segment.duration > self.max_duration:
+                audio_segment.crop(duration=self.max_duration, mode=self.mode)
+            samples = torch.tensor(audio_segment.samples, dtype=torch.float32)
+            feature = self.audio_featurizer(samples)
+            feature = feature.squeeze(0)
+        spk_id = torch.tensor(spk_id, dtype=torch.int64)
+        return feature, spk_id
 
     def __len__(self):
         return len(self.lines)
+
+    def get_crop_feature_len(self):
+        samples = torch.randn((1, self.max_duration * self._target_sample_rate))
+        feature = self.audio_featurizer(samples).squeeze(0)
+        freq_len = feature.size(0)
+        return freq_len
 
     # 音频增强
     def augment_audio(self,

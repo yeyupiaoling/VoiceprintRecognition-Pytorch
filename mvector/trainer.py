@@ -21,7 +21,7 @@ from visualdl import LogWriter
 from mvector import SUPPORT_MODEL, __version__
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
-from mvector.data_utils.reader import CustomDataset
+from mvector.data_utils.reader import MVectorDataset
 from mvector.data_utils.spec_aug import SpecAug
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
 from mvector.models.campplus import CAMPPlus
@@ -63,7 +63,12 @@ class MVectorTrainer(object):
         self.model = None
         self.backbone = None
         self.model_output_name = '1.weight'
+        self.audio_featurizer = None
+        self.train_dataset = None
+        self.train_loader = None
+        self.enroll_dataset = None
         self.enroll_loader = None
+        self.trials_dataset = None
         self.trials_loader = None
         self.margin_scheduler = None
         self.amp_scaler = None
@@ -85,17 +90,21 @@ class MVectorTrainer(object):
         self.stop_train, self.stop_eval = False, False
 
     def __setup_dataloader(self, is_train=False):
+        # 获取特征器
+        self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
+                                                method_args=self.configs.preprocess_conf.get('method_args', {}))
         if is_train:
-            self.train_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.train_list,
-                                               do_vad=self.configs.dataset_conf.do_vad,
-                                               max_duration=self.configs.dataset_conf.max_duration,
-                                               min_duration=self.configs.dataset_conf.min_duration,
-                                               sample_rate=self.configs.dataset_conf.sample_rate,
-                                               aug_conf=self.configs.dataset_conf.aug_conf,
-                                               num_speakers=self.configs.model_conf.classifier.num_speakers,
-                                               use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                               target_dB=self.configs.dataset_conf.target_dB,
-                                               mode='train')
+            self.train_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.train_list,
+                                                audio_featurizer=self.audio_featurizer,
+                                                do_vad=self.configs.dataset_conf.do_vad,
+                                                max_duration=self.configs.dataset_conf.max_duration,
+                                                min_duration=self.configs.dataset_conf.min_duration,
+                                                sample_rate=self.configs.dataset_conf.sample_rate,
+                                                aug_conf=self.configs.dataset_conf.aug_conf,
+                                                num_speakers=self.configs.model_conf.classifier.num_speakers,
+                                                use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                                target_dB=self.configs.dataset_conf.target_dB,
+                                                mode='train')
             train_sampler = None
             if torch.cuda.device_count() > 1:
                 # 设置支持多卡训练
@@ -106,30 +115,59 @@ class MVectorTrainer(object):
                                            sampler=train_sampler,
                                            **self.configs.dataset_conf.dataLoader)
         # 获取评估的注册数据和检验数据
-        self.enroll_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.enroll_list,
-                                            do_vad=self.configs.dataset_conf.do_vad,
-                                            max_duration=self.configs.dataset_conf.eval_conf.max_duration,
-                                            min_duration=self.configs.dataset_conf.min_duration,
-                                            sample_rate=self.configs.dataset_conf.sample_rate,
-                                            use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                            target_dB=self.configs.dataset_conf.target_dB,
-                                            mode='eval')
+        self.enroll_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.enroll_list,
+                                             audio_featurizer=self.audio_featurizer,
+                                             do_vad=self.configs.dataset_conf.do_vad,
+                                             max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                             min_duration=self.configs.dataset_conf.min_duration,
+                                             sample_rate=self.configs.dataset_conf.sample_rate,
+                                             use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                             target_dB=self.configs.dataset_conf.target_dB,
+                                             mode='eval')
         self.enroll_loader = DataLoader(dataset=self.enroll_dataset,
                                         collate_fn=collate_fn,
                                         batch_size=self.configs.dataset_conf.eval_conf.batch_size,
                                         num_workers=self.configs.dataset_conf.dataLoader.num_workers)
-        self.trials_dataset = CustomDataset(data_list_path=self.configs.dataset_conf.trials_list,
-                                            do_vad=self.configs.dataset_conf.do_vad,
-                                            max_duration=self.configs.dataset_conf.eval_conf.max_duration,
-                                            min_duration=self.configs.dataset_conf.min_duration,
-                                            sample_rate=self.configs.dataset_conf.sample_rate,
-                                            use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                            target_dB=self.configs.dataset_conf.target_dB,
-                                            mode='eval')
+        self.trials_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.trials_list,
+                                             audio_featurizer=self.audio_featurizer,
+                                             do_vad=self.configs.dataset_conf.do_vad,
+                                             max_duration=self.configs.dataset_conf.eval_conf.max_duration,
+                                             min_duration=self.configs.dataset_conf.min_duration,
+                                             sample_rate=self.configs.dataset_conf.sample_rate,
+                                             use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                             target_dB=self.configs.dataset_conf.target_dB,
+                                             mode='eval')
         self.trials_loader = DataLoader(dataset=self.trials_dataset,
                                         collate_fn=collate_fn,
                                         batch_size=self.configs.dataset_conf.eval_conf.batch_size,
                                         num_workers=self.configs.dataset_conf.dataLoader.num_workers)
+
+    # 提取特征保存文件
+    def extract_features(self, save_dir='dataset/features'):
+        self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
+                                                method_args=self.configs.preprocess_conf.get('method_args', {}))
+        for i, data_list in enumerate([self.configs.dataset_conf.train_list,
+                                       self.configs.dataset_conf.enroll_list,
+                                       self.configs.dataset_conf.trials_list]):
+            # 获取测试数据
+            test_dataset = MVectorDataset(data_list_path=data_list,
+                                          audio_featurizer=self.audio_featurizer,
+                                          do_vad=self.configs.dataset_conf.do_vad,
+                                          sample_rate=self.configs.dataset_conf.sample_rate,
+                                          use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
+                                          target_dB=self.configs.dataset_conf.target_dB,
+                                          mode='extract_feature')
+            save_data_list = data_list.replace('.txt', '_features.txt')
+            with open(save_data_list, 'w', encoding='utf-8') as f:
+                for i in tqdm(range(len(test_dataset))):
+                    feature, label = test_dataset[i]
+                    feature = feature.numpy()
+                    label = int(label)
+                    save_path = os.path.join(save_dir, str(label), f'{int(time.time() * 1000)}.npy').replace('\\', '/')
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                    np.save(save_path, feature)
+                    f.write(f'{save_path}\t{label}\n')
+            logger.info(f'{data_list}列表中的数据已提取特征完成，新列表为：{save_data_list}')
 
     def __setup_model(self, input_size, is_train=False):
         # 获取模型
@@ -231,7 +269,7 @@ class MVectorTrainer(object):
             self.model = nn.Sequential(self.backbone)
             self.model.to(self.device)
         self.model.to(self.device)
-        summary(self.model, (1, 98, self.audio_featurizer.feature_dim))
+        summary(self.model, (1, 98, input_size))
         # 使用Pytorch2.0的编译器
         if self.configs.train_conf.use_compile and torch.__version__ >= "2" and platform.system().lower() != 'windows':
             self.model = torch.compile(self.model, mode="reduce-overhead")
@@ -338,17 +376,14 @@ class MVectorTrainer(object):
         train_times, accuracies, loss_sum = [], [], []
         start = time.time()
         use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
-        for batch_id, (audio, label, input_lens_ratio) in enumerate(self.train_loader):
+        for batch_id, (features, label, input_len) in enumerate(self.train_loader):
             if self.stop_train: break
             if nranks > 1:
-                audio = audio.to(local_rank)
-                input_lens_ratio = input_lens_ratio.to(local_rank)
+                features = features.to(local_rank)
                 label = label.to(local_rank).long()
             else:
-                audio = audio.to(self.device)
-                input_lens_ratio = input_lens_ratio.to(self.device)
+                features = features.to(self.device)
                 label = label.to(self.device).long()
-            features, _ = self.audio_featurizer(audio, input_lens_ratio)
             # 特征增强
             if self.configs.dataset_conf.use_spec_aug:
                 features = self.spec_aug(features)
@@ -454,7 +489,6 @@ class MVectorTrainer(object):
         # 支持多卡训练
         if nranks > 1 and self.use_gpu:
             self.model.to(local_rank)
-            self.audio_featurizer.to(local_rank)
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[local_rank])
         logger.info('训练数据：{}'.format(len(self.train_dataset)))
 
@@ -532,12 +566,11 @@ class MVectorTrainer(object):
         # 获取注册的声纹特征和标签
         enroll_features, enroll_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.enroll_loader, desc="注册音频声纹特征")):
+            for batch_id, (audio_features, label, input_len) in enumerate(
+                    tqdm(self.enroll_loader, desc="注册音频声纹特征")):
                 if self.stop_eval: break
-                audio = audio.to(self.device)
-                input_lens_ratio = input_lens_ratio.to(self.device)
+                audio_features = audio_features.to(self.device)
                 label = label.to(self.device).long()
-                audio_features, _ = self.audio_featurizer(audio, input_lens_ratio)
                 feature = eval_model(audio_features).data.cpu().numpy()
                 label = label.data.cpu().numpy()
                 # 存放特征
@@ -546,12 +579,11 @@ class MVectorTrainer(object):
         # 获取检验的声纹特征和标签
         trials_features, trials_labels = None, None
         with torch.no_grad():
-            for batch_id, (audio, label, input_lens_ratio) in enumerate(tqdm(self.trials_loader, desc="验证音频声纹特征")):
+            for batch_id, (audio_features, label, input_lens) in enumerate(
+                    tqdm(self.trials_loader, desc="验证音频声纹特征")):
                 if self.stop_eval: break
-                audio = audio.to(self.device)
-                input_lens_ratio = input_lens_ratio.to(self.device)
+                audio_features = audio_features.to(self.device)
                 label = label.to(self.device).long()
-                audio_features, _ = self.audio_featurizer(audio, input_lens_ratio)
                 feature = eval_model(audio_features).data.cpu().numpy()
                 label = label.data.cpu().numpy()
                 # 存放特征

@@ -58,7 +58,6 @@ class MVectorPredictor:
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self._audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                  method_args=self.configs.preprocess_conf.get('method_args', {}))
-        self._audio_featurizer.to(self.device)
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
             backbone = ERes2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
@@ -228,9 +227,8 @@ class MVectorPredictor:
         """
         # 加载音频文件，并进行预处理
         input_data = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
-        input_data = torch.tensor(input_data.samples, dtype=torch.float32, device=self.device).unsqueeze(0)
-        input_len_ratio = torch.tensor([1], dtype=torch.float32, device=self.device)
-        audio_feature, _ = self._audio_featurizer(input_data, input_len_ratio)
+        input_data = torch.tensor(input_data.samples, dtype=torch.float32).unsqueeze(0)
+        audio_feature = self._audio_featurizer(input_data).to(self.device)
         # 执行预测
         feature = self.predictor(audio_feature).data.cpu().numpy()[0]
         return feature
@@ -252,7 +250,7 @@ class MVectorPredictor:
         max_audio_length = batch[0].shape[0]
         batch_size = len(batch)
         # 以最大的长度创建0张量
-        inputs = np.zeros((batch_size, max_audio_length), dtype='float32')
+        inputs = np.zeros((batch_size, max_audio_length), dtype=np.float32)
         input_lens_ratio = []
         for x in range(batch_size):
             tensor = audios_data1[x]
@@ -260,9 +258,9 @@ class MVectorPredictor:
             # 将数据插入都0张量中，实现了padding
             inputs[x, :seq_length] = tensor[:]
             input_lens_ratio.append(seq_length / max_audio_length)
-        audios_data = torch.tensor(inputs, dtype=torch.float32, device=self.device)
-        input_lens_ratio = torch.tensor(input_lens_ratio, dtype=torch.float32, device=self.device)
-        audio_feature, _ = self._audio_featurizer(audios_data, input_lens_ratio)
+        inputs = torch.tensor(inputs, dtype=torch.float32)
+        input_lens_ratio = torch.tensor(input_lens_ratio, dtype=torch.float32)
+        audio_feature = self._audio_featurizer(inputs, input_lens_ratio).to(self.device)
         # 执行预测
         features = self.predictor(audio_feature).data.cpu().numpy()
         return features

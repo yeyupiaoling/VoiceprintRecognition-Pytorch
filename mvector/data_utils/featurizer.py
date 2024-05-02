@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 import torchaudio.compliance.kaldi as Kaldi
+from torch import nn
 from torchaudio.transforms import MelSpectrogram, Spectrogram, MFCC
 
 
@@ -28,7 +28,7 @@ class AudioFeaturizer(nn.Module):
         else:
             raise Exception(f'预处理方法 {self._feature_method} 不存在!')
 
-    def forward(self, waveforms, input_lens_ratio):
+    def forward(self, waveforms, input_lens_ratio=None):
         """从AudioSegment中提取音频特征
 
         :param waveforms: Audio segment to extract features from.
@@ -38,22 +38,24 @@ class AudioFeaturizer(nn.Module):
         :return: Spectrogram audio feature in 2darray.
         :rtype: ndarray
         """
+        if len(waveforms.shape) == 1:
+            waveforms = waveforms.unsqueeze(0)
         feature = self.feat_fun(waveforms)
         feature = feature.transpose(2, 1)
         # 归一化
         feature = feature - feature.mean(1, keepdim=True)
-        # 对掩码比例进行扩展
-        input_lens = (input_lens_ratio * feature.shape[1])
-        mask_lens = torch.round(input_lens).long()
-        mask_lens = mask_lens.unsqueeze(1)
-        input_lens = input_lens.int()
-        # 生成掩码张量
-        idxs = torch.arange(feature.shape[1], device=feature.device).repeat(feature.shape[0], 1)
-        mask = idxs < mask_lens
-        mask = mask.unsqueeze(-1)
-        # 对特征进行掩码操作
-        feature_masked = torch.where(mask, feature, torch.zeros_like(feature))
-        return feature_masked, input_lens
+        if input_lens_ratio is not None:
+            # 对掩码比例进行扩展
+            input_lens = (input_lens_ratio * feature.shape[1])
+            mask_lens = torch.round(input_lens).long()
+            mask_lens = mask_lens.unsqueeze(1)
+            # 生成掩码张量
+            idxs = torch.arange(feature.shape[1], device=feature.device).repeat(feature.shape[0], 1)
+            mask = idxs < mask_lens
+            mask = mask.unsqueeze(-1)
+            # 对特征进行掩码操作
+            feature = torch.where(mask, feature, torch.zeros_like(feature))
+        return feature
 
     @property
     def feature_dim(self):
