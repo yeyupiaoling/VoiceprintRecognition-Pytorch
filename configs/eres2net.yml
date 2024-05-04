@@ -111,5 +111,5 @@ train_conf:
   max_epoch: 60
   log_interval: 100
 
-# 所使用的模型
+# 所使用的模型，支持模型ERes2Net、ERes2NetV2
 use_model: 'ERes2Net'

@@ -15,7 +15,7 @@ from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.eres2net import ERes2Net
+from mvector.models.eres2net import ERes2Net, ERes2NetV2
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
@@ -61,6 +61,8 @@ class MVectorPredictor:
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
             backbone = ERes2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
+        elif self.configs.use_model == 'ERes2NetV2':
+            backbone = ERes2NetV2(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'CAMPPlus':
             backbone = CAMPPlus(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'EcapaTdnn':

@@ -17,7 +17,7 @@ def create_cn_celeb(list_path, data_path='dataset/'):
     f_train.close()
 
 
-# 制作CN-Celeb2数据集列表
+# 制作CN-Celeb2数据集列表，如果是Windows，请跳过这个数据集
 # 下载分包1地址：https://openslr.trmal.net/resources/82/cn-celeb2_v2.tar.gzaa
 # 下载分包2地址：https://openslr.trmal.net/resources/82/cn-celeb2_v2.tar.gzab
 # 下载分包3地址：https://openslr.trmal.net/resources/82/cn-celeb2_v2.tar.gzac

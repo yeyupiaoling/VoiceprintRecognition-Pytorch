@@ -26,7 +26,7 @@ from mvector.data_utils.spec_aug import SpecAug
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
 from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.eres2net import ERes2Net
+from mvector.models.eres2net import ERes2Net, ERes2NetV2
 from mvector.models.fc import SpeakerIdentification
 from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenterLoss, SphereFace2
 from mvector.models.res2net import Res2Net
@@ -173,6 +173,8 @@ class MVectorTrainer(object):
         # 获取模型
         if self.configs.use_model == 'ERes2Net':
             self.backbone = ERes2Net(input_size=input_size, **self.configs.model_conf.backbone)
+        elif self.configs.use_model == 'ERes2NetV2':
+            self.backbone = ERes2NetV2(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'CAMPPlus':
             self.backbone = CAMPPlus(input_size=input_size, **self.configs.model_conf.backbone)
         elif self.configs.use_model == 'EcapaTdnn':
