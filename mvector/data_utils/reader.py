@@ -80,6 +80,8 @@ class MVectorDataset(Dataset):
             # 数据太短不利于训练
             if self.mode == 'train':
                 if audio_segment.duration < self.min_duration:
+                    logger.error(f"[{data_path}]音频太短，已跳过，最低阈值是{self.min_duration}s，"
+                                 f"实际时长是{audio_segment.duration}s")
                     return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
             # 重采样
             if audio_segment.sample_rate != self._target_sample_rate:
@@ -94,7 +96,11 @@ class MVectorDataset(Dataset):
             if self.mode != 'extract_feature' and audio_segment.duration > self.max_duration:
                 audio_segment.crop(duration=self.max_duration, mode=self.mode)
             samples = torch.tensor(audio_segment.samples, dtype=torch.float32)
-            feature = self.audio_featurizer(samples)
+            try:
+                feature = self.audio_featurizer(samples)
+            except Exception as e:
+                logger.error(f"[{data_path}]特征提取失败，错误信息：{e}")
+                return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
             feature = feature.squeeze(0)
         spk_id = torch.tensor(spk_id, dtype=torch.int64)
         return feature, spk_id

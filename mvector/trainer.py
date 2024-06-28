@@ -284,6 +284,17 @@ class MVectorTrainer(object):
             pretrained_model = os.path.join(pretrained_model, 'model.pth')
         assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
         model_state_dict = torch.load(pretrained_model)
+        if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
+            model_dict = self.model.module.state_dict()
+        else:
+            model_dict = self.model.state_dict()
+        # 过滤不存在的参数
+        for name, weight in model_dict.items():
+            if name in model_state_dict.keys():
+                if list(weight.shape) != list(model_state_dict[name].shape):
+                    logger.warning(f'{name} not used, shape {list(model_state_dict[name].shape)} '
+                                   f'unmatched with {list(weight.shape)} in model.')
+                    model_state_dict.pop(name, None)
         # 加载权重
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             missing_keys, unexpected_keys = self.model.module.load_state_dict(model_state_dict, strict=False)
