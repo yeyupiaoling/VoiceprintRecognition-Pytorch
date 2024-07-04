@@ -57,6 +57,7 @@ class MVectorPredictor:
         self.configs = dict_to_object(configs)
         assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
         self._audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
+                                                 use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
                                                  method_args=self.configs.preprocess_conf.get('method_args', {}))
         # 获取模型
         if self.configs.use_model == 'ERes2Net':

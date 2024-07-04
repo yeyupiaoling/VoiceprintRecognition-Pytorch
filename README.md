@@ -29,7 +29,7 @@
 1. 支持模型：EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
 2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
 3. 支持损失函数：AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss
-4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank
+4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank、Wav2vec2.0、WavLM
 
 **模型论文：**
 
@@ -87,6 +87,27 @@
 3. 参数数量不包含了分类器的参数数量。
 
 
+### 预处理对比实验
+
+|                                      预处理方法                                       |                数据集                 | train speakers | threshold | EER | MinDCF |   模型下载   |
+|:--------------------------------------------------------------------------------:|:----------------------------------:|:--------------:|:---------:|:---:|:------:|:--------:|
+|                                      Fbank                                       | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|                                  MelSpectrogram                                  | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|                                   Spectrogram                                    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|                                       MFCC                                       | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+| [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|      [wav2vec2-xls-r-1b](https://huggingface.co/facebook/wav2vec2-xls-r-1b)      | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|           [wavlm-large](https://huggingface.co/microsoft/wavlm-large)            | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+
+说明：
+
+1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
+2. 实验数据为CN-Celeb，实验模型为CAM++。
+3. 数据使用`extract_features.py`提前提取特征，也就是说训练中没有使用对音频的数据增强。
+4. `w2v-bert-2.0`、`wav2vec2-large-xlsr-53`、`wav2vec2-xls-r-1b`是多语言数据预训练得到的，`wavlm-base-plus`、`wavlm-large`的预训练数据仅用英文。
+
 ## 安装环境
 
  - 首先安装的是Pytorch的GPU版本，如果已经安装过了，请跳过。
@@ -142,9 +163,14 @@ dataset/CN-Celeb2_flac/data/id11999/recitation-05-010.flac      2795
 ```yaml
 # 数据预处理参数
 preprocess_conf:
-  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
+  # 是否使用HF上的Wav2Vec2类似模型提取音频特征
+  use_hf_model: False
+  # 音频预处理方法，也可以叫特征提取方法
+  # 当use_hf_model为False时，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
+  # 当use_hf_model为True时，指定的是HuggingFace的模型或者本地路径，比如facebook/w2v-bert-2.0或者./feature_models/w2v-bert-2.0
   feature_method: 'Fbank'
-  # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
+  # 当use_hf_model为False时，设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值。
+  # 当use_hf_model为True时，可以设置参数use_gpu，指定是否使用GPU提取特征
   method_args:
     sample_frequency: 16000
     num_mel_bins: 80

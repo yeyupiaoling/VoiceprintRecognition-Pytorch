@@ -93,7 +93,7 @@ class MVectorDataset(Dataset):
             if self._use_dB_normalization:
                 audio_segment.normalize(target_db=self._target_dB)
             # 裁剪需要的数据
-            if self.mode != 'extract_feature' and audio_segment.duration > self.max_duration:
+            if audio_segment.duration > self.max_duration:
                 audio_segment.crop(duration=self.max_duration, mode=self.mode)
             samples = torch.tensor(audio_segment.samples, dtype=torch.float32)
             try:

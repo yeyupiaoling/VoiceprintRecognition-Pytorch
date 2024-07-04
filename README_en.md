@@ -19,14 +19,14 @@ Environment：
  - Anaconda 3
  - Python 3.11
  - Pytorch 2.0.1
- - Windows 10 or Ubuntu 18.04
+ - Windows 11 or Ubuntu 22.04
 
 # Project Features
 
 1. Supporting models: EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
 2. Supporting pooling: AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
 3. Supporting Loss: AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss
-4. Support preprocessing methods: MelSpectrogram、Spectrogram、MFCC、Fbank
+4. Support preprocessing methods: MelSpectrogram、Spectrogram、MFCC、Fbank、Wav2vec2.0、WavLM
 
 **Model Paper：**
 
@@ -133,21 +133,22 @@ dataset/CN-Celeb2_flac/data/id11999/recitation-05-010.flac      2795
 
 # Change preprocessing methods
 
-By default, the MelSpectrogram preprocessing method is used in the configuration file. If you want to use other preprocessing methods, you can modify the following installation in the configuration file, and the specific value can be modified according to your own situation. If it's not clear how to set the parameters, you can remove that section and just use the default values.
+By default, the Fbank preprocessing method is used in the configuration file. If you want to use other preprocessing methods, you can modify the following installation in the configuration file, and the specific value can be modified according to your own situation. If it's not clear how to set the parameters, you can remove that section and just use the default values.
 
 ```yaml
+# 数据预处理参数
 preprocess_conf:
-  # 音频预处理方法，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
-  feature_method: 'MelSpectrogram'
-  # 设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值
+  # 是否使用HF上的Wav2Vec2类似模型提取音频特征
+  use_hf_model: False
+  # 音频预处理方法，也可以叫特征提取方法
+  # 当use_hf_model为False时，支持：MelSpectrogram、Spectrogram、MFCC、Fbank
+  # 当use_hf_model为True时，指定的是HuggingFace的模型或者本地路径，比如facebook/w2v-bert-2.0或者./feature_models/w2v-bert-2.0
+  feature_method: 'Fbank'
+  # 当use_hf_model为False时，设置API参数，更参数查看对应API，不清楚的可以直接删除该部分，直接使用默认值。
+  # 当use_hf_model为True时，可以设置参数use_gpu，指定是否使用GPU提取特征
   method_args:
-    sample_rate: 16000
-    n_fft: 1024
-    hop_length: 320
-    win_length: 1024
-    f_min: 50.0
-    f_max: 14000.0
-    n_mels: 64
+    sample_frequency: 16000
+    num_mel_bins: 80
 ```
 
 # Train

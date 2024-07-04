@@ -8,7 +8,6 @@ soundfile>=0.12.1
 soundcard>=0.4.2
 pyyaml>=5.4.1
 termcolor>=1.1.0
-typeguard==2.13.3
 scikit-learn>=1.0.2
 pydub>=0.25.1
 torchinfo>=1.7.2
