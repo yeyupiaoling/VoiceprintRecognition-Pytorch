@@ -32,7 +32,7 @@ class AudioFeaturizer(nn.Module):
             # 加载Wav2Vec2类似模型
             self.processor = AutoFeatureExtractor.from_pretrained(feature_method)
             self.feature_model = AutoModel.from_pretrained(feature_method).to(self.device)
-            logger.info(f'使用模型 {feature_method} 提取特征')
+            logger.info(f'使用模型【{feature_method}】提取特征，使用【{self.device}】设备提取')
             # 获取模型的输出通道数
             inputs = self.processor(np.ones(16000 * 1, dtype=np.float32), sampling_rate=16000,
                                     return_tensors="pt").to(self.device)
@@ -50,7 +50,7 @@ class AudioFeaturizer(nn.Module):
                 self.feat_fun = KaldiFbank(**method_args)
             else:
                 raise Exception(f'预处理方法 {self._feature_method} 不存在!')
-            logger.info(f'使用 {feature_method} 提取特征')
+            logger.info(f'使用【{feature_method}】提取特征')
 
     def forward(self, waveforms, input_lens_ratio=None):
         """从AudioSegment中提取音频特征
