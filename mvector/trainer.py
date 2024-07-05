@@ -72,11 +72,6 @@ class MVectorTrainer(object):
         self.trials_loader = None
         self.margin_scheduler = None
         self.amp_scaler = None
-        # 获取特征器
-        self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
-                                                use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
-                                                method_args=self.configs.preprocess_conf.get('method_args', {}))
-        self.audio_featurizer.to(self.device)
         # 特征增强
         self.spec_aug = SpecAug(**self.configs.dataset_conf.get('spec_aug_args', {}))
         self.spec_aug.to(self.device)
