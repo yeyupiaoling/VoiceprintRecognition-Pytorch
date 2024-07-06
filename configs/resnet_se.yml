@@ -37,7 +37,7 @@ dataset_conf:
     # 是否使用语速扰动增强
     speed_perturb: True
     # 使用语速增强是否分类大小翻三倍
-    speed_perturb_3_class: True
+    speed_perturb_3_class: False
     # 是否使用音量增强
     volume_perturb: False
     # 音量增强概率
