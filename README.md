@@ -87,26 +87,43 @@
 3. 参数数量不包含了分类器的参数数量。
 
 
-### 预处理对比实验
+### 预处理方法效果对比实验
 
-|                                      预处理方法                                       |                数据集                 | train speakers | threshold | EER | MinDCF |   模型下载   |
-|:--------------------------------------------------------------------------------:|:----------------------------------:|:--------------:|:---------:|:---:|:------:|:--------:|
-|                                      Fbank                                       | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|                                  MelSpectrogram                                  | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|                                   Spectrogram                                    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|                                       MFCC                                       | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-| [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|      [wav2vec2-xls-r-1b](https://huggingface.co/facebook/wav2vec2-xls-r-1b)      | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
-|           [wavlm-large](https://huggingface.co/microsoft/wavlm-large)            | [CN-Celeb](http://openslr.org/82/) |      2796      |           |     |        | 加入知识星球获取 |
+|                                      预处理方法                                       |   数据集    | train speakers | threshold | EER | MinDCF |   模型下载   |
+|:--------------------------------------------------------------------------------:|:--------:|:--------------:|:---------:|:---:|:------:|:--------:|
+|                                      Fbank                                       | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|                                  MelSpectrogram                                  | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|                                   Spectrogram                                    | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|                                       MFCC                                       | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+| [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|           [wavlm-large](https://huggingface.co/microsoft/wavlm-large)            | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
 
 说明：
 
 1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
-2. 实验数据为CN-Celeb，实验模型为CAM++。
+2. 实验数据为[CN-Celeb](http://openslr.org/82/)，实验模型为CAM++。
 3. 数据使用`extract_features.py`提前提取特征，也就是说训练中没有使用对音频的数据增强。
-4. `w2v-bert-2.0`、`wav2vec2-large-xlsr-53`、`wav2vec2-xls-r-1b`是多语言数据预训练得到的，`wavlm-base-plus`、`wavlm-large`的预训练数据仅用英文。
+4. `w2v-bert-2.0`、`wav2vec2-large-xlsr-53`是多语言数据预训练得到的，`wavlm-base-plus`、`wavlm-large`的预训练数据仅用英文。
+
+
+### 损失函数效果对比实验
+
+|    损失函数     |   数据集    | train speakers | threshold | EER | MinDCF |   模型下载   |
+|:-----------:|:--------:|:--------------:|:---------:|:---:|:------:|:--------:|
+|   AAMLoss   | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+| SphereFace2 | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|   AMLoss    | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|   ARMLoss   | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+|   CELoss    | CN-Celeb |      2796      |           |     |        | 加入知识星球获取 |
+
+说明：
+
+1. 评估的测试集为[CN-Celeb的测试集](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，包含196个说话人。
+2. 实验数据为[CN-Celeb](http://openslr.org/82/)，实验模型为CAM++。
+3. 数据使用`extract_features.py`提前提取特征，也就是说训练中没有使用对音频的数据增强。
+
 
 ## 安装环境
 

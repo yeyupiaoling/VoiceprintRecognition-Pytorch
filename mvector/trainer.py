@@ -130,6 +130,7 @@ class MVectorTrainer(object):
                                              mode='eval')
         self.enroll_loader = DataLoader(dataset=self.enroll_dataset,
                                         collate_fn=collate_fn,
+                                        shuffle=False,
                                         batch_size=self.configs.dataset_conf.eval_conf.batch_size,
                                         num_workers=self.configs.dataset_conf.dataLoader.num_workers)
         self.trials_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.trials_list,
@@ -143,6 +144,7 @@ class MVectorTrainer(object):
                                              mode='eval')
         self.trials_loader = DataLoader(dataset=self.trials_dataset,
                                         collate_fn=collate_fn,
+                                        shuffle=False,
                                         batch_size=self.configs.dataset_conf.eval_conf.batch_size,
                                         num_workers=self.configs.dataset_conf.dataLoader.num_workers)
 
@@ -155,8 +157,7 @@ class MVectorTrainer(object):
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
-        for i, data_list in enumerate([self.configs.dataset_conf.train_list,
-                                       self.configs.dataset_conf.enroll_list,
+        for i, data_list in enumerate([self.configs.dataset_conf.enroll_list,
                                        self.configs.dataset_conf.trials_list]):
             # 获取测试数据
             test_dataset = MVectorDataset(data_list_path=data_list,

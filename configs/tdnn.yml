@@ -21,7 +21,7 @@ dataset_conf:
   # 评估的数据要特殊处理
   eval_conf:
     # 评估的批量大小
-    batch_size: 1
+    batch_size: 8
     # 最长的音频长度
     max_duration: 20
   # 数据加载器参数

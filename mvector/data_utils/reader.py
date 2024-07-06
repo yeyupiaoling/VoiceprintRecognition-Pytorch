@@ -4,6 +4,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
@@ -41,7 +42,8 @@ class MVectorDataset(Dataset):
             target_dB: 音量归一化的大小
         """
         super(MVectorDataset, self).__init__()
-        assert mode in ['train', 'eval', 'create_data', 'extract_feature']
+        assert mode in ['train', 'eval', 'extract_feature']
+        self.data_list_path = data_list_path
         self.do_vad = do_vad
         self.max_duration = max_duration
         self.min_duration = min_duration
@@ -57,8 +59,11 @@ class MVectorDataset(Dataset):
         # 获取特征裁剪的大小
         self.max_feature_len = self.get_crop_feature_len()
         # 获取数据列表
-        with open(data_list_path, 'r', encoding='utf-8') as f:
+        with open(self.data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
+        # 评估模式下，数据列表需要排序
+        if self.mode == 'eval':
+            self.sort_list()
 
     def __getitem__(self, idx):
         # 分割数据文件路径和标签
@@ -68,7 +73,7 @@ class MVectorDataset(Dataset):
         if data_path.endswith('.npy'):
             feature = np.load(data_path)
             if feature.shape[0] > self.max_feature_len:
-                crop_start = random.randint(0, feature.shape[0] - self.max_feature_len) if self.mode == 'eval' else 0
+                crop_start = random.randint(0, feature.shape[0] - self.max_feature_len) if self.mode == 'train' else 0
                 feature = feature[crop_start:crop_start + self.max_feature_len, :]
             feature = torch.tensor(feature, dtype=torch.float32)
         else:
@@ -108,11 +113,31 @@ class MVectorDataset(Dataset):
     def __len__(self):
         return len(self.lines)
 
+    # 获取特征裁剪的大小，对应max_duration音频提取特征后的长度
     def get_crop_feature_len(self):
         samples = torch.randn((1, self.max_duration * self._target_sample_rate))
         feature = self.audio_featurizer(samples).squeeze(0)
         freq_len = feature.size(0)
         return freq_len
+
+    # 数据列表需要排序
+    def sort_list(self):
+        lengths = []
+        for line in tqdm(self.lines, desc=f"对列表[{self.data_list_path}]进行长度排序"):
+            # 分割数据文件路径和标签
+            data_path, _ = line.split('\t')
+            if data_path.endswith('.npy'):
+                feature = np.load(data_path)
+                length = feature.shape[0]
+                lengths.append(length)
+            else:
+                # 读取音频
+                audio_segment = AudioSegment.from_file(data_path)
+                length = audio_segment.duration
+                lengths.append(length)
+        # 对长度排序并获取索引
+        sorted_indexes = np.argsort(lengths)
+        self.lines = [self.lines[i] for i in sorted_indexes]
 
     # 音频增强
     def augment_audio(self,
