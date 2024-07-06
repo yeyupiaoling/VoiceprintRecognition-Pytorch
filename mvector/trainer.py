@@ -157,7 +157,8 @@ class MVectorTrainer(object):
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
-        for i, data_list in enumerate([self.configs.dataset_conf.enroll_list,
+        for i, data_list in enumerate([self.configs.dataset_conf.train_list,
+                                       self.configs.dataset_conf.enroll_list,
                                        self.configs.dataset_conf.trials_list]):
             # 获取测试数据
             test_dataset = MVectorDataset(data_list_path=data_list,
