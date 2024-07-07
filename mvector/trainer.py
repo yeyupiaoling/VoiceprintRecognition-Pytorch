@@ -406,8 +406,9 @@ class MVectorTrainer(object):
         if self.amp_scaler is not None:
             torch.save(self.amp_scaler.state_dict(), os.path.join(model_path, 'scaler.pth'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
+            use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
             data = {"last_epoch": epoch_id, "version": __version__, "use_model": self.configs.use_model,
-                    "feature_method": self.configs.preprocess_conf.feature_method}
+                    "feature_method": self.configs.preprocess_conf.feature_method, "loss": use_loss}
             if eer is not None:
                 data['threshold'] = threshold
                 data['eer'] = eer
