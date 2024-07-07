@@ -336,7 +336,7 @@ class MVectorTrainer(object):
         :param resume_model: 恢复训练的模型路径
         """
         last_epoch1 = -1
-        best_acc1 = 1
+        best_eer1 = 1
 
         def load_model(model_path):
             assert os.path.exists(os.path.join(model_path, 'model.pth')), "模型参数文件不存在！"
@@ -353,11 +353,12 @@ class MVectorTrainer(object):
             with open(os.path.join(model_path, 'model.state'), 'r', encoding='utf-8') as f:
                 json_data = json.load(f)
                 last_epoch = json_data['last_epoch'] - 1
-                best_acc = json_data['accuracy']
+                if 'eer' in json_data.keys():
+                    best_eer = json_data['eer']
             logger.info('成功恢复模型参数和优化方法参数：{}'.format(model_path))
             self.optimizer.step()
             [self.scheduler.step() for _ in range(last_epoch * len(self.train_loader))]
-            return last_epoch, best_acc
+            return last_epoch, best_eer
 
         # 获取最后一个保存的模型
         last_model_dir = os.path.join(save_model_path,
@@ -366,14 +367,14 @@ class MVectorTrainer(object):
         if resume_model is not None or (os.path.exists(os.path.join(last_model_dir, 'model.pth'))
                                         and os.path.exists(os.path.join(last_model_dir, 'optimizer.pth'))):
             if resume_model is not None:
-                last_epoch1, best_acc1 = load_model(resume_model)
+                last_epoch1, best_eer1 = load_model(resume_model)
             else:
                 try:
                     # 自动获取最新保存的模型
-                    last_epoch1, best_acc1 = load_model(last_model_dir)
+                    last_epoch1, best_eer1 = load_model(last_model_dir)
                 except Exception as e:
                     logger.warning(f'尝试自动恢复最新模型失败，错误信息：{e}')
-        return last_epoch1, best_acc1
+        return last_epoch1, best_eer1
 
     # 保存模型
     def __save_checkpoint(self, save_model_path, epoch_id, eer=None, min_dcf=None, threshold=None, best_model=False):
@@ -405,14 +406,15 @@ class MVectorTrainer(object):
         if self.amp_scaler is not None:
             torch.save(self.amp_scaler.state_dict(), os.path.join(model_path, 'scaler.pth'))
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
-            data = {"last_epoch": epoch_id, "version": __version__}
+            data = {"last_epoch": epoch_id, "version": __version__, "use_model": self.configs.use_model,
+                    "feature_method": self.configs.preprocess_conf.feature_method}
             if eer is not None:
                 data['threshold'] = threshold
                 data['eer'] = eer
                 data['min_dcf'] = min_dcf
             if self.margin_scheduler:
                 data['margin'] = self.margin_scheduler.get_margin()
-            f.write(json.dumps(data, ensure_ascii=False))
+            f.write(json.dumps(data, indent=4, ensure_ascii=False))
         if not best_model:
             last_model_path = os.path.join(save_model_path,
                                            f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
