@@ -1,3 +1,4 @@
+import math
 from collections import OrderedDict
 
 import torch
@@ -269,7 +270,7 @@ class FCM(nn.Module):
 
         self.conv2 = nn.Conv2d(m_channels, m_channels, kernel_size=3, stride=(2, 1), padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(m_channels)
-        self.out_channels = m_channels * (feat_dim // 8)
+        self.out_channels = m_channels * (math.ceil(feat_dim / 8))
 
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
