@@ -21,6 +21,7 @@ from visualdl import LogWriter
 from mvector import SUPPORT_MODEL, __version__
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
+from mvector.data_utils.pk_sampler import PKSampler
 from mvector.data_utils.reader import MVectorDataset
 from mvector.data_utils.spec_aug import SpecAug
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
@@ -28,7 +29,7 @@ from mvector.models.campplus import CAMPPlus
 from mvector.models.ecapa_tdnn import EcapaTdnn
 from mvector.models.eres2net import ERes2Net, ERes2NetV2
 from mvector.models.fc import SpeakerIdentification
-from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenterLoss, SphereFace2
+from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenterLoss, SphereFace2, TripletAngularMarginLoss
 from mvector.models.res2net import Res2Net
 from mvector.models.resnet_se import ResNetSE
 from mvector.models.tdnn import TDNN
@@ -110,13 +111,20 @@ class MVectorTrainer(object):
                                                 target_dB=self.configs.dataset_conf.target_dB,
                                                 mode='train')
             train_sampler = None
+            # 使用TripletAngularMarginLoss必须使用PKSampler
+            use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
+            if self.configs.dataset_conf.get("is_use_pksampler", False) or use_loss == "TripletAngularMarginLoss":
+                # 设置支持多卡训练
+                train_sampler = PKSampler(dataset=self.train_dataset,
+                                          sample_per_id=self.configs.dataset_conf.get("sample_per_id", 4),
+                                          batch_size=self.configs.dataset_conf.dataLoader.batch_size)
             if torch.cuda.device_count() > 1:
                 # 设置支持多卡训练
                 train_sampler = DistributedSampler(dataset=self.train_dataset)
             self.train_loader = DataLoader(dataset=self.train_dataset,
                                            collate_fn=collate_fn,
                                            shuffle=(train_sampler is None),
-                                           sampler=train_sampler,
+                                           batch_sampler=train_sampler,
                                            **self.configs.dataset_conf.dataLoader)
         # 获取评估的注册数据和检验数据
         self.enroll_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.enroll_list,
@@ -230,6 +238,8 @@ class MVectorTrainer(object):
                 self.loss = AAMLoss(**loss_args)
             elif use_loss == 'SphereFace2':
                 self.loss = SphereFace2(**loss_args)
+            elif use_loss == 'TripletAngularMarginLoss':
+                self.loss = TripletAngularMarginLoss(**loss_args)
             elif use_loss == 'SubCenterLoss':
                 self.loss = SubCenterLoss(**loss_args)
             elif use_loss == 'AMLoss':

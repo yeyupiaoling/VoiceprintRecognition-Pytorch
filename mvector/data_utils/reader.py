@@ -61,6 +61,7 @@ class MVectorDataset(Dataset):
         # 获取数据列表
         with open(self.data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
+        self.labels = [np.int64(line.strip().split('\t')[1]) for line in self.lines]
         # 评估模式下，数据列表需要排序
         if self.mode == 'eval':
             self.sort_list()

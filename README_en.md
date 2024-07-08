@@ -25,7 +25,7 @@ Environment：
 
 1. Supporting models: EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
 2. Supporting pooling: AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
-3. Supporting Loss: AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss
+3. Supporting Loss: AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss、SubCenterLoss、TripletAngularMarginLoss
 4. Support preprocessing methods: MelSpectrogram、Spectrogram、MFCC、Fbank、Wav2vec2.0、WavLM
 
 **Model Paper：**

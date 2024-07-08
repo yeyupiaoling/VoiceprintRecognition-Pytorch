@@ -18,6 +18,10 @@ dataset_conf:
   enroll_list: 'dataset/cn-celeb-test/enroll_list.txt'
   # 评估检验的数据列表路径
   trials_list: 'dataset/cn-celeb-test/trials_list.txt'
+  # 是否使用PKSampler，该Sampler可以保证每个说话人都有sample_per_id个样本
+  is_use_pksampler: False
+  # 使用PKSampler时设置样本数量
+  sample_per_id: 4
   # 评估的数据要特殊处理
   eval_conf:
     # 评估的批量大小
@@ -94,7 +98,7 @@ model_conf:
     num_blocks: 0
 
 loss_conf:
-  # 所使用的损失函数，支持AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss
+  # 所使用的损失函数，支持AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss、SubCenterLoss、TripletAngularMarginLoss
   use_loss: 'AAMLoss'
   # 损失函数参数
   args:
