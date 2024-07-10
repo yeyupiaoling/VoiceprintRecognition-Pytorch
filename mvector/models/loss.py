@@ -263,6 +263,7 @@ class TripletAngularMarginLoss(nn.Module):
                  an_value=0.4):
         super(TripletAngularMarginLoss, self).__init__()
         self.margin = margin
+        self.ranking_loss = torch.nn.MarginRankingLoss(margin=margin)
         self.normalize_feature = normalize_feature
         self.add_absolute = add_absolute
         self.ap_value = ap_value
@@ -277,7 +278,7 @@ class TripletAngularMarginLoss(nn.Module):
             target: ground truth labels with shape (batch_size)
         """
         if self.normalize_feature:
-            inputs = F.normalize(inputs, p=2, dim=-1)
+            inputs = torch.divide(inputs, torch.norm(inputs, p=2, dim=-1, keepdim=True))
 
         loss_ce = self.criterion(inputs, target)
         bs = inputs.size(0)
@@ -293,19 +294,22 @@ class TripletAngularMarginLoss(nn.Module):
         dist_ap = dist[is_pos].view(bs, -1).min(dim=1, keepdim=True)[0]
         # `dist_an` means distance(anchor, negative)
         dist_an = dist[is_neg].view(bs, -1).max(dim=1, keepdim=True)[0]
+        # shape [N]
+        dist_ap = torch.squeeze(dist_ap, dim=1)
+        dist_an = torch.squeeze(dist_an, dim=1)
 
         # Compute ranking hinge loss
         y = torch.ones_like(dist_an)
-        loss = F.relu(self.margin + dist_ap - dist_an).mean()
+        loss = self.ranking_loss(dist_ap, dist_an, y)
 
         if self.add_absolute:
             absolut_loss_ap = self.ap_value - dist_ap
             absolut_loss_ap = torch.where(absolut_loss_ap > 0, absolut_loss_ap, torch.zeros_like(absolut_loss_ap))
 
             absolut_loss_an = dist_an - self.an_value
-            absolut_loss_an = torch.where(absolut_loss_an > 0, absolut_loss_an, torch.zeros_like(absolut_loss_an))
+            absolut_loss_an = torch.where(absolut_loss_an > 0, absolut_loss_an, torch.ones_like(absolut_loss_an))
 
-            loss = (absolut_loss_an.mean() + absolut_loss_ap.mean()) * self.absolute_loss_weight + loss
+            loss = (absolut_loss_an.mean() + absolut_loss_ap.mean()) * self.absolute_loss_weight + loss.mean()
         loss = loss + loss_ce
         return loss
 
