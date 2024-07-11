@@ -94,9 +94,9 @@
 |                                      预处理方法                                       |   数据集    | train speakers | threshold |   EER   | MinDCF  |   模型下载   |
 |:--------------------------------------------------------------------------------:|:--------:|:--------------:|:---------:|:-------:|:-------:|:--------:|
 |                                      Fbank                                       | CN-Celeb |      2796      |  0.14574  | 0.10988 | 0.58955 | 加入知识星球获取 |
+|                                       MFCC                                       | CN-Celeb |      2796      |  0.14868  | 0.11483 | 0.61275 | 加入知识星球获取 |
 |                                  MelSpectrogram                                  | CN-Celeb |      2796      |  0.13458  | 0.12498 | 0.60741 | 加入知识星球获取 |
 |                                   Spectrogram                                    | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
-|                                       MFCC                                       | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
 |           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
 | [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
 |       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
