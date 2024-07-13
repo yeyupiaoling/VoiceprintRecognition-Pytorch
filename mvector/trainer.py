@@ -470,9 +470,10 @@ class MVectorTrainer(object):
                 features = self.spec_aug(features)
             # 执行模型计算，是否开启自动混合精度
             with torch.cuda.amp.autocast(enabled=self.configs.train_conf.enable_amp):
-                output = self.model(features)
+                outputs = self.model(features)
+            logits = outputs['logits']
             # 计算损失值
-            los = self.loss(output, label)
+            los = self.loss(outputs, label)
             # 是否开启自动混合精度
             if self.configs.train_conf.enable_amp:
                 # loss缩放，乘以系数loss_scaling
@@ -492,9 +493,9 @@ class MVectorTrainer(object):
             # 计算准确率
             if use_loss == 'SubCenterLoss':
                 loss_args = self.configs.loss_conf.get('args', {})
-                cosine = torch.reshape(output, (-1, output.shape[1] // loss_args.K, loss_args.K))
-                output, _ = torch.max(cosine, 2)
-            acc = accuracy(output, label)
+                cosine = torch.reshape(logits, (-1, logits.shape[1] // loss_args.K, loss_args.K))
+                logits, _ = torch.max(cosine, 2)
+            acc = accuracy(logits, label)
             accuracies.append(acc)
             loss_sum.append(los.data.cpu().numpy())
             train_times.append((time.time() - start) * 1000)

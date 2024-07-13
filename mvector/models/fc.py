@@ -30,8 +30,7 @@ class SpeakerIdentification(nn.Module):
             self.blocks.append(DenseLayer(input_dim, inter_dim, config_str='batchnorm'))
             input_dim = inter_dim
 
-        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or self.loss_type == 'SphereFace2' or\
-                self.loss_type == 'TripletAngularMarginLoss':
+        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or self.loss_type == 'SphereFace2':
             self.weight = nn.Parameter(torch.FloatTensor(num_speakers * K, input_dim))
             nn.init.xavier_uniform_(self.weight)
         elif self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
@@ -40,14 +39,14 @@ class SpeakerIdentification(nn.Module):
         else:
             self.output = nn.Linear(input_dim, num_speakers)
 
-    def forward(self, x):
+    def forward(self, features):
         # x: [B, dim]
+        x = features
         for layer in self.blocks:
             x = layer(x)
 
         # normalized
-        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or self.loss_type == 'SphereFace2' or \
-                self.loss_type == 'TripletAngularMarginLoss':
+        if self.loss_type == 'AAMLoss' or self.loss_type == 'SubCenterLoss' or self.loss_type == 'SphereFace2':
             logits = F.linear(F.normalize(x), F.normalize(self.weight))
         elif self.loss_type == 'AMLoss' or self.loss_type == 'ARMLoss':
             x_norm = torch.norm(x, p=2, dim=1, keepdim=True).clamp(min=1e-12)
@@ -58,7 +57,7 @@ class SpeakerIdentification(nn.Module):
         else:
             logits = self.output(x)
 
-        return logits
+        return {"features": features, "logits": logits}
 
 
 class DenseLayer(nn.Module):
