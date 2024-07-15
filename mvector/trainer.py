@@ -377,8 +377,11 @@ class MVectorTrainer(object):
             return last_epoch, best_eer
 
         # 获取最后一个保存的模型
+        save_feature_method = self.configs.preprocess_conf.feature_method
+        if self.configs.preprocess_conf.get('use_hf_model', False):
+            save_feature_method = os.path.basename(save_feature_method)
         last_model_dir = os.path.join(save_model_path,
-                                      f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
+                                      f'{self.configs.use_model}_{save_feature_method}',
                                       'last_model')
         if resume_model is not None or (os.path.exists(os.path.join(last_model_dir, 'model.pth'))
                                         and os.path.exists(os.path.join(last_model_dir, 'optimizer.pth'))):
@@ -407,15 +410,18 @@ class MVectorTrainer(object):
             state_dict = self.model.module.state_dict()
         else:
             state_dict = self.model.state_dict()
+        # 保存模型的路径
+        save_feature_method = self.configs.preprocess_conf.feature_method
+        if self.configs.preprocess_conf.get('use_hf_model', False):
+            save_feature_method = os.path.basename(save_feature_method)
         if best_model:
             model_path = os.path.join(save_model_path,
-                                      f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
-                                      'best_model')
+                                      f'{self.configs.use_model}_{save_feature_method}', 'best_model')
         else:
             model_path = os.path.join(save_model_path,
-                                      f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
-                                      'epoch_{}'.format(epoch_id))
+                                      f'{self.configs.use_model}_{save_feature_method}', 'epoch_{}'.format(epoch_id))
         os.makedirs(model_path, exist_ok=True)
+        # 保存模型参数
         torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pth'))
         torch.save(state_dict, os.path.join(model_path, 'model.pth'))
         # 自动混合精度参数
@@ -424,7 +430,7 @@ class MVectorTrainer(object):
         with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
             use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
             data = {"last_epoch": epoch_id, "version": __version__, "use_model": self.configs.use_model,
-                    "feature_method": self.configs.preprocess_conf.feature_method, "loss": use_loss}
+                    "feature_method": save_feature_method, "loss": use_loss}
             if eer is not None:
                 data['threshold'] = threshold
                 data['eer'] = eer
@@ -434,13 +440,12 @@ class MVectorTrainer(object):
             f.write(json.dumps(data, indent=4, ensure_ascii=False))
         if not best_model:
             last_model_path = os.path.join(save_model_path,
-                                           f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
-                                           'last_model')
+                                           f'{self.configs.use_model}_{save_feature_method}', 'last_model')
             shutil.rmtree(last_model_path, ignore_errors=True)
             shutil.copytree(model_path, last_model_path)
             # 删除旧的模型
             old_model_path = os.path.join(save_model_path,
-                                          f'{self.configs.use_model}_{self.configs.preprocess_conf.feature_method}',
+                                          f'{self.configs.use_model}_{save_feature_method}',
                                           'epoch_{}'.format(epoch_id - 3))
             if os.path.exists(old_model_path):
                 shutil.rmtree(old_model_path)
