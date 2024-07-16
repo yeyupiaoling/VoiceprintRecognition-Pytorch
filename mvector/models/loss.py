@@ -18,9 +18,11 @@ class AAMLoss(nn.Module):
         super(AAMLoss, self).__init__()
         self.scale = scale
         self.easy_margin = easy_margin
+        self.cos_m = math.cos(margin)
+        self.sin_m = math.sin(margin)
+        self.th = math.cos(math.pi - margin)
+        self.mmm = 1.0 + math.cos(math.pi - margin)
         self.criterion = nn.CrossEntropyLoss()
-
-        self.update(margin)
 
     def forward(self, inputs, labels):
         """
@@ -45,12 +47,9 @@ class AAMLoss(nn.Module):
         return loss
 
     def update(self, margin=0.2):
-        self.margin = margin
         self.cos_m = math.cos(margin)
         self.sin_m = math.sin(margin)
         self.th = math.cos(math.pi - margin)
-        self.mm = math.sin(math.pi - margin) * margin
-        self.m = self.margin
         self.mmm = 1.0 + math.cos(math.pi - margin)
 
 
@@ -79,7 +78,11 @@ class SphereFace2(nn.Module):
         self.lanbuda = lanbuda
         self.margin_type = margin_type
 
-        self.update(margin)
+        self.margin = margin
+        self.cos_m = math.cos(margin)
+        self.sin_m = math.sin(margin)
+        self.th = math.cos(math.pi - margin)
+        self.mmm = 1.0 + math.cos(math.pi - margin)
 
     def fun_g(self, z, t: int):
         gz = 2 * torch.pow((z + 1) / 2, t) - 1
@@ -118,15 +121,14 @@ class SphereFace2(nn.Module):
         self.cos_m = math.cos(margin)
         self.sin_m = math.sin(margin)
         self.th = math.cos(math.pi - margin)
-        self.mm = math.sin(math.pi - margin)
         self.mmm = 1.0 + math.cos(math.pi - margin)
 
 
 class AMLoss(nn.Module):
     def __init__(self, margin=0.3, scale=32):
         super(AMLoss, self).__init__()
-        self.m = margin
-        self.s = scale
+        self.margin = margin
+        self.scale = scale
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, inputs, labels):
@@ -137,9 +139,9 @@ class AMLoss(nn.Module):
         """
         features, logits = inputs['features'], inputs['logits']
         label_view = labels.view(-1, 1)
-        delt_costh = torch.zeros(logits.size(), device=labels.device).scatter_(1, label_view, self.m)
+        delt_costh = torch.zeros(logits.size(), device=labels.device).scatter_(1, label_view, self.margin)
         costh_m = logits - delt_costh
-        predictions = self.s * costh_m
+        predictions = self.scale * costh_m
         loss = self.criterion(predictions, labels) / labels.shape[0]
         return loss
 
@@ -150,8 +152,8 @@ class AMLoss(nn.Module):
 class ARMLoss(nn.Module):
     def __init__(self, margin=0.3, scale=32):
         super(ARMLoss, self).__init__()
-        self.m = margin
-        self.s = scale
+        self.margin = margin
+        self.scale = scale
         self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
     def forward(self, inputs, labels):
@@ -162,9 +164,9 @@ class ARMLoss(nn.Module):
         """
         features, logits = inputs['features'], inputs['logits']
         label_view = labels.view(-1, 1)
-        delt_costh = torch.zeros(logits.size(), device=labels.device).scatter_(1, label_view, self.m)
+        delt_costh = torch.zeros(logits.size(), device=labels.device).scatter_(1, label_view, self.margin)
         costh_m = logits - delt_costh
-        costh_m_s = self.s * costh_m
+        costh_m_s = self.scale * costh_m
         delt_costh_m_s = costh_m_s.gather(1, label_view).repeat(1, costh_m_s.size()[1])
         costh_m_s_reduct = costh_m_s - delt_costh_m_s
         predictions = torch.where(costh_m_s_reduct < 0.0, torch.zeros_like(costh_m_s), costh_m_s)
@@ -172,7 +174,7 @@ class ARMLoss(nn.Module):
         return loss
 
     def update(self, margin=0.2):
-        self.m = margin
+        self.margin = margin
 
 
 class CELoss(nn.Module):
@@ -216,21 +218,8 @@ class SubCenterLoss(nn.Module):
         self.cos_m = math.cos(margin)
         self.sin_m = math.sin(margin)
         self.th = math.cos(math.pi - margin)
-        self.mm = math.sin(math.pi - margin) * margin
         self.mmm = 1.0 + math.cos(math.pi - margin)
-        self.m = self.margin
         self.criterion = nn.CrossEntropyLoss()
-
-        self.update(margin)
-
-    def update(self, margin=0.2):
-        self.margin = margin
-        self.cos_m = math.cos(margin)
-        self.sin_m = math.sin(margin)
-        self.th = math.cos(math.pi - margin)
-        self.mm = math.sin(math.pi - margin) * margin
-        self.m = self.margin
-        self.mmm = 1.0 + math.cos(math.pi - margin)
 
     def forward(self, inputs, labels):
         """
@@ -259,6 +248,12 @@ class SubCenterLoss(nn.Module):
         loss = self.criterion(output, labels)
         return loss
 
+    def update(self, margin=0.2):
+        self.cos_m = math.cos(margin)
+        self.sin_m = math.sin(margin)
+        self.th = math.cos(math.pi - margin)
+        self.mmm = 1.0 + math.cos(math.pi - margin)
+
 
 class TripletAngularMarginLoss(nn.Module):
     """A more robust triplet loss with hard positive/negative mining on angular margin instead of relative distance between d(a,p) and d(a,n).
@@ -266,10 +261,10 @@ class TripletAngularMarginLoss(nn.Module):
     Args:
         margin (float, optional): angular margin. Defaults to 0.5.
         normalize_feature (bool, optional): whether to apply L2-norm in feature before computing distance(cos-similarity). Defaults to True.
-        add_absolute (bool, optional): whether add absolute loss within d(a,p) or d(a,n). Defaults to False.
+        add_absolute (bool, optional): whether add absolute loss within d(a,p) or d(a,n). Defaults to True.
         absolute_loss_weight (float, optional): weight for absolute loss. Defaults to 1.0.
-        ap_value (float, optional): weight for d(a, p). Defaults to 0.9.
-        an_value (float, optional): weight for d(a, n). Defaults to 0.5.
+        ap_value (float, optional): weight for d(a, p). Defaults to 0.8.
+        an_value (float, optional): weight for d(a, n). Defaults to 0.4.
     """
 
     def __init__(self,
@@ -287,7 +282,7 @@ class TripletAngularMarginLoss(nn.Module):
         self.ap_value = ap_value
         self.an_value = an_value
         self.absolute_loss_weight = absolute_loss_weight
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     def forward(self, inputs, labels):
         """
@@ -334,4 +329,4 @@ class TripletAngularMarginLoss(nn.Module):
         return loss
 
     def update(self, margin=0.5):
-        self.margin = margin
+        self.ranking_loss.margin = margin

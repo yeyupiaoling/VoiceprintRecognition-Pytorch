@@ -379,6 +379,7 @@ class MVectorTrainer(object):
         # 获取最后一个保存的模型
         save_feature_method = self.configs.preprocess_conf.feature_method
         if self.configs.preprocess_conf.get('use_hf_model', False):
+            save_feature_method = save_feature_method[:-1] if save_feature_method[-1] == '/' else save_feature_method
             save_feature_method = os.path.basename(save_feature_method)
         last_model_dir = os.path.join(save_model_path,
                                       f'{self.configs.use_model}_{save_feature_method}',
@@ -413,6 +414,7 @@ class MVectorTrainer(object):
         # 保存模型的路径
         save_feature_method = self.configs.preprocess_conf.feature_method
         if self.configs.preprocess_conf.get('use_hf_model', False):
+            save_feature_method = save_feature_method[:-1] if save_feature_method[-1] == '/' else save_feature_method
             save_feature_method = os.path.basename(save_feature_method)
         if best_model:
             model_path = os.path.join(save_model_path,
@@ -577,7 +579,7 @@ class MVectorTrainer(object):
         if nranks > 1 and self.use_gpu:
             self.model.to(local_rank)
             self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[local_rank])
-        logger.info('训练数据：{}'.format(len(self.train_dataset)))
+        logger.info(f'训练数据：{len(self.train_dataset)}')
 
         self.train_loss, self.train_acc = None, None
         self.test_log_step, self.train_log_step = 0, 0
