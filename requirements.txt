@@ -12,3 +12,4 @@ scikit-learn>=1.0.2
 pydub>=0.25.1
 torchinfo>=1.7.2
 av>=10.0.0
+faiss-cpu>=1.7.0

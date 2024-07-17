@@ -22,7 +22,7 @@
  - Anaconda 3
  - Python 3.11
  - Pytorch 2.0.1
- - Windows 10 or Ubuntu 18.04
+ - Windows 11 or Ubuntu 22.04
 
 # 项目特性
 

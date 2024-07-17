@@ -508,7 +508,7 @@ class AudioSegment(object):
         Integers will be scaled to [-1, 1] in float32.
         """
         float32_samples = samples.astype('float32')
-        if samples.dtype in np.sctypes['int']:
+        if samples.dtype in [np.int8, np.int16, np.int32, np.int64]:
             bits = np.iinfo(samples.dtype).bits
             float32_samples *= (1. / 2 ** (bits - 1))
         elif samples.dtype in np.sctypes['float']:
@@ -529,7 +529,7 @@ class AudioSegment(object):
         """
         dtype = np.dtype(dtype)
         output_samples = samples.copy()
-        if dtype in np.sctypes['int']:
+        if dtype in [np.int8, np.int16, np.int32, np.int64]:
             bits = np.iinfo(dtype).bits
             output_samples *= (2 ** (bits - 1) / 1.)
             min_val = np.iinfo(dtype).min
