@@ -109,6 +109,7 @@ loss_conf:
   use_margin_scheduler: True
   # margin调度器参数
   margin_scheduler_args:
+    initial_margin: 0.0
     final_margin: 0.3
 
 train_conf:
