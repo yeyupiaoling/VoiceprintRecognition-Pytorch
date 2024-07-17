@@ -3,6 +3,7 @@ import pickle
 import shutil
 from io import BufferedReader
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 import faiss
 import numpy as np
 import torch
@@ -200,11 +201,12 @@ class MVectorPredictor:
         if isinstance(np_feature, list):
             np_feature = np.array(np_feature)
         labels = []
-        similarities, indices = self.index.search(np_feature.astype(np.float32), 1)
+        np_feature = self.normalize_features(np_feature.astype(np.float32))
+        similarities, indices = self.index.search(np_feature, 1)
         for sim, idx in zip(similarities, indices):
             sim, idx = sim[0], idx[0]
             if sim >= self.threshold:
-                sim = round(sim, 5)
+                sim = round(float(sim), 5)
                 labels.append([self.index_users_name[idx], sim])
             else:
                 labels.append([None, None])

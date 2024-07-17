@@ -82,6 +82,46 @@ Explain：
 2. Triple the classification size using speech rate augmentation`speed_perturb_3_class: True`.
 3. The number of parameters does not include the number of parameters of the classifier.
 
+### Effect comparison experiment of preprocessing methods
+
+|                               Preprocessing method                               | Dataset  | train speakers | threshold |   EER   | MinDCF  |  
+|:--------------------------------------------------------------------------------:|:--------:|:--------------:|:---------:|:-------:|:-------:|
+|                                      Fbank                                       | CN-Celeb |      2796      |  0.14574  | 0.10988 | 0.58955 | 
+|                                       MFCC                                       | CN-Celeb |      2796      |  0.14868  | 0.11483 | 0.61275 | 
+|                                   Spectrogram                                    | CN-Celeb |      2796      |  0.14962  | 0.11613 | 0.60057 |
+|                                  MelSpectrogram                                  | CN-Celeb |      2796      |  0.13458  | 0.12498 | 0.60741 |
+|           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | CN-Celeb |      2796      |           |         |         | 
+| [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | CN-Celeb |      2796      |           |         |         | 
+|       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | CN-Celeb |      2796      |           |         |         | 
+|           [wavlm-large](https://huggingface.co/microsoft/wavlm-large)            | CN-Celeb |      2796      |           |         |         | 
+
+
+Explain：
+
+1. [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，which contains 196 speakers.
+2. The experimental data is [CN-Celeb](http://openslr.org/82/), the experimental model is `CAM++`, and loss function is `AAMLoss`.
+3. The data is pre-extracted using 'extract_features.py', which means no data augmentation is used for the audio during training.
+
+
+### Loss function effect comparison experiment
+
+
+|   Preprocessing method   | Dataset  | train speakers | threshold |   EER   | MinDCF  | 
+|:------------------------:|:--------:|:--------------:|:---------:|:-------:|:-------:|
+|         AAMLoss          | CN-Celeb |      2796      |  0.14574  | 0.10988 | 0.58955 |
+|       SphereFace2        | CN-Celeb |      2796      |  0.20377  | 0.11309 | 0.61536 |
+| TripletAngularMarginLoss | CN-Celeb |      2796      |  0.28940  | 0.11749 | 0.63735 |
+|      SubCenterLoss       | CN-Celeb |      2796      |  0.13126  | 0.11775 | 0.56995 |
+|         ARMLoss          | CN-Celeb |      2796      |  0.14563  | 0.11805 | 0.57171 |
+|          AMLoss          | CN-Celeb |      2796      |  0.12870  | 0.12301 | 0.63263 |
+|          CELoss          | CN-Celeb |      2796      |  0.13607  | 0.12684 | 0.65176 |
+
+Explain：
+
+1. [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361)，which contains 196 speakers.
+2. The experimental data is [CN-Celeb](http://openslr.org/82/), the experimental model is `CAM++`, and the preprocessing method is `Fbank`.
+3. The data is pre-extracted using 'extract_features.py', which means no data augmentation is used for the audio during training.
+
 
 ## Installation Environment
 
