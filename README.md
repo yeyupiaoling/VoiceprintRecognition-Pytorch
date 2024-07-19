@@ -8,7 +8,9 @@
 ![GitHub](https://img.shields.io/github/license/yeyupiaoling/VoiceprintRecognition-Pytorch)
 ![支持系统](https://img.shields.io/badge/支持系统-Win/Linux/MAC-9cf)
 
-本分支为1.0版本，如果要使用之前的0.3版本请在[0.x分支](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.x)使用。本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
+本分支为1.0版本，如果要使用之前的0.3版本请在[0.3分支](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.3.9)使用。本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
+
+**本项目是如果对你有帮助，欢迎Star，避免之后需要找不到了。**
 
 **欢迎大家扫码入知识星球或者QQ群讨论，知识星球里面提供项目的模型文件和博主其他相关项目的模型文件，也包括其他一些资源。**
 
@@ -98,9 +100,6 @@
 |                                   Spectrogram                                    | CN-Celeb |      2796      |  0.14962  | 0.11613 | 0.60057 | 加入知识星球获取 |
 |                                  MelSpectrogram                                  | CN-Celeb |      2796      |  0.13458  | 0.12498 | 0.60741 | 加入知识星球获取 |
 |       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | CN-Celeb |      2796      |  0.14166  | 0.13247 | 0.62451 | 加入知识星球获取 |
-|           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
-| [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
-|           [wavlm-large](https://huggingface.co/microsoft/wavlm-large)            | CN-Celeb |      2796      |           |         |         | 加入知识星球获取 |
 
 说明：
 
