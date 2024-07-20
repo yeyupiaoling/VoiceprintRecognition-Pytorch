@@ -1,6 +1,6 @@
 简体中文 | [English](./README_en.md)
 
-# 基于Pytorch实现的声纹识别系统
+# 基于Pytorch实现的声纹识别系统（该分支未完成，请使用其他分支）
 
 ![python version](https://img.shields.io/badge/python-3.8+-orange.svg)
 ![GitHub forks](https://img.shields.io/github/forks/yeyupiaoling/VoiceprintRecognition-Pytorch)
@@ -8,7 +8,7 @@
 ![GitHub](https://img.shields.io/github/license/yeyupiaoling/VoiceprintRecognition-Pytorch)
 ![支持系统](https://img.shields.io/badge/支持系统-Win/Linux/MAC-9cf)
 
-本分支为1.0版本，如果要使用之前的0.3版本请在[0.3分支](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/0.3.9)使用。本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
+本分支为1.1版本，如果要使用之前的1.0版本请在[1.0分支](https://github.com/yeyupiaoling/VoiceprintRecognition-Pytorch/tree/release/1.0.5)使用。本项目使用了EcapaTdnn、ResNetSE、ERes2Net、CAM++等多种先进的声纹识别模型，不排除以后会支持更多模型，同时本项目也支持了MelSpectrogram、Spectrogram、MFCC、Fbank等多种数据预处理方法，使用了ArcFace Loss，ArcFace loss：Additive Angular Margin Loss（加性角度间隔损失函数），对应项目中的AAMLoss，对特征向量和权重归一化，对θ加上角度间隔m，角度间隔比余弦间隔在对角度的影响更加直接，除此之外，还支持AMLoss、ARMLoss、CELoss等多种损失函数。
 
 **本项目是如果对你有帮助，欢迎Star，避免之后需要找不到了。**
 
