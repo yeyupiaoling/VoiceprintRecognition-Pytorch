@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 
-from mvector.models.pooling import AttentiveStatsPool, TemporalAveragePooling
+from mvector.models.pooling import AttentiveStatisticsPooling, TemporalAveragePooling
 from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooling
 
 
@@ -106,7 +106,7 @@ class Res2Net(nn.Module):
 
         cat_channels = m_channels * 8 * Bottle2neck.expansion * (input_size // base_width)
         if pooling_type == "ASP":
-            self.pooling = AttentiveStatsPool(cat_channels, 128)
+            self.pooling = AttentiveStatisticsPooling(cat_channels, attention_channels=128)
             self.bn2 = nn.BatchNorm1d(cat_channels * 2)
             self.linear = nn.Linear(cat_channels * 2, embd_dim)
             self.bn3 = nn.BatchNorm1d(embd_dim)

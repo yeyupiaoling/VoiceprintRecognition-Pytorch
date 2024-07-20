@@ -1,7 +1,5 @@
-import json
 import os
 import platform
-import shutil
 import time
 from datetime import timedelta
 
@@ -11,30 +9,26 @@ import torch.distributed as dist
 import torch.nn as nn
 import yaml
 from sklearn.metrics.pairwise import cosine_similarity
-from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, BatchSampler, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 from torchinfo import summary
 from tqdm import tqdm
 from visualdl import LogWriter
 
-from mvector import SUPPORT_MODEL, __version__
+from mvector import SUPPORT_MODEL
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.pk_sampler import PKSampler
 from mvector.data_utils.reader import MVectorDataset
 from mvector.data_utils.spec_aug import SpecAug
+from mvector.loss import build_loss
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
-from mvector.models.campplus import CAMPPlus
-from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.eres2net import ERes2Net, ERes2NetV2
+from mvector.models import build_model
 from mvector.models.fc import SpeakerIdentification
-from mvector.models.loss import AAMLoss, CELoss, AMLoss, ARMLoss, SubCenterLoss, SphereFace2, TripletAngularMarginLoss
-from mvector.models.res2net import Res2Net
-from mvector.models.resnet_se import ResNetSE
-from mvector.models.tdnn import TDNN
+from mvector.optimizer import build_optimizer, build_lr_scheduler
+from mvector.optimizer.scheduler import MarginScheduler
+from mvector.utils.checkpoint import save_checkpoint, load_pretrained, load_checkpoint
 from mvector.utils.logger import setup_logger
-from mvector.utils.scheduler import WarmupCosineSchedulerLR, MarginScheduler
 from mvector.utils.utils import dict_to_object, print_arguments
 
 logger = setup_logger(__name__)
@@ -60,9 +54,11 @@ class MVectorTrainer(object):
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
             print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
-        assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
+        assert self.configs.model_conf.model in SUPPORT_MODEL, f'没有该模型：{self.configs.model_conf.model}'
         self.model = None
         self.backbone = None
+        self.optimizer = None
+        self.scheduler = None
         self.model_output_name = '1.weight'
         self.audio_featurizer = None
         self.train_dataset = None
@@ -98,69 +94,55 @@ class MVectorTrainer(object):
         self.audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                 use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
                                                 method_args=self.configs.preprocess_conf.get('method_args', {}))
+        dataset_args = self.configs.dataset_conf.get('dataset', {})
+        sampler_args = self.configs.dataset_conf.get('sampler', {})
+        data_loader_args = self.configs.dataset_conf.get('dataLoader', {})
         if is_train:
             self.train_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.train_list,
                                                 audio_featurizer=self.audio_featurizer,
-                                                do_vad=self.configs.dataset_conf.do_vad,
-                                                max_duration=self.configs.dataset_conf.max_duration,
-                                                min_duration=self.configs.dataset_conf.min_duration,
-                                                sample_rate=self.configs.dataset_conf.sample_rate,
                                                 aug_conf=self.configs.dataset_conf.aug_conf,
-                                                num_speakers=self.configs.model_conf.classifier.num_speakers,
-                                                use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                                target_dB=self.configs.dataset_conf.target_dB,
-                                                mode='train')
+                                                mode='train',
+                                                **dataset_args)
             train_sampler = RandomSampler(self.train_dataset)
             # 使用TripletAngularMarginLoss必须使用PKSampler
-            use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
+            use_loss = self.configs.loss_conf.get('loss', 'AAMLoss')
             if self.configs.dataset_conf.get("is_use_pksampler", False) or use_loss == "TripletAngularMarginLoss":
                 # 设置支持多卡训练
                 if torch.cuda.device_count() > 1:
                     train_sampler = DistributedSampler(dataset=self.train_dataset, shuffle=True)
                 batch_sampler = PKSampler(sampler=train_sampler,
                                           sample_per_id=self.configs.dataset_conf.get("sample_per_id", 4),
-                                          batch_size=self.configs.dataset_conf.dataLoader.batch_size,
+                                          batch_size=self.configs.dataset_conf.sampler.batch_size,
                                           drop_last=self.configs.dataset_conf.dataLoader.get("drop_last", True))
             else:
                 # 设置支持多卡训练
                 if torch.cuda.device_count() > 1:
                     train_sampler = DistributedSampler(dataset=self.train_dataset, shuffle=True)
-                batch_sampler = BatchSampler(sampler=train_sampler,
-                                             batch_size=self.configs.dataset_conf.dataLoader.batch_size,
-                                             drop_last=self.configs.dataset_conf.dataLoader.get("drop_last", True))
+                batch_sampler = BatchSampler(sampler=train_sampler, **sampler_args)
             self.train_loader = DataLoader(dataset=self.train_dataset,
                                            collate_fn=collate_fn,
                                            batch_sampler=batch_sampler,
-                                           num_workers=self.configs.dataset_conf.dataLoader.num_workers)
+                                           **data_loader_args)
+        dataset_args.max_duration = self.configs.dataset_conf.eval_conf.max_duration
         # 获取评估的注册数据和检验数据
         self.enroll_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.enroll_list,
                                              audio_featurizer=self.audio_featurizer,
-                                             do_vad=self.configs.dataset_conf.do_vad,
-                                             max_duration=self.configs.dataset_conf.eval_conf.max_duration,
-                                             min_duration=self.configs.dataset_conf.min_duration,
-                                             sample_rate=self.configs.dataset_conf.sample_rate,
-                                             use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                             target_dB=self.configs.dataset_conf.target_dB,
-                                             mode='eval')
+                                             mode='eval',
+                                             **dataset_args)
         self.enroll_loader = DataLoader(dataset=self.enroll_dataset,
                                         collate_fn=collate_fn,
                                         shuffle=False,
                                         batch_size=self.configs.dataset_conf.eval_conf.batch_size,
-                                        num_workers=self.configs.dataset_conf.dataLoader.num_workers)
+                                        **data_loader_args)
         self.trials_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.trials_list,
                                              audio_featurizer=self.audio_featurizer,
-                                             do_vad=self.configs.dataset_conf.do_vad,
-                                             max_duration=self.configs.dataset_conf.eval_conf.max_duration,
-                                             min_duration=self.configs.dataset_conf.min_duration,
-                                             sample_rate=self.configs.dataset_conf.sample_rate,
-                                             use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                             target_dB=self.configs.dataset_conf.target_dB,
-                                             mode='eval')
+                                             mode='eval',
+                                             **dataset_args)
         self.trials_loader = DataLoader(dataset=self.trials_dataset,
                                         collate_fn=collate_fn,
                                         shuffle=False,
                                         batch_size=self.configs.dataset_conf.eval_conf.batch_size,
-                                        num_workers=self.configs.dataset_conf.dataLoader.num_workers)
+                                        **data_loader_args)
 
     def extract_features(self, save_dir='dataset/features', max_duration=100):
         """ 提取特征保存文件
@@ -175,14 +157,12 @@ class MVectorTrainer(object):
                                        self.configs.dataset_conf.enroll_list,
                                        self.configs.dataset_conf.trials_list]):
             # 获取测试数据
+            dataset_args = self.configs.dataset_conf.get('dataset', {})
+            dataset_args.max_duration = max_duration
             test_dataset = MVectorDataset(data_list_path=data_list,
                                           audio_featurizer=self.audio_featurizer,
-                                          max_duration=max_duration,
-                                          do_vad=self.configs.dataset_conf.do_vad,
-                                          sample_rate=self.configs.dataset_conf.sample_rate,
-                                          use_dB_normalization=self.configs.dataset_conf.use_dB_normalization,
-                                          target_dB=self.configs.dataset_conf.target_dB,
-                                          mode='extract_feature')
+                                          mode='extract_feature',
+                                          **dataset_args)
             save_data_list = data_list.replace('.txt', '_features.txt')
             with open(save_data_list, 'w', encoding='utf-8') as f:
                 for i in tqdm(range(len(test_dataset))):
@@ -202,28 +182,13 @@ class MVectorTrainer(object):
         :param is_train: 是否获取训练模型
         """
         # 获取模型
-        if self.configs.use_model == 'ERes2Net':
-            self.backbone = ERes2Net(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'ERes2NetV2':
-            self.backbone = ERes2NetV2(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'CAMPPlus':
-            self.backbone = CAMPPlus(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'EcapaTdnn':
-            self.backbone = EcapaTdnn(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'Res2Net':
-            self.backbone = Res2Net(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'ResNetSE':
-            self.backbone = ResNetSE(input_size=input_size, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'TDNN':
-            self.backbone = TDNN(input_size=input_size, **self.configs.model_conf.backbone)
-        else:
-            raise Exception(f'{self.configs.use_model} 模型不存在！')
+        self.backbone = build_model(input_size=input_size, configs=self.configs)
 
         # 获取训练所需的函数
         if is_train:
             if self.configs.train_conf.enable_amp:
                 self.amp_scaler = torch.cuda.amp.GradScaler(init_scale=1024)
-            use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
+            use_loss = self.configs.loss_conf.get('loss', 'AAMLoss')
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
             # 语速扰动要增加分类数量
@@ -238,220 +203,32 @@ class MVectorTrainer(object):
             self.model = nn.Sequential(self.backbone, classifier)
             # print(self.model)
             # 获取损失函数
-            loss_args = self.configs.loss_conf.get('args', {})
-            loss_args = loss_args if loss_args is not None else {}
-            if use_loss == 'AAMLoss':
-                self.loss = AAMLoss(**loss_args)
-            elif use_loss == 'SphereFace2':
-                self.loss = SphereFace2(**loss_args)
-            elif use_loss == 'TripletAngularMarginLoss':
-                self.loss = TripletAngularMarginLoss(**loss_args)
-            elif use_loss == 'SubCenterLoss':
-                self.loss = SubCenterLoss(**loss_args)
-            elif use_loss == 'AMLoss':
-                self.loss = AMLoss(**loss_args)
-            elif use_loss == 'ARMLoss':
-                self.loss = ARMLoss(**loss_args)
-            elif use_loss == 'CELoss':
-                self.loss = CELoss(**loss_args)
-            else:
-                raise Exception(f'没有{use_loss}损失函数！')
+            self.loss = build_loss(configs=self.configs)
             # 损失函数margin调度器
             if self.configs.loss_conf.get('use_margin_scheduler', False):
                 margin_scheduler_args = dict(increase_start_epoch=int(self.configs.train_conf.max_epoch * 0.3),
                                              fix_epoch=int(self.configs.train_conf.max_epoch * 0.7),
                                              initial_margin=0.0,
                                              final_margin=0.3)
-                if self.configs.loss_conf.margin_scheduler_args:
-                    for k, v in self.configs.loss_conf.margin_scheduler_args.items():
-                        margin_scheduler_args[k] = v
+                margin_scheduler_args.update(self.configs.loss_conf.get('margin_scheduler_args', {}))
                 self.margin_scheduler = MarginScheduler(criterion=self.loss,
                                                         step_per_epoch=len(self.train_loader),
                                                         **margin_scheduler_args)
             # 获取优化方法
-            optimizer = self.configs.optimizer_conf.optimizer
-            if optimizer == 'Adam':
-                self.optimizer = torch.optim.Adam(params=self.model.parameters(),
-                                                  lr=self.configs.optimizer_conf.learning_rate,
-                                                  weight_decay=self.configs.optimizer_conf.weight_decay)
-            elif optimizer == 'AdamW':
-                self.optimizer = torch.optim.AdamW(params=self.model.parameters(),
-                                                   lr=self.configs.optimizer_conf.learning_rate,
-                                                   weight_decay=self.configs.optimizer_conf.weight_decay)
-            elif optimizer == 'SGD':
-                self.optimizer = torch.optim.SGD(params=self.model.parameters(),
-                                                 momentum=self.configs.optimizer_conf.get('momentum', 0.9),
-                                                 lr=self.configs.optimizer_conf.learning_rate,
-                                                 weight_decay=self.configs.optimizer_conf.weight_decay)
-            else:
-                raise Exception(f'不支持优化方法：{optimizer}')
+            self.optimizer = build_optimizer(params=self.model.parameters(), configs=self.configs)
             # 学习率衰减函数
-            scheduler_args = self.configs.optimizer_conf.get('scheduler_args', {}) \
-                if self.configs.optimizer_conf.get('scheduler_args', {}) is not None else {}
-            if self.configs.optimizer_conf.scheduler == 'CosineAnnealingLR':
-                max_step = int(self.configs.train_conf.max_epoch * 1.2) * len(self.train_loader)
-                self.scheduler = CosineAnnealingLR(optimizer=self.optimizer,
-                                                   T_max=max_step,
-                                                   **scheduler_args)
-            elif self.configs.optimizer_conf.scheduler == 'WarmupCosineSchedulerLR':
-                self.scheduler = WarmupCosineSchedulerLR(optimizer=self.optimizer,
-                                                         fix_epoch=self.configs.train_conf.max_epoch,
-                                                         step_per_epoch=len(self.train_loader),
-                                                         **scheduler_args)
-            else:
-                raise Exception(f'不支持学习率衰减函数：{self.configs.optimizer_conf.scheduler}')
+            self.scheduler = build_lr_scheduler(optimizer=self.optimizer, step_epoch=len(self.train_loader),
+                                                configs=self.configs)
         else:
             # 不训练模型不包含分类器
             self.model = nn.Sequential(self.backbone)
             self.model.to(self.device)
         self.model.to(self.device)
+        # 打印模型信息，98是长度，这个取决于输入的音频长度
         summary(self.model, (1, 98, input_size))
         # 使用Pytorch2.0的编译器
         if self.configs.train_conf.use_compile and torch.__version__ >= "2" and platform.system().lower() != 'windows':
             self.model = torch.compile(self.model, mode="reduce-overhead")
-
-    def __load_pretrained(self, pretrained_model):
-        """加载预训练模型
-
-        :param pretrained_model: 预训练模型路径
-        """
-        # 加载预训练模型
-        if pretrained_model is None: return
-        if os.path.isdir(pretrained_model):
-            pretrained_model = os.path.join(pretrained_model, 'model.pth')
-        assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
-        model_state_dict = torch.load(pretrained_model)
-        if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-            model_dict = self.model.module.state_dict()
-        else:
-            model_dict = self.model.state_dict()
-        # 过滤不存在的参数
-        for name, weight in model_dict.items():
-            if name in model_state_dict.keys():
-                if list(weight.shape) != list(model_state_dict[name].shape):
-                    logger.warning(f'{name} not used, shape {list(model_state_dict[name].shape)} '
-                                   f'unmatched with {list(weight.shape)} in model.')
-                    model_state_dict.pop(name, None)
-        # 加载权重
-        if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-            missing_keys, unexpected_keys = self.model.module.load_state_dict(model_state_dict, strict=False)
-        else:
-            missing_keys, unexpected_keys = self.model.load_state_dict(model_state_dict, strict=False)
-        if len(unexpected_keys) > 0:
-            logger.warning('Unexpected key(s) in state_dict: {}. '
-                           .format(', '.join('"{}"'.format(k) for k in unexpected_keys)))
-        if len(missing_keys) > 0:
-            logger.warning('Missing key(s) in state_dict: {}. '
-                           .format(', '.join('"{}"'.format(k) for k in missing_keys)))
-        logger.info('成功加载预训练模型：{}'.format(pretrained_model))
-
-    def __load_checkpoint(self, save_model_path, resume_model):
-        """加载模型
-
-        :param save_model_path: 模型保存路径
-        :param resume_model: 恢复训练的模型路径
-        """
-        last_epoch1 = -1
-        best_eer1 = 1
-
-        def load_model(model_path):
-            assert os.path.exists(os.path.join(model_path, 'model.pth')), "模型参数文件不存在！"
-            assert os.path.exists(os.path.join(model_path, 'optimizer.pth')), "优化方法参数文件不存在！"
-            state_dict = torch.load(os.path.join(model_path, 'model.pth'))
-            if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-                self.model.module.load_state_dict(state_dict)
-            else:
-                self.model.load_state_dict(state_dict)
-            self.optimizer.load_state_dict(torch.load(os.path.join(model_path, 'optimizer.pth')))
-            # 自动混合精度参数
-            if self.amp_scaler is not None and os.path.exists(os.path.join(model_path, 'scaler.pth')):
-                self.amp_scaler.load_state_dict(torch.load(os.path.join(model_path, 'scaler.pth')))
-            with open(os.path.join(model_path, 'model.state'), 'r', encoding='utf-8') as f:
-                json_data = json.load(f)
-                last_epoch = json_data['last_epoch'] - 1
-                if 'eer' in json_data.keys():
-                    best_eer = json_data['eer']
-            logger.info('成功恢复模型参数和优化方法参数：{}'.format(model_path))
-            self.optimizer.step()
-            [self.scheduler.step() for _ in range(last_epoch * len(self.train_loader))]
-            return last_epoch, best_eer
-
-        # 获取最后一个保存的模型
-        save_feature_method = self.configs.preprocess_conf.feature_method
-        if self.configs.preprocess_conf.get('use_hf_model', False):
-            save_feature_method = save_feature_method[:-1] if save_feature_method[-1] == '/' else save_feature_method
-            save_feature_method = os.path.basename(save_feature_method)
-        last_model_dir = os.path.join(save_model_path,
-                                      f'{self.configs.use_model}_{save_feature_method}',
-                                      'last_model')
-        if resume_model is not None or (os.path.exists(os.path.join(last_model_dir, 'model.pth'))
-                                        and os.path.exists(os.path.join(last_model_dir, 'optimizer.pth'))):
-            if resume_model is not None:
-                last_epoch1, best_eer1 = load_model(resume_model)
-            else:
-                try:
-                    # 自动获取最新保存的模型
-                    last_epoch1, best_eer1 = load_model(last_model_dir)
-                except Exception as e:
-                    logger.warning(f'尝试自动恢复最新模型失败，错误信息：{e}')
-        return last_epoch1, best_eer1
-
-    # 保存模型
-    def __save_checkpoint(self, save_model_path, epoch_id, eer=None, min_dcf=None, threshold=None, best_model=False):
-        """保存模型
-
-        :param save_model_path: 模型保存路径
-        :param epoch_id: 当前epoch
-        :param eer: 当前eer
-        :param min_dcf: 当前min_dcf
-        :param threshold: 当前threshold
-        :param best_model: 是否为最佳模型
-        """
-        if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
-            state_dict = self.model.module.state_dict()
-        else:
-            state_dict = self.model.state_dict()
-        # 保存模型的路径
-        save_feature_method = self.configs.preprocess_conf.feature_method
-        if self.configs.preprocess_conf.get('use_hf_model', False):
-            save_feature_method = save_feature_method[:-1] if save_feature_method[-1] == '/' else save_feature_method
-            save_feature_method = os.path.basename(save_feature_method)
-        if best_model:
-            model_path = os.path.join(save_model_path,
-                                      f'{self.configs.use_model}_{save_feature_method}', 'best_model')
-        else:
-            model_path = os.path.join(save_model_path,
-                                      f'{self.configs.use_model}_{save_feature_method}', 'epoch_{}'.format(epoch_id))
-        os.makedirs(model_path, exist_ok=True)
-        # 保存模型参数
-        torch.save(self.optimizer.state_dict(), os.path.join(model_path, 'optimizer.pth'))
-        torch.save(state_dict, os.path.join(model_path, 'model.pth'))
-        # 自动混合精度参数
-        if self.amp_scaler is not None:
-            torch.save(self.amp_scaler.state_dict(), os.path.join(model_path, 'scaler.pth'))
-        with open(os.path.join(model_path, 'model.state'), 'w', encoding='utf-8') as f:
-            use_loss = self.configs.loss_conf.get('use_loss', 'AAMLoss')
-            data = {"last_epoch": epoch_id, "version": __version__, "use_model": self.configs.use_model,
-                    "feature_method": save_feature_method, "loss": use_loss}
-            if eer is not None:
-                data['threshold'] = threshold
-                data['eer'] = eer
-                data['min_dcf'] = min_dcf
-            if self.margin_scheduler:
-                data['margin'] = self.margin_scheduler.get_margin()
-            f.write(json.dumps(data, indent=4, ensure_ascii=False))
-        if not best_model:
-            last_model_path = os.path.join(save_model_path,
-                                           f'{self.configs.use_model}_{save_feature_method}', 'last_model')
-            shutil.rmtree(last_model_path, ignore_errors=True)
-            shutil.copytree(model_path, last_model_path)
-            # 删除旧的模型
-            old_model_path = os.path.join(save_model_path,
-                                          f'{self.configs.use_model}_{save_feature_method}',
-                                          'epoch_{}'.format(epoch_id - 3))
-            if os.path.exists(old_model_path):
-                shutil.rmtree(old_model_path)
-        logger.info('已保存模型：{}'.format(model_path))
 
     def __train_epoch(self, epoch_id, save_model_path, local_rank, writer, nranks=0):
         """训练一个epoch
@@ -511,7 +288,7 @@ class MVectorTrainer(object):
             # 多卡训练只使用一个进程打印
             if batch_id % self.configs.train_conf.log_interval == 0 and local_rank == 0:
                 # 计算每秒训练数据量
-                train_speed = self.configs.dataset_conf.dataLoader.batch_size / (
+                train_speed = self.configs.dataset_conf.sampler.batch_size / (
                         sum(train_times) / len(train_times) / 1000)
                 # 计算剩余时间
                 self.train_eta_sec = (sum(train_times) / len(train_times)) * (self.max_step - self.train_step) / 1000
@@ -533,7 +310,9 @@ class MVectorTrainer(object):
                 train_times, accuracies, loss_sum = [], [], []
             # 固定步数也要保存一次模型
             if batch_id % 10000 == 0 and batch_id != 0 and local_rank == 0:
-                self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id)
+                save_checkpoint(configs=self.configs, model=self.model, optimizer=self.optimizer,
+                                amp_scaler=self.amp_scaler, margin_scheduler=self.margin_scheduler,
+                                save_model_path=save_model_path, epoch_id=epoch_id)
             start = time.time()
             self.scheduler.step()
             if self.margin_scheduler:
@@ -568,13 +347,13 @@ class MVectorTrainer(object):
         # 获取模型
         self.__setup_model(input_size=self.audio_featurizer.feature_dim, is_train=True)
         # 加载预训练模型
-        self.__load_pretrained(pretrained_model=pretrained_model)
+        self.model = load_pretrained(model=self.model, pretrained_model=pretrained_model)
         # 加载恢复模型
-        last_epoch, best_eer = self.__load_checkpoint(save_model_path=save_model_path, resume_model=resume_model)
-        if last_epoch > 0:
-            self.optimizer.step()
-            [self.scheduler.step() for _ in range(last_epoch)]
-
+        self.model, self.optimizer, self.amp_scaler, self.scheduler, self.margin_scheduler, last_epoch, best_eer = \
+            load_checkpoint(configs=self.configs, model=self.model, optimizer=self.optimizer,
+                            amp_scaler=self.amp_scaler, scheduler=self.scheduler,
+                            margin_scheduler=self.margin_scheduler, step_epoch=len(self.train_loader),
+                            save_model_path=save_model_path, resume_model=resume_model)
         # 支持多卡训练
         if nranks > 1 and self.use_gpu:
             self.model.to(local_rank)
@@ -615,12 +394,16 @@ class MVectorTrainer(object):
                 # # 保存最优模型
                 if self.eval_eer <= best_eer:
                     best_eer = self.eval_eer
-                    self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, eer=self.eval_eer,
-                                           min_dcf=self.eval_min_dcf, threshold=self.eval_threshold, best_model=True)
+                    save_checkpoint(configs=self.configs, model=self.model, optimizer=self.optimizer,
+                                    amp_scaler=self.amp_scaler, margin_scheduler=self.margin_scheduler,
+                                    save_model_path=save_model_path, epoch_id=epoch_id, eer=self.eval_eer,
+                                    min_dcf=self.eval_min_dcf, threshold=self.eval_threshold, best_model=True)
             if local_rank == 0:
                 # 保存模型
-                self.__save_checkpoint(save_model_path=save_model_path, epoch_id=epoch_id, eer=self.eval_eer,
-                                       min_dcf=self.eval_min_dcf, threshold=self.eval_threshold)
+                save_checkpoint(configs=self.configs, model=self.model, optimizer=self.optimizer,
+                                amp_scaler=self.amp_scaler, margin_scheduler=self.margin_scheduler,
+                                save_model_path=save_model_path, epoch_id=epoch_id, eer=self.eval_eer,
+                                min_dcf=self.eval_min_dcf, threshold=self.eval_threshold)
 
     def evaluate(self, resume_model=None, save_image_path=None):
         """

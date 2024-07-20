@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mvector.models.pooling import TemporalAveragePooling, TemporalStatsPool, AttentiveStatsPool
+from mvector.models.pooling import TemporalAveragePooling, TemporalStatsPool, AttentiveStatisticsPooling
 
 __all__ = ['ERes2Net', 'ERes2NetV2']
 
@@ -428,7 +428,7 @@ class ERes2NetV2(nn.Module):
         if pooling_type == "TAP":
             self.pooling = TemporalAveragePooling()
         elif pooling_type == "ASP":
-            self.pooling = AttentiveStatsPool(in_dim=self.stats_dim * self.expansion)
+            self.pooling = AttentiveStatisticsPooling(channels=self.stats_dim * self.expansion)
         elif pooling_type == "TSTP":
             self.pooling = TemporalStatsPool()
         else:

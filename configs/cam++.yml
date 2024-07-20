@@ -1,17 +1,26 @@
 # 数据集参数
 dataset_conf:
-  # 过滤最短的音频长度
-  min_duration: 0.5
-  # 最长的音频长度，大于这个长度会裁剪掉
-  max_duration: 3
-  # 是否裁剪静音片段
-  do_vad: False
-  # 音频的采样率
-  sample_rate: 16000
-  # 是否对音频进行音量归一化
-  use_dB_normalization: True
-  # 对音频进行音量归一化的音量分贝值
-  target_dB: -20
+  dataset:
+    # 过滤最短的音频长度
+    min_duration: 0.4
+    # 最长的音频长度，大于这个长度会裁剪掉
+    max_duration: 3
+    # 是否裁剪静音片段
+    do_vad: False
+    # 音频的采样率
+    sample_rate: 16000
+    # 是否对音频进行音量归一化
+    use_dB_normalization: True
+    # 对音频进行音量归一化的音量分贝值
+    target_dB: -20
+  sampler:
+    # 训练的批量大小
+    batch_size: 64
+    # 是否丢弃最后一个样本
+    drop_last: True
+  dataLoader:
+    # 读取数据的线程数量
+    num_workers: 4
   # 训练数据的数据列表路径
   train_list: 'dataset/train_list.txt'
   # 评估注册的数据列表路径
@@ -28,14 +37,6 @@ dataset_conf:
     batch_size: 8
     # 最长的音频长度
     max_duration: 20
-  # 数据加载器参数
-  dataLoader:
-    # 训练的批量大小
-    batch_size: 64
-    # 读取数据的线程数量
-    num_workers: 4
-    # 是否丢弃最后一个样本
-    drop_last: True
   # 数据增强参数
   aug_conf:
     # 是否使用语速扰动增强
@@ -73,23 +74,13 @@ preprocess_conf:
     sample_frequency: 16000
     num_mel_bins: 80
 
-optimizer_conf:
-  # 优化方法，支持Adam、AdamW、SGD
-  optimizer: 'Adam'
-  # 初始学习率的大小
-  learning_rate: 0.001
-  weight_decay: !!float 1e-5
-  # 学习率衰减函数，支持WarmupCosineSchedulerLR、CosineAnnealingLR
-  scheduler: 'WarmupCosineSchedulerLR'
-  # 学习率衰减函数参数
-  scheduler_args:
-    min_lr: !!float 1e-5
-    max_lr: 0.001
-    warmup_epoch: 5
-
 model_conf:
-  backbone:
+  # 所使用的模型
+  model: 'CAMPPlus'
+  # 模型参数
+  model_args:
     embd_dim: 192
+  # 分类器参数
   classifier:
     # 说话人数量，即分类大小
     num_speakers: 2796
@@ -97,9 +88,9 @@ model_conf:
 
 loss_conf:
   # 所使用的损失函数，支持AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss、SubCenterLoss、TripletAngularMarginLoss
-  use_loss: 'AAMLoss'
+  loss: 'AAMLoss'
   # 损失函数参数
-  args:
+  loss_args:
     margin: 0.2
     scale: 32
     easy_margin: False
@@ -110,6 +101,23 @@ loss_conf:
     initial_margin: 0.0
     final_margin: 0.3
 
+optimizer_conf:
+  # 优化方法
+  optimizer: 'SGD'
+  # 优化方法参数
+  optimizer_args:
+    lr: 0.001
+    momentum: 0.9
+    nesterov: True
+    weight_decay: !!float 1e-5
+  # 学习率衰减函数，支持Pytorch支持的和项目提供的WarmupCosineSchedulerLR
+  scheduler: 'WarmupCosineSchedulerLR'
+  # 学习率衰减函数参数
+  scheduler_args:
+    min_lr: !!float 1e-5
+    max_lr: 0.001
+    warmup_epoch: 5
+
 train_conf:
   # 是否开启自动混合精度
   enable_amp: False
@@ -118,6 +126,3 @@ train_conf:
   # 训练的轮数
   max_epoch: 60
   log_interval: 100
-
-# 所使用的模型
-use_model: 'CAMPPlus'
