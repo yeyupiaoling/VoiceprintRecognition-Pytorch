@@ -90,11 +90,6 @@ Explain：
 |                                       MFCC                                       | CN-Celeb |      2796      |  0.14868  | 0.11483 | 0.61275 | 
 |                                   Spectrogram                                    | CN-Celeb |      2796      |  0.14962  | 0.11613 | 0.60057 |
 |                                  MelSpectrogram                                  | CN-Celeb |      2796      |  0.13458  | 0.12498 | 0.60741 |
-|           [w2v-bert-2.0](https://huggingface.co/facebook/w2v-bert-2.0)           | CN-Celeb |      2796      |           |         |         | 
-| [wav2vec2-large-xlsr-53](https://huggingface.co/facebook/wav2vec2-large-xlsr-53) | CN-Celeb |      2796      |           |         |         | 
-|       [wavlm-base-plus](https://huggingface.co/microsoft/wavlm-base-plus)        | CN-Celeb |      2796      |           |         |         | 
-|           [wavlm-large](https://huggingface.co/microsoft/wavlm-large)            | CN-Celeb |      2796      |           |         |         | 
-
 
 Explain：
 
@@ -109,8 +104,8 @@ Explain：
 |   Preprocessing method   | Dataset  | train speakers | threshold |   EER   | MinDCF  | 
 |:------------------------:|:--------:|:--------------:|:---------:|:-------:|:-------:|
 |         AAMLoss          | CN-Celeb |      2796      |  0.14574  | 0.10988 | 0.58955 |
+| TripletAngularMarginLoss | CN-Celeb |      2796      |  0.30838  | 0.11169 | 0.61810 |
 |       SphereFace2        | CN-Celeb |      2796      |  0.20377  | 0.11309 | 0.61536 |
-| TripletAngularMarginLoss | CN-Celeb |      2796      |  0.28940  | 0.11749 | 0.63735 |
 |      SubCenterLoss       | CN-Celeb |      2796      |  0.13126  | 0.11775 | 0.56995 |
 |         ARMLoss          | CN-Celeb |      2796      |  0.14563  | 0.11805 | 0.57171 |
 |          AMLoss          | CN-Celeb |      2796      |  0.12870  | 0.12301 | 0.63263 |
