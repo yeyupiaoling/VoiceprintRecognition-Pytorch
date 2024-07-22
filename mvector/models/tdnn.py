@@ -7,18 +7,18 @@ from mvector.models.pooling import SelfAttentivePooling, TemporalStatisticsPooli
 
 
 class TDNN(nn.Module):
-    def __init__(self, input_size=80, channels=512, embd_dim=192, pooling_type="ASP"):
+    def __init__(self, input_size, channels=512, embd_dim=192, pooling_type="ASP"):
         super(TDNN, self).__init__()
         self.embd_dim = embd_dim
-        self.td_layer1 = torch.nn.Conv1d(in_channels=input_size, out_channels=512, dilation=1, kernel_size=5, stride=1)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.td_layer2 = torch.nn.Conv1d(in_channels=512, out_channels=512, dilation=2, kernel_size=3, stride=1)
-        self.bn2 = nn.BatchNorm1d(512)
-        self.td_layer3 = torch.nn.Conv1d(in_channels=512, out_channels=512, dilation=3, kernel_size=3, stride=1)
-        self.bn3 = nn.BatchNorm1d(512)
-        self.td_layer4 = torch.nn.Conv1d(in_channels=512, out_channels=512, dilation=1, kernel_size=1, stride=1)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.td_layer5 = torch.nn.Conv1d(in_channels=512, out_channels=channels, dilation=1, kernel_size=1, stride=1)
+        self.td_layer1 = torch.nn.Conv1d(in_channels=input_size, out_channels=channels, dilation=1, kernel_size=5, stride=1)
+        self.bn1 = nn.BatchNorm1d(channels)
+        self.td_layer2 = torch.nn.Conv1d(in_channels=channels, out_channels=channels, dilation=2, kernel_size=3, stride=1)
+        self.bn2 = nn.BatchNorm1d(channels)
+        self.td_layer3 = torch.nn.Conv1d(in_channels=channels, out_channels=channels, dilation=3, kernel_size=3, stride=1)
+        self.bn3 = nn.BatchNorm1d(channels)
+        self.td_layer4 = torch.nn.Conv1d(in_channels=channels, out_channels=channels, dilation=1, kernel_size=1, stride=1)
+        self.bn4 = nn.BatchNorm1d(channels)
+        self.td_layer5 = torch.nn.Conv1d(in_channels=channels, out_channels=channels, dilation=1, kernel_size=1, stride=1)
 
         if pooling_type == "ASP":
             self.pooling = AttentiveStatisticsPooling(channels, attention_channels=128)

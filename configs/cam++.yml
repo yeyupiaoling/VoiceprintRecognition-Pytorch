@@ -82,6 +82,8 @@ model_conf:
     embd_dim: 192
   # 分类器参数
   classifier:
+    # 分类器类型，支持Cosine、Linear
+    classifier_type: 'Cosine'
     # 说话人数量，即分类大小
     num_speakers: 2796
     num_blocks: 0

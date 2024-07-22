@@ -188,7 +188,6 @@ class MVectorTrainer(object):
         if is_train:
             if self.configs.train_conf.enable_amp:
                 self.amp_scaler = torch.cuda.amp.GradScaler(init_scale=1024)
-            use_loss = self.configs.loss_conf.get('loss', 'AAMLoss')
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
             # 语速扰动要增加分类数量
@@ -197,7 +196,6 @@ class MVectorTrainer(object):
                     self.configs.model_conf.classifier.num_speakers = num_class * 3
             # 分类器
             classifier = SpeakerIdentification(input_dim=self.backbone.embd_dim,
-                                               loss_type=use_loss,
                                                **self.configs.model_conf.classifier)
             # 合并模型
             self.model = nn.Sequential(self.backbone, classifier)
@@ -217,7 +215,7 @@ class MVectorTrainer(object):
             # 获取优化方法
             self.optimizer = build_optimizer(params=self.model.parameters(), configs=self.configs)
             # 学习率衰减函数
-            self.scheduler = build_lr_scheduler(optimizer=self.optimizer, step_epoch=len(self.train_loader),
+            self.scheduler = build_lr_scheduler(optimizer=self.optimizer, step_per_epoch=len(self.train_loader),
                                                 configs=self.configs)
         else:
             # 不训练模型不包含分类器
@@ -276,7 +274,7 @@ class MVectorTrainer(object):
 
             # 计算准确率
             if use_loss == 'SubCenterLoss':
-                loss_args = self.configs.loss_conf.get('args', {})
+                loss_args = self.configs.loss_conf.get('loss_args', {})
                 cosine = torch.reshape(logits, (-1, logits.shape[1] // loss_args.K, loss_args.K))
                 logits, _ = torch.max(cosine, 2)
             acc = accuracy(logits, label)

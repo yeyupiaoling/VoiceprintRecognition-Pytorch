@@ -143,7 +143,7 @@ class SERes2NetBlock(nn.Module):
         return x + residual
 
 
-class ECAPA_TDNN(torch.nn.Module):
+class EcapaTdnn(torch.nn.Module):
     def __init__(
             self,
             input_size,
@@ -274,13 +274,10 @@ class ECAPA_TDNN(torch.nn.Module):
         x = self.mfa(x)
 
         # Attentive Statistical Pooling
-        x = self.asp(x, lengths=lengths)
+        x = self.asp(x)
         x = self.asp_bn(x)
-
+        x = x.unsqueeze(2)
         # Final linear transformation
-        x = self.fc(x)
-
-        x = x.transpose(1, 2)
-        x = x.squeeze(1)
+        x = self.fc(x).squeeze(-1)  # (N, emb_size, 1) -> (N, emb_size)
 
         return x

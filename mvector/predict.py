@@ -3,6 +3,8 @@ import pickle
 import shutil
 from io import BufferedReader
 
+from mvector.models import build_model
+
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 import faiss
 import numpy as np
@@ -14,12 +16,6 @@ from tqdm import tqdm
 from mvector import SUPPORT_MODEL
 from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
-from mvector.models.campplus import CAMPPlus
-from mvector.models.ecapa_tdnn import EcapaTdnn
-from mvector.models.eres2net import ERes2Net, ERes2NetV2
-from mvector.models.res2net import Res2Net
-from mvector.models.resnet_se import ResNetSE
-from mvector.models.tdnn import TDNN
 from mvector.utils.logger import setup_logger
 from mvector.utils.utils import dict_to_object, print_arguments
 
@@ -54,27 +50,12 @@ class MVectorPredictor:
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
             print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
-        assert self.configs.use_model in SUPPORT_MODEL, f'没有该模型：{self.configs.use_model}'
+        assert self.configs.model_conf.model in SUPPORT_MODEL, f'没有该模型：{self.configs.model_conf.model}'
         self._audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                  use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
                                                  method_args=self.configs.preprocess_conf.get('method_args', {}))
         # 获取模型
-        if self.configs.use_model == 'ERes2Net':
-            backbone = ERes2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'ERes2NetV2':
-            backbone = ERes2NetV2(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'CAMPPlus':
-            backbone = CAMPPlus(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'EcapaTdnn':
-            backbone = EcapaTdnn(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'Res2Net':
-            backbone = Res2Net(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'ResNetSE':
-            backbone = ResNetSE(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        elif self.configs.use_model == 'TDNN':
-            backbone = TDNN(input_size=self._audio_featurizer.feature_dim, **self.configs.model_conf.backbone)
-        else:
-            raise Exception(f'{self.configs.use_model} 模型不存在！')
+        backbone = build_model(input_size=self._audio_featurizer.feature_dim, configs=self.configs)
         model = nn.Sequential(backbone)
         model.to(self.device)
         # 加载模型
@@ -229,14 +210,14 @@ class MVectorPredictor:
             audio_segment = AudioSegment.from_bytes(audio_data)
         else:
             raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
-        assert audio_segment.duration >= self.configs.dataset_conf.min_duration, \
-            f'音频太短，最小应该为{self.configs.dataset_conf.min_duration}s，当前音频为{audio_segment.duration}s'
+        assert audio_segment.duration >= self.configs.dataset_conf.dataset.min_duration, \
+            f'音频太短，最小应该为{self.configs.dataset_conf.dataset.min_duration}s，当前音频为{audio_segment.duration}s'
         # 重采样
-        if audio_segment.sample_rate != self.configs.dataset_conf.sample_rate:
-            audio_segment.resample(self.configs.dataset_conf.sample_rate)
+        if audio_segment.sample_rate != self.configs.dataset_conf.dataset.sample_rate:
+            audio_segment.resample(self.configs.dataset_conf.dataset.sample_rate)
         # decibel normalization
-        if self.configs.dataset_conf.use_dB_normalization:
-            audio_segment.normalize(target_db=self.configs.dataset_conf.target_dB)
+        if self.configs.dataset_conf.dataset.use_dB_normalization:
+            audio_segment.normalize(target_db=self.configs.dataset_conf.dataset.target_dB)
         return audio_segment
 
     def predict(self,

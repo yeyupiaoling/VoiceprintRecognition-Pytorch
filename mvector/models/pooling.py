@@ -123,7 +123,6 @@ class AttentiveStatisticsPooling(nn.Module):
         mean, std = _compute_statistics(x, attn)
         # Append mean and std of the batch
         pooled_stats = torch.cat((mean, std), dim=1)
-        pooled_stats = pooled_stats.unsqueeze(2)
 
         return pooled_stats
 

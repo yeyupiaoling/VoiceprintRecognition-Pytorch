@@ -11,6 +11,8 @@ from mvector.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+__all__ = ['build_loss']
+
 
 def build_loss(configs):
     use_loss = configs.loss_conf.get('loss', 'AAMLoss')
