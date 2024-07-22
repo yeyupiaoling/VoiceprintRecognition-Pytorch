@@ -182,7 +182,6 @@ class ERes2Net(nn.Module):
                  base_width=32,
                  scale=2,
                  embd_dim=192,
-                 pooling_type='TSTP',
                  two_emb_layer=False):
         super(ERes2Net, self).__init__()
         self.in_planes = m_channels
@@ -219,14 +218,8 @@ class ERes2Net(nn.Module):
         self.fuse_mode123 = AFF(channels=m_channels * 8 * mul_channel)
         self.fuse_mode1234 = AFF(channels=m_channels * 16 * mul_channel)
 
-        self.n_stats = 1 if pooling_type == 'TAP' else 2
-        if pooling_type == "TAP":
-            self.pooling = TemporalAveragePooling()
-        elif pooling_type == "TSTP":
-            self.pooling = TemporalStatsPool()
-        else:
-            raise Exception(f'没有{pooling_type}池化层！')
-
+        self.n_stats = 2
+        self.pooling = TemporalStatsPool()
         self.seg_1 = nn.Linear(self.stats_dim * self.expansion * self.n_stats, embd_dim)
         if self.two_emb_layer:
             self.seg_bn_1 = nn.BatchNorm1d(embd_dim, affine=False)
@@ -398,7 +391,6 @@ class ERes2NetV2(nn.Module):
                  base_width=26,
                  scale=2,
                  embd_dim=192,
-                 pooling_type='TSTP',
                  two_emb_layer=False):
         super(ERes2NetV2, self).__init__()
         self.in_planes = m_channels
@@ -424,16 +416,7 @@ class ERes2NetV2(nn.Module):
         # Bottom-up fusion module
         self.fuse34 = AFF(channels=m_channels * 16, r=4)
 
-        self.n_stats = 1 if pooling_type == 'TAP' else 2
-        if pooling_type == "TAP":
-            self.pooling = TemporalAveragePooling()
-        elif pooling_type == "ASP":
-            self.pooling = AttentiveStatisticsPooling(channels=self.stats_dim * self.expansion)
-        elif pooling_type == "TSTP":
-            self.pooling = TemporalStatsPool()
-        else:
-            raise Exception(f'没有{pooling_type}池化层！')
-
+        self.n_stats = 2
         self.seg_1 = nn.Linear(self.stats_dim * self.expansion * self.n_stats, embd_dim)
         if self.two_emb_layer:
             self.seg_bn_1 = nn.BatchNorm1d(embd_dim, affine=False)

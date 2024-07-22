@@ -80,7 +80,6 @@ model_conf:
   # 模型参数
   model_args:
     embd_dim: 192
-    pooling_type: 'TSTP'
     m_channels: 32
   # 分类器参数
   classifier:
