@@ -109,12 +109,10 @@ loss_conf:
 
 optimizer_conf:
   # 优化方法
-  optimizer: 'SGD'
+  optimizer: 'Adam'
   # 优化方法参数
   optimizer_args:
     lr: 0.001
-    momentum: 0.9
-    nesterov: True
     weight_decay: !!float 1e-5
   # 学习率衰减函数，支持Pytorch支持的和项目提供的WarmupCosineSchedulerLR
   scheduler: 'WarmupCosineSchedulerLR'
