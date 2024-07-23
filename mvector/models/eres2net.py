@@ -417,6 +417,7 @@ class ERes2NetV2(nn.Module):
         self.fuse34 = AFF(channels=m_channels * 16, r=4)
 
         self.n_stats = 2
+        self.pooling = TemporalStatsPool()
         self.seg_1 = nn.Linear(self.stats_dim * self.expansion * self.n_stats, embd_dim)
         if self.two_emb_layer:
             self.seg_bn_1 = nn.BatchNorm1d(embd_dim, affine=False)
