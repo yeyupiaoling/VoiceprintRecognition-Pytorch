@@ -63,8 +63,8 @@ class MVectorDataset(Dataset):
             self.lines = f.readlines()
         self.labels = [np.int64(line.strip().split('\t')[1]) for line in self.lines]
         # 评估模式下，数据列表需要排序
-        # if self.mode == 'eval':
-        #     self.sort_list()
+        if self.mode == 'eval':
+            self.sort_list()
 
     def __getitem__(self, idx):
         # 分割数据文件路径和标签

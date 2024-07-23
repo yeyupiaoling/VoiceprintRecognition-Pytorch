@@ -98,6 +98,7 @@ loss_conf:
     margin: 0.2
     scale: 32
     easy_margin: False
+    label_smoothing: 0.1
   # 是否使用损失函数margin调度器
   use_margin_scheduler: True
   # margin调度器参数

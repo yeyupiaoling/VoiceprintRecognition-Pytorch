@@ -3,11 +3,11 @@ import torch.nn as nn
 
 
 class ARMLoss(nn.Module):
-    def __init__(self, margin=0.3, scale=32):
+    def __init__(self, margin=0.3, scale=32, label_smoothing=0.0):
         super(ARMLoss, self).__init__()
         self.margin = margin
         self.scale = scale
-        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum", label_smoothing=label_smoothing)
 
     def forward(self, inputs, labels):
         """

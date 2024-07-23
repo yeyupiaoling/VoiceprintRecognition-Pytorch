@@ -20,7 +20,8 @@ class TripletAngularMarginLoss(nn.Module):
                  add_absolute=True,
                  absolute_loss_weight=1.0,
                  ap_value=0.8,
-                 an_value=0.4):
+                 an_value=0.4,
+                 label_smoothing=0.0):
         super(TripletAngularMarginLoss, self).__init__()
         self.margin = margin
         self.ranking_loss = torch.nn.MarginRankingLoss(margin=margin)
@@ -29,7 +30,7 @@ class TripletAngularMarginLoss(nn.Module):
         self.ap_value = ap_value
         self.an_value = an_value
         self.absolute_loss_weight = absolute_loss_weight
-        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
 
     def forward(self, inputs, labels):
         """

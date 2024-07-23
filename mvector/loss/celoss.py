@@ -3,9 +3,9 @@ import torch.nn as nn
 
 
 class CELoss(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self, label_smoothing=0.0):
         super(CELoss, self).__init__()
-        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+        self.criterion = torch.nn.CrossEntropyLoss(reduction="sum", label_smoothing=label_smoothing)
 
     def forward(self, inputs, labels):
         """

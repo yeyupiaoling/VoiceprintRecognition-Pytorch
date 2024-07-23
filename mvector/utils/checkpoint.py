@@ -10,11 +10,13 @@ from mvector.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-def load_pretrained(model, pretrained_model):
+def load_pretrained(model, pretrained_model, use_gpu=True):
     """加载预训练模型
 
     :param model: 使用的模型
     :param pretrained_model: 预训练模型路径
+    :param use_gpu: 模型是否使用GPU
+    :return: 加载的模型
     """
     # 加载预训练模型
     if pretrained_model is None: return model
@@ -25,7 +27,10 @@ def load_pretrained(model, pretrained_model):
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_dict = model.module.state_dict()
     else:
-        model_dict = model.state_dict()
+        if torch.cuda.is_available() and use_gpu:
+            model_dict = torch.load(pretrained_model)
+        else:
+            model_dict = torch.load(pretrained_model, map_location='cpu')
     # 过滤不存在的参数
     for name, weight in model_dict.items():
         if name in model_state_dict.keys():

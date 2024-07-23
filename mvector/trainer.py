@@ -59,7 +59,7 @@ class MVectorTrainer(object):
         self.backbone = None
         self.optimizer = None
         self.scheduler = None
-        self.model_output_name = '1.weight'
+        self.model_output_name = '1.output'
         self.audio_featurizer = None
         self.train_dataset = None
         self.train_loader = None
@@ -418,15 +418,7 @@ class MVectorTrainer(object):
             if os.path.isdir(resume_model):
                 resume_model = os.path.join(resume_model, 'model.pth')
             assert os.path.exists(resume_model), f"{resume_model} 模型不存在！"
-            if torch.cuda.is_available() and self.use_gpu:
-                model_state_dict = torch.load(resume_model)
-            else:
-                model_state_dict = torch.load(resume_model, map_location='cpu')
-            # 删除最后的分类层参数
-            if self.model_output_name in model_state_dict.keys():
-                del model_state_dict[self.model_output_name]
-            self.model.load_state_dict(model_state_dict, strict=True)
-            logger.info(f'成功加载模型：{resume_model}')
+            self.model = load_pretrained(self.model, resume_model, use_gpu=self.use_gpu)
         self.model.eval()
         if isinstance(self.model, torch.nn.parallel.DistributedDataParallel):
             eval_model = self.model.module if len(self.model.module) == 1 else self.model.module[0]

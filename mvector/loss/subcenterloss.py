@@ -16,7 +16,7 @@ class SubCenterLoss(nn.Module):
         K: number of sub-centers, same classifier K.
     """
 
-    def __init__(self, margin=0.2, scale=32, easy_margin=False, K=3):
+    def __init__(self, margin=0.2, scale=32, easy_margin=False, K=3, label_smoothing=0.0):
         super(SubCenterLoss, self).__init__()
         self.scale = scale
         self.margin = margin
@@ -27,7 +27,7 @@ class SubCenterLoss(nn.Module):
         self.sin_m = math.sin(margin)
         self.th = math.cos(math.pi - margin)
         self.mmm = 1.0 + math.cos(math.pi - margin)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
 
     def forward(self, inputs, labels):
         """
