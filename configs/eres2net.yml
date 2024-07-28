@@ -75,7 +75,7 @@ preprocess_conf:
     num_mel_bins: 80
 
 model_conf:
-  # 所使用的模型
+  # 所使用的模型，支持ERes2Net、ERes2NetV2
   model: 'ERes2Net'
   # 模型参数
   model_args:
