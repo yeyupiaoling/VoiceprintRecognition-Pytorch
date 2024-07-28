@@ -20,7 +20,7 @@ dataset_conf:
     drop_last: True
   dataLoader:
     # 读取数据的线程数量
-    num_workers: 4
+    num_workers: 8
   # 训练数据的数据列表路径
   train_list: 'dataset/train_list.txt'
   # 评估注册的数据列表路径
