@@ -14,7 +14,6 @@ import torch.nn as nn
 import yaml
 from tqdm import tqdm
 
-from mvector import SUPPORT_MODEL
 from mvector.data_utils.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.utils.logger import setup_logger
@@ -51,7 +50,6 @@ class MVectorPredictor:
                 configs = yaml.load(f.read(), Loader=yaml.FullLoader)
             print_arguments(configs=configs)
         self.configs = dict_to_object(configs)
-        assert self.configs.model_conf.model in SUPPORT_MODEL, f'没有该模型：{self.configs.model_conf.model}'
         self._audio_featurizer = AudioFeaturizer(feature_method=self.configs.preprocess_conf.feature_method,
                                                  use_hf_model=self.configs.preprocess_conf.get('use_hf_model', False),
                                                  method_args=self.configs.preprocess_conf.get('method_args', {}))
