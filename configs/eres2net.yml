@@ -21,6 +21,12 @@ dataset_conf:
   dataLoader:
     # 读取数据的线程数量
     num_workers: 8
+  # 评估的数据要特殊处理
+  eval_conf:
+    # 评估的批量大小
+    batch_size: 4
+    # 最长的音频长度
+    max_duration: 20
   # 训练数据的数据列表路径
   train_list: 'dataset/train_list.txt'
   # 评估注册的数据列表路径
@@ -31,12 +37,6 @@ dataset_conf:
   is_use_pksampler: False
   # 使用PKSampler时设置样本数量
   sample_per_id: 4
-  # 评估的数据要特殊处理
-  eval_conf:
-    # 评估的批量大小
-    batch_size: 4
-    # 最长的音频长度
-    max_duration: 20
   # 数据增强参数
   aug_conf:
     # 是否使用语速扰动增强
