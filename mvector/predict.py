@@ -4,6 +4,7 @@ import shutil
 from io import BufferedReader
 
 from mvector.models import build_model
+from mvector.utils.checkpoint import load_pretrained
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 import faiss
@@ -56,20 +57,15 @@ class MVectorPredictor:
                                                  method_args=self.configs.preprocess_conf.get('method_args', {}))
         # 获取模型
         backbone = build_model(input_size=self._audio_featurizer.feature_dim, configs=self.configs)
-        model = nn.Sequential(backbone)
-        model.to(self.device)
+        self.predictor = nn.Sequential(backbone)
+        self.predictor.to(self.device)
         # 加载模型
         if os.path.isdir(model_path):
             model_path = os.path.join(model_path, 'model.pth')
         assert os.path.exists(model_path), f"{model_path} 模型不存在！"
-        if torch.cuda.is_available() and use_gpu:
-            model_state_dict = torch.load(model_path)
-        else:
-            model_state_dict = torch.load(model_path, map_location='cpu')
-        model.load_state_dict(model_state_dict, strict=False)
+        self.predictor = load_pretrained(self.predictor, model_path, use_gpu=use_gpu)
         print(f"成功加载模型参数：{model_path}")
-        model.eval()
-        self.predictor = model
+        self.predictor.eval()
 
         self.index = None
         # 声纹库的声纹特征
