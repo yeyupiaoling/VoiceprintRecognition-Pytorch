@@ -53,9 +53,9 @@
 |   CAM++    |    6.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 | 加入知识星球获取 |
 |  ERes2Net  |    6.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.19    | 0.09980 | 0.52352 | 加入知识星球获取 |
 |  ResNetSE  |    7.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         | 加入知识星球获取 |
-| EcapaTdnn  |    6.1    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         | 加入知识星球获取 |
-|    TDNN    |    2.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         | 加入知识星球获取 |
-|  Res2Net   |    5.0    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         | 加入知识星球获取 |
+| EcapaTdnn  |    6.1    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.16645  | 0.10954 | 0.62656 | 加入知识星球获取 |
+|    TDNN    |    2.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.18728  | 0.11641 | 0.65420 | 加入知识星球获取 |
+|  Res2Net   |    5.0    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.14433  | 0.14345 | 0.70355 | 加入知识星球获取 |
 |   CAM++    |    6.8    |               更大数据集                |      2W+       |   0.33    | 0.07874 | 0.52524 | 加入知识星球获取 |
 |  ERes2Net  |   55.1    |               其他数据集                |      20W+      |   0.36    | 0.02936 | 0.18355 | 加入知识星球获取 |
 | ERes2NetV2 |   56.2    |               其他数据集                |      20W+      |   0.36    | 0.03847 | 0.24301 | 加入知识星球获取 |
