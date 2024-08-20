@@ -23,7 +23,7 @@
 
  - Anaconda 3
  - Python 3.11
- - Pytorch 2.0.1
+ - Pytorch 2.4.0
  - Windows 11 or Ubuntu 22.04
 
 # 项目特性
@@ -135,7 +135,7 @@
 
  - 首先安装的是Pytorch的GPU版本，如果已经安装过了，请跳过。
 ```shell
-conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
 
  - 安装ppvector库。

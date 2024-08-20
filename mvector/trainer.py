@@ -249,7 +249,7 @@ class MVectorTrainer(object):
             if self.configs.dataset_conf.use_spec_aug:
                 features = self.spec_aug(features)
             # 执行模型计算，是否开启自动混合精度
-            with torch.cuda.amp.autocast(enabled=self.configs.train_conf.enable_amp):
+            with torch.amp.autocast(device_type='cuda', enabled=self.configs.train_conf.enable_amp):
                 outputs = self.model(features)
             logits = outputs['logits']
             # 计算损失值

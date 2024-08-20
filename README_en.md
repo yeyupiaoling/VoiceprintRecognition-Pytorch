@@ -18,7 +18,7 @@ Environment：
 
  - Anaconda 3
  - Python 3.11
- - Pytorch 2.0.1
+ - Pytorch 2.4.0
  - Windows 11 or Ubuntu 22.04
 
 # Project Features
@@ -41,46 +41,48 @@ Environment：
 
 # Download Model
 
-|   Model    | Params(M) | Preprocessing method |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
-|:----------:|:---------:|:--------------------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:| 
-|   CAM++    |    7.5    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 |        
-|  ERes2Net  |    8.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.19    | 0.09980 | 0.52352 |        
-|  ResNetSE  |    9.4    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.20    | 0.10149 | 0.55185 |        
-| EcapaTdnn  |    6.7    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.24    | 0.10163 | 0.56543 |   
-|    TDNN    |    3.2    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.23    | 0.12182 | 0.62141 |     
-|  Res2Net   |    6.6    |        Fbank         | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.22    | 0.14390 | 0.67961 |     
-|   CAM++    |    7.5    |        Fbank         |               更大数据集                |      2W+       |   0.33    | 0.07874 | 0.52524 |
-|  ERes2Net  |    8.2    |        Fbank         |               其他数据集                |      20W       |   0.36    | 0.02936 | 0.18355 |  
-| ERes2NetV2 |   56.2    |        Fbank         |               其他数据集                |      20W+      |   0.36    | 0.03847 | 0.24301 |
-|   CAM++    |    7.5    |        Fbank         |               其他数据集                |      20W       |   0.29    | 0.04765 | 0.31436 |        
+|   Model    | Params(M) |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
+|:----------:|:---------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:|
+|   CAM++    |    6.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.26    | 0.09557 | 0.53516 |
+|  ERes2Net  |    6.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |   0.19    | 0.09980 | 0.52352 | 
+|  ResNetSE  |    7.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.14543  | 0.10671 | 0.59055 |
+| EcapaTdnn  |    6.1    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.16645  | 0.10954 | 0.62656 |
+|    TDNN    |    2.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.18728  | 0.11641 | 0.65420 |
+|  Res2Net   |    5.0    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.14433  | 0.14345 | 0.70355 |
+|   CAM++    |    6.8    |               更大数据集                |      2W+       |   0.33    | 0.07874 | 0.52524 |
+|  ERes2Net  |   55.1    |               其他数据集                |      20W+      |   0.36    | 0.02936 | 0.18355 |
+| ERes2NetV2 |   56.2    |               其他数据集                |      20W+      |   0.36    | 0.03847 | 0.24301 |
+|   CAM++    |    6.8    |               其他数据集                |      20W+      |   0.29    | 0.04765 | 0.31436 |
 
 Explain:
 
 1. [CN-Celeb Test](https://aistudio.baidu.com/aistudio/datasetdetail/233361), which contains 196 speakers.
 2. Triple the classification size using speech rate augmentation`speed_perturb_3_class: True`.
-3. The number of parameters does not include the number of parameters of the classifier.
+3. The preprocessing method used is `Fbank` and the loss function is `AAMLoss`.
+4. The number of parameters does not include the number of parameters of the classifier.
 
 
 ### VoxCeleb1&2数据
 
-|     模型     | Params(M) | Preprocessing method |   Dataset   | train speakers | threshold |   EER   | MinDCF  |
-|:----------:|:---------:|:--------------------:|:-----------:|:--------------:|:---------:|:-------:|:-------:|
-|   CAM++    |    6.8    |        Fbank         | VoxCeleb1&2 |      7205      |   0.23    | 0.02659 | 0.18604 |
-|  ERes2Net  |    6.6    |        Fbank         | VoxCeleb1&2 |      7205      |   0.23    | 0.03648 | 0.25508 | 
-|  ResNetSE  |    7.8    |        Fbank         | VoxCeleb1&2 |      7205      |   0.23    | 0.03668 | 0.27881 | 
-| EcapaTdnn  |    6.1    |        Fbank         | VoxCeleb1&2 |      7205      |   0.26    | 0.02610 | 0.18008 |
-|    TDNN    |    2.6    |        Fbank         | VoxCeleb1&2 |      7205      |   0.26    | 0.03963 | 0.31433 |
-|  Res2Net   |    5.0    |        Fbank         | VoxCeleb1&2 |      7205      |   0.20    | 0.04290 | 0.41416 |
-|   CAM++    |    6.8    |        Fbank         |    更大数据集    |      2W+       |   0.28    | 0.03182 | 0.23731 | 
-|  ERes2Net  |   55.1    |        Fbank         |    其他数据集    |      20W+      |   0.53    | 0.08904 | 0.62130 | 
-| ERes2NetV2 |   56.2    |        Fbank         |    其他数据集    |      20W+      |   0.52    | 0.08649 | 0.64193 |
-|   CAM++    |    6.8    |        Fbank         |    其他数据集    |      20W+      |   0.49    | 0.10334 | 0.71200 | 
+|     模型     | Params(M) |   Dataset   | train speakers | threshold |   EER   | MinDCF  |
+|:----------:|:---------:|:-----------:|:--------------:|:---------:|:-------:|:-------:|
+|   CAM++    |    6.8    | VoxCeleb1&2 |      7205      |   0.23    | 0.02659 | 0.18604 |
+|  ERes2Net  |    6.6    | VoxCeleb1&2 |      7205      |   0.23    | 0.03648 | 0.25508 |
+|  ResNetSE  |    7.8    | VoxCeleb1&2 |      7205      |           |         |         |
+| EcapaTdnn  |    6.1    | VoxCeleb1&2 |      7205      |           |         |         |
+|    TDNN    |    2.6    | VoxCeleb1&2 |      7205      |           |         |         |
+|  Res2Net   |    5.0    | VoxCeleb1&2 |      7205      |           |         |         |
+|   CAM++    |    6.8    |    更大数据集    |      2W+       |   0.28    | 0.03182 | 0.23731 |
+|  ERes2Net  |   55.1    |    其他数据集    |      20W+      |   0.53    | 0.08904 | 0.62130 |
+| ERes2NetV2 |   56.2    |    其他数据集    |      20W+      |   0.52    | 0.08649 | 0.64193 | 
+|   CAM++    |    6.8    |    其他数据集    |      20W+      |   0.49    | 0.10334 | 0.71200 |
 
 Explain：
 
 1. [VoxCeleb1&2 Test](https://aistudio.baidu.com/aistudio/datasetdetail/255977), which contains 158 speakers.
 2. Triple the classification size using speech rate augmentation`speed_perturb_3_class: True`.
-3. The number of parameters does not include the number of parameters of the classifier.
+3. The preprocessing method used is `Fbank` and the loss function is `AAMLoss`.
+4. The number of parameters does not include the number of parameters of the classifier.
 
 ### Effect comparison experiment of preprocessing methods
 
@@ -127,7 +129,7 @@ Explain：
 
  - The GPU version of Pytorch will be installed first, please skip it if you already have it installed.
 ```shell
-conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=11.8 -c pytorch -c nvidia
 ```
 
  - Install ppvector.
