@@ -162,8 +162,12 @@ class MVectorDataset(Dataset):
                       speed_perturb=False,
                       speed_perturb_3_class=False,
                       volume_aug_prob=0.0,
+                      min_gain_dBFS=-15,
+                      max_gain_dBFS=15,
                       noise_dir=None,
                       noise_aug_prob=0.5,
+                      min_snr_dB=10,
+                      max_snr_dB=50,
                       reverb_dir=None,
                       reverb_aug_prob=0.5):
         # 语速增强
@@ -178,12 +182,10 @@ class MVectorDataset(Dataset):
                 spk_id = spk_id + self.num_speakers * speed_idx
         # 音量增强
         if random.random() < volume_aug_prob:
-            min_gain_dBFS, max_gain_dBFS = -15, 15
             gain = random.uniform(min_gain_dBFS, max_gain_dBFS)
             audio_segment.gain_db(gain)
         # 噪声增强
         if len(self.noises_path) > 0 and random.random() < noise_aug_prob:
-            min_snr_dB, max_snr_dB = 10, 50
             # 随机选择一个noises_path中的一个
             noise_file = random.sample(self.noises_path, 1)[0]
             # 随机生成snr_dB的值
