@@ -1,4 +1,3 @@
-import copy
 import io
 import os
 import random
@@ -6,6 +5,7 @@ import random
 import numpy as np
 import resampy
 import soundfile
+from scipy import signal
 
 from mvector.data_utils.utils import buf_to_float, vad, decode_audio
 
@@ -342,6 +342,16 @@ class AudioSegment(object):
             raise ValueError(f"Unknown value for the sides {sides}")
         self._samples = padded._samples
 
+    def pad(self, pad_width, mode='wrap', **kwargs):
+        """在这个音频样本上加一段音频，等同numpy.pad
+
+        param pad_width: Padding width.
+        :type pad_width: {sequence, array_like, int}
+        :param mode: Padding mode.
+        :type mode: str or function, optional
+        """
+        self._samples = np.pad(self.samples, pad_width=pad_width, mode=mode, **kwargs)
+
     def shift(self, shift_ms):
         """音频偏移。如果shift_ms为正，则随时间提前移位;如果为负，则随时间延迟移位。填补静音以保持持续时间不变。
 
@@ -410,35 +420,74 @@ class AudioSegment(object):
         start_time = random.uniform(0.0, self.duration - subsegment_length)
         self.subsegment(start_time, start_time + subsegment_length)
 
-    def add_noise(self,
-                  noise,
-                  snr_dB,
-                  max_gain_db=300.0):
+    def convolve(self, reverb_file, allow_resample=True):
+        """将这个音频段与给定的音频进行卷积，通常用于添加混响
+
+        :param reverb_file: 混响音频的路径
+        :type reverb_file: str
+        :param allow_resample: 指示是否允许在两个音频段具有不同的采样率时重采样
+        :type allow_resample: bool
+        :raises ValueError: 两个音频段之间的采样率不匹配
+        """
+        # 读取混响音频
+        reverb_segment = AudioSegment.from_file(reverb_file)
+        if allow_resample and self.sample_rate != reverb_segment.sample_rate:
+            reverb_segment.resample(self.sample_rate)
+        if self.sample_rate != reverb_segment.sample_rate:
+            raise ValueError(f"音频的采样率为{self.sample_rate}，而混响的音频采样率{reverb_segment.sample_rate}")
+        if reverb_segment.duration > self.duration:
+            reverb_segment.random_subsegment(self.duration)
+        reverb_samples = reverb_segment.samples
+        reverb_samples = reverb_samples / np.sqrt(np.sum(reverb_samples ** 2))
+        samples = signal.convolve(self.samples, reverb_samples, "full")
+        samples = samples / (np.max(np.abs(samples)) + 1e-6)
+        self._samples = samples[:self.num_samples]
+
+    def convolve_and_normalize(self, reverb_file, allow_resample=True):
+        """将这个音频段与给定的音频进行卷积，通常用于添加混响，然后归一化
+
+        :param reverb_file: 混响音频的路径
+        :type reverb_file: str
+        :param allow_resample: 指示是否允许在两个音频段具有不同的采样率时重采样
+        :type allow_resample: bool
+        :raises ValueError: 两个音频段之间的采样率不匹配
+        """
+        target_db = self.rms_db
+        self.convolve(reverb_file, allow_resample=allow_resample)
+        self.normalize(target_db)
+
+    def add_noise(self, noise_file, snr_dB, max_gain_db=300.0, allow_resample=True):
         """以特定的信噪比添加给定的噪声段。如果噪声段比该噪声段长，则从该噪声段中采样匹配长度的随机子段。
 
         Note that this is an in-place transformation.
 
-        :param noise: Noise signal to add.
-        :type noise: AudioSegment
+        :param noise_file: 噪声音频的路径
+        :type noise_file: str
         :param snr_dB: Signal-to-Noise Ratio, in decibels.
         :type snr_dB: float
         :param max_gain_db: Maximum amount of gain to apply to noise signal
                             before adding it in. This is to prevent attempting
                             to apply infinite gain to a zero signal.
         :type max_gain_db: float
-        :raises ValueError: If the sample rate does not match between the two
-                            audio segments, or if the duration of noise segments
-                            is shorter than original audio segments.
+        :param allow_resample: 指示是否允许在两个音频段具有不同的采样率时重采样
+        :type allow_resample: bool
+        :raises ValueError: 两个音频段之间的采样率不匹配
         """
-        if noise.sample_rate != self.sample_rate:
-            raise ValueError(f"噪声采样率({noise.sample_rate} Hz)不等于基信号采样率({self.sample_rate} Hz)")
-        if noise.duration < self.duration:
-            raise ValueError(f"噪声信号({noise.duration}秒)必须至少与基信号({self.duration}秒)一样长")
-        noise_gain_db = min(self.rms_db - noise.rms_db - snr_dB, max_gain_db)
-        noise_new = copy.deepcopy(noise)
-        noise_new.random_subsegment(self.duration)
-        noise_new.gain_db(noise_gain_db)
-        self.superimpose(noise_new)
+        # 读取噪声音频
+        noise_segment = AudioSegment.from_file(noise_file)
+        if allow_resample and self.sample_rate != noise_segment.sample_rate:
+            noise_segment.resample(self.sample_rate)
+        if noise_segment.sample_rate != self.sample_rate:
+            raise ValueError(f"噪声采样率({noise_segment.sample_rate} Hz)不等于基信号采样率({self.sample_rate} Hz)")
+        if noise_segment.duration >= self.duration:
+            noise_segment.random_subsegment(self.duration)
+        else:
+            # 如果噪声的长度小于基信号的长度，则将噪声的前面的部分填充噪声末尾补长
+            num_samples = self.num_samples - noise_segment.num_samples
+            noise_segment.pad((0, num_samples), mode='wrap')
+        noise_gain_db = min(self.rms_db - noise_segment.rms_db - snr_dB, max_gain_db)
+        noise_segment.gain_db(noise_gain_db)
+        self.superimpose(noise_segment)
 
     def vad(self, top_db=20, overlap=200):
         self._samples = vad(wav=self._samples, top_db=top_db, overlap=overlap)
