@@ -149,7 +149,9 @@ class MVectorDataset(Dataset):
                       volume_perturb=False,
                       volume_aug_prob=0.2,
                       noise_dir=None,
-                      noise_aug_prob=0.2):
+                      noise_aug_prob=0.2,
+                      min_snr_dB=10,
+                      max_snr_dB=50):
         # 语速增强
         if speed_perturb:
             speeds = [1.0, 0.9, 1.1]
@@ -173,7 +175,6 @@ class MVectorDataset(Dataset):
                     self.noises_path.append(os.path.join(noise_dir, file))
         # 噪声增强
         if self.noises_path is not None and len(self.noises_path) > 0 and random.random() < noise_aug_prob:
-            min_snr_dB, max_snr_dB = 10, 50
             # 随机选择一个noises_path中的一个
             noise_path = random.sample(self.noises_path, 1)[0]
             # 读取噪声音频
