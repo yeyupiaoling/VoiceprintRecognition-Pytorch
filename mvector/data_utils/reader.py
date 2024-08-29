@@ -53,7 +53,6 @@ class MVectorDataset(Dataset):
         self._target_dB = target_dB
         self.aug_conf = aug_conf
         self.num_speakers = num_speakers
-        self.noises_path = None
         # 获取特征器
         self.audio_featurizer = audio_featurizer
         # 获取特征裁剪的大小
@@ -62,6 +61,12 @@ class MVectorDataset(Dataset):
         with open(self.data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
         self.labels = [np.int64(line.strip().split('\t')[1]) for line in self.lines]
+        if mode == 'train':
+            # 获取噪声文件和混响音频
+            self.noises_path = self.get_audio_path(path=aug_conf.get('noise_dir', None))
+            self.reverb_path = self.get_audio_path(path=aug_conf.get('reverb_dir', None))
+            logger.info(f"噪声增强的噪声音频文件数量: {len(self.noises_path)}")
+            logger.info(f"混响增强音频文件数量: {len(self.reverb_path)}")
         # 评估模式下，数据列表需要排序
         if self.mode == 'eval':
             self.sort_list()
@@ -116,7 +121,7 @@ class MVectorDataset(Dataset):
 
     # 获取特征裁剪的大小，对应max_duration音频提取特征后的长度
     def get_crop_feature_len(self):
-        samples = torch.randn((1, self.max_duration * self._target_sample_rate))
+        samples = torch.randn((1, int(self.max_duration * self._target_sample_rate)))
         feature = self.audio_featurizer(samples).squeeze(0)
         freq_len = feature.size(0)
         return freq_len
@@ -140,18 +145,27 @@ class MVectorDataset(Dataset):
         sorted_indexes = np.argsort(lengths)
         self.lines = [self.lines[i] for i in sorted_indexes]
 
+    # 获取文件夹下的全部音频文件路径
+    @staticmethod
+    def get_audio_path(path):
+        if path is None or not os.path.exists(path):
+            return []
+        paths = []
+        for file in os.listdir(path):
+            paths.append(os.path.join(path, file))
+        return paths
+
     # 音频增强
     def augment_audio(self,
                       audio_segment,
                       spk_id,
                       speed_perturb=False,
                       speed_perturb_3_class=False,
-                      volume_perturb=False,
-                      volume_aug_prob=0.2,
+                      volume_aug_prob=0.0,
                       noise_dir=None,
-                      noise_aug_prob=0.2,
-                      min_snr_dB=10,
-                      max_snr_dB=50):
+                      noise_aug_prob=0.5,
+                      reverb_dir=None,
+                      reverb_aug_prob=0.5):
         # 语速增强
         if speed_perturb:
             speeds = [1.0, 0.9, 1.1]
@@ -163,31 +177,23 @@ class MVectorDataset(Dataset):
             if speed_perturb_3_class:
                 spk_id = spk_id + self.num_speakers * speed_idx
         # 音量增强
-        if volume_perturb and random.random() < volume_aug_prob:
+        if random.random() < volume_aug_prob:
             min_gain_dBFS, max_gain_dBFS = -15, 15
             gain = random.uniform(min_gain_dBFS, max_gain_dBFS)
             audio_segment.gain_db(gain)
-        # 获取噪声文件
-        if self.noises_path is None and noise_dir is not None:
-            self.noises_path = []
-            if noise_dir is not None and os.path.exists(noise_dir):
-                for file in os.listdir(noise_dir):
-                    self.noises_path.append(os.path.join(noise_dir, file))
         # 噪声增强
-        if self.noises_path is not None and len(self.noises_path) > 0 and random.random() < noise_aug_prob:
+        if len(self.noises_path) > 0 and random.random() < noise_aug_prob:
+            min_snr_dB, max_snr_dB = 10, 50
             # 随机选择一个noises_path中的一个
-            noise_path = random.sample(self.noises_path, 1)[0]
-            # 读取噪声音频
-            noise_segment = AudioSegment.slice_from_file(noise_path)
-            # 如果噪声采样率不等于audio_segment的采样率，则重采样
-            if noise_segment.sample_rate != audio_segment.sample_rate:
-                noise_segment.resample(audio_segment.sample_rate)
+            noise_file = random.sample(self.noises_path, 1)[0]
             # 随机生成snr_dB的值
             snr_dB = random.uniform(min_snr_dB, max_snr_dB)
-            # 如果噪声的长度小于audio_segment的长度，则将噪声的前面的部分填充噪声末尾补长
-            if noise_segment.duration < audio_segment.duration:
-                diff_duration = audio_segment.num_samples - noise_segment.num_samples
-                noise_segment._samples = np.pad(noise_segment.samples, (0, diff_duration), 'wrap')
             # 将噪声添加到audio_segment中，并将snr_dB调整到最小值和最大值之间
-            audio_segment.add_noise(noise_segment, snr_dB)
+            audio_segment.add_noise(noise_file, snr_dB)
+        # 噪声增强
+        if len(self.reverb_path) > 0 and random.random() < reverb_aug_prob:
+            # 随机选择混响音频
+            reverb_file = random.sample(self.noises_path, 1)[0]
+            # 生成混响音效
+            audio_segment.convolve(reverb_file, allow_resample=True)
         return audio_segment, spk_id
