@@ -685,7 +685,7 @@ class MVectorTrainer(object):
         all_score, all_labels = [], []
         for i in tqdm(range(len(trials_features)), desc='特征对比'):
             if self.stop_eval: break
-            trials_feature = np.expand_dims(trials_features[i], 0).repeat(len(enroll_features), axis=0)
+            trials_feature = np.expand_dims(trials_features[i], 0)
             score = cosine_similarity(trials_feature, enroll_features).tolist()[0]
             trials_label = np.expand_dims(trials_labels[i], 0).repeat(len(enroll_features), axis=0)
             y_true = np.array(enroll_labels == trials_label).astype(np.int32).tolist()
