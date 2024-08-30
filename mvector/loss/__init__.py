@@ -1,5 +1,6 @@
 import importlib
 
+from loguru import logger
 from .aamloss import AAMLoss
 from .amloss import AMLoss
 from .armloss import ARMLoss
@@ -7,9 +8,6 @@ from .celoss import CELoss
 from .sphereface2 import SphereFace2
 from .subcenterloss import SubCenterLoss
 from .tripletangularmarginloss import TripletAngularMarginLoss
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 __all__ = ['build_loss']
 

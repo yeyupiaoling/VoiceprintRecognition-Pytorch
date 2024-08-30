@@ -3,19 +3,18 @@ import distutils.util
 import numpy as np
 from tqdm import tqdm
 
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
+from loguru import logger
 
 
-def print_arguments(args=None, configs=None):
+def print_arguments(args=None, configs=None, title=None):
     if args:
         logger.info("----------- 额外配置参数 -----------")
         for arg, value in sorted(vars(args).items()):
             logger.info("%s: %s" % (arg, value))
         logger.info("------------------------------------------------")
     if configs:
-        logger.info("----------- 配置文件参数 -----------")
+        title = title if title else "配置文件参数"
+        logger.info(f"----------- {title} -----------")
         for arg, value in sorted(configs.items()):
             if isinstance(value, dict):
                 logger.info(f"{arg}:")

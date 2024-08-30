@@ -1,5 +1,6 @@
 import importlib
 
+from loguru import logger
 from .campplus import CAMPPlus
 from .ecapa_tdnn import EcapaTdnn
 from .eres2net import ERes2Net, ERes2NetV2
@@ -7,9 +8,6 @@ from .fc import SpeakerIdentification
 from .res2net import Res2Net
 from .resnet_se import ResNetSE
 from .tdnn import TDNN
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 __all__ = ['build_model']
 

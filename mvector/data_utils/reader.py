@@ -6,24 +6,23 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from mvector.data_utils.audio import AudioSegment
+from loguru import logger
+from yeaudio.audio import AudioSegment
+from mvector.data_utils.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor, \
+    ReverbPerturbAugmentor
 from mvector.data_utils.featurizer import AudioFeaturizer
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 
 class MVectorDataset(Dataset):
     def __init__(self,
                  data_list_path,
                  audio_featurizer: AudioFeaturizer,
-                 do_vad=True,
                  max_duration=3,
                  min_duration=0.5,
                  mode='train',
                  sample_rate=16000,
-                 aug_conf={},
-                 num_speakers=1000,
+                 aug_conf=None,
+                 num_speakers=None,
                  use_dB_normalization=True,
                  target_dB=-20):
         """音频数据加载器
@@ -31,7 +30,6 @@ class MVectorDataset(Dataset):
         Args:
             data_list_path: 包含音频路径和标签的数据列表文件的路径
             audio_featurizer: 声纹特征提取器
-            do_vad: 是否对音频进行语音活动检测（VAD）来裁剪静音部分
             max_duration: 最长的音频长度，大于这个长度会裁剪掉
             min_duration: 过滤最短的音频长度
             aug_conf: 用于指定音频增强的配置
@@ -44,15 +42,12 @@ class MVectorDataset(Dataset):
         super(MVectorDataset, self).__init__()
         assert mode in ['train', 'eval', 'extract_feature']
         self.data_list_path = data_list_path
-        self.do_vad = do_vad
         self.max_duration = max_duration
         self.min_duration = min_duration
         self.mode = mode
         self._target_sample_rate = sample_rate
         self._use_dB_normalization = use_dB_normalization
         self._target_dB = target_dB
-        self.aug_conf = aug_conf
-        self.num_speakers = num_speakers
         # 获取特征器
         self.audio_featurizer = audio_featurizer
         # 获取特征裁剪的大小
@@ -62,11 +57,11 @@ class MVectorDataset(Dataset):
             self.lines = f.readlines()
         self.labels = [np.int64(line.strip().split('\t')[1]) for line in self.lines]
         if mode == 'train':
-            # 获取噪声文件和混响音频
-            self.noises_path = self.get_audio_path(path=aug_conf.get('noise_dir', None))
-            self.reverb_path = self.get_audio_path(path=aug_conf.get('reverb_dir', None))
-            logger.info(f"噪声增强的噪声音频文件数量: {len(self.noises_path)}")
-            logger.info(f"混响增强音频文件数量: {len(self.reverb_path)}")
+            # 获取数据增强器
+            self.speed_augment = SpeedPerturbAugmentor(num_speakers=num_speakers, **aug_conf.get('speed', {}))
+            self.volume_augment = VolumePerturbAugmentor(**aug_conf.get('volume', {}))
+            self.noise_augment = NoisePerturbAugmentor(**aug_conf.get('noise', {}))
+            self.reverb_augment = ReverbPerturbAugmentor(**aug_conf.get('reverb', {}))
         # 评估模式下，数据列表需要排序
         if self.mode == 'eval':
             self.sort_list()
@@ -85,9 +80,6 @@ class MVectorDataset(Dataset):
         else:
             # 读取音频
             audio_segment = AudioSegment.from_file(data_path)
-            # 裁剪静音
-            if self.do_vad:
-                audio_segment.vad()
             # 数据太短不利于训练
             if self.mode == 'train':
                 if audio_segment.duration < self.min_duration:
@@ -99,7 +91,7 @@ class MVectorDataset(Dataset):
                 audio_segment.resample(self._target_sample_rate)
             # 音频增强
             if self.mode == 'train':
-                audio_segment, spk_id = self.augment_audio(audio_segment, spk_id, **self.aug_conf)
+                audio_segment, spk_id = self.augment_audio(audio_segment, spk_id)
             # decibel normalization
             if self._use_dB_normalization:
                 audio_segment.normalize(target_db=self._target_dB)
@@ -145,57 +137,10 @@ class MVectorDataset(Dataset):
         sorted_indexes = np.argsort(lengths)
         self.lines = [self.lines[i] for i in sorted_indexes]
 
-    # 获取文件夹下的全部音频文件路径
-    @staticmethod
-    def get_audio_path(path):
-        if path is None or not os.path.exists(path):
-            return []
-        paths = []
-        for file in os.listdir(path):
-            paths.append(os.path.join(path, file))
-        return paths
-
     # 音频增强
-    def augment_audio(self,
-                      audio_segment,
-                      spk_id,
-                      speed_perturb=False,
-                      speed_perturb_3_class=False,
-                      volume_aug_prob=0.0,
-                      min_gain_dBFS=-15,
-                      max_gain_dBFS=15,
-                      noise_dir=None,
-                      noise_aug_prob=0.5,
-                      min_snr_dB=10,
-                      max_snr_dB=50,
-                      reverb_dir=None,
-                      reverb_aug_prob=0.5):
-        # 语速增强
-        if speed_perturb:
-            speeds = [1.0, 0.9, 1.1]
-            speed_idx = random.randint(0, 2)
-            speed_rate = speeds[speed_idx]
-            if speed_rate != 1.0:
-                audio_segment.change_speed(speed_rate)
-            # 注意使用语速增强分类数量会大三倍
-            if speed_perturb_3_class:
-                spk_id = spk_id + self.num_speakers * speed_idx
-        # 音量增强
-        if random.random() < volume_aug_prob:
-            gain = random.uniform(min_gain_dBFS, max_gain_dBFS)
-            audio_segment.gain_db(gain)
-        # 噪声增强
-        if len(self.noises_path) > 0 and random.random() < noise_aug_prob:
-            # 随机选择一个noises_path中的一个
-            noise_file = random.sample(self.noises_path, 1)[0]
-            # 随机生成snr_dB的值
-            snr_dB = random.uniform(min_snr_dB, max_snr_dB)
-            # 将噪声添加到audio_segment中，并将snr_dB调整到最小值和最大值之间
-            audio_segment.add_noise(noise_file, snr_dB)
-        # 噪声增强
-        if len(self.reverb_path) > 0 and random.random() < reverb_aug_prob:
-            # 随机选择混响音频
-            reverb_file = random.sample(self.noises_path, 1)[0]
-            # 生成混响音效
-            audio_segment.convolve(reverb_file, allow_resample=True)
+    def augment_audio(self, audio_segment, spk_id):
+        audio_segment, spk_id = self.speed_augment(audio_segment, spk_id)
+        audio_segment = self.volume_augment(audio_segment)
+        audio_segment = self.noise_augment(audio_segment)
+        audio_segment = self.reverb_augment(audio_segment)
         return audio_segment, spk_id

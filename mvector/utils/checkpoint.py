@@ -4,10 +4,8 @@ import shutil
 
 import torch
 
+from loguru import logger
 from mvector import __version__
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 
 def load_pretrained(model, pretrained_model, use_gpu=True):

@@ -1,0 +1,42 @@
+# 语速增强
+speed:
+  # 增强概率
+  prob: 1.0
+  # 使用语速增强是否分类大小翻三倍
+  speed_perturb_3_class: False
+
+# 音量增强
+volume:
+  # 增强概率
+  prob: 0.0
+  # 最小增益
+  min_gain_dBFS: -15
+  # 最大增益
+  max_gain_dBFS: 15
+
+# 噪声增强
+noise:
+  # 增强概率
+  prob: 0.5
+  # 噪声增强的噪声文件夹
+  noise_dir: 'dataset/noise'
+  # 针对噪声的最小音量增益
+  min_snr_dB: 10
+  # 针对噪声的最大音量增益
+  max_snr_dB: 50
+
+# 混响增强
+reverb:
+  # 增强概率
+  prob: 0.5
+  # 混响增强的混响文件夹
+  reverb_dir: 'dataset/reverb'
+
+# Spec增强
+spec_aug:
+  # 增强概率
+  prob: 1.0
+  # 随机频谱掩码大小
+  freq_mask_width: [ 0, 8 ]
+  # 随机时间掩码大小
+  time_mask_width: [ 0, 10 ]

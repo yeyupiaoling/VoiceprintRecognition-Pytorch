@@ -15,11 +15,12 @@ from torchinfo import summary
 from tqdm import tqdm
 from visualdl import LogWriter
 
+from loguru import logger
 from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.pk_sampler import PKSampler
 from mvector.data_utils.reader import MVectorDataset
-from mvector.data_utils.spec_aug import SpecAug
+from mvector.data_utils.augmentation import SpecAugmentor
 from mvector.loss import build_loss
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
 from mvector.models import build_model
@@ -27,18 +28,16 @@ from mvector.models.fc import SpeakerIdentification
 from mvector.optimizer import build_optimizer, build_lr_scheduler
 from mvector.optimizer.scheduler import MarginScheduler
 from mvector.utils.checkpoint import save_checkpoint, load_pretrained, load_checkpoint
-from mvector.utils.logger import setup_logger
 from mvector.utils.utils import dict_to_object, print_arguments
-
-logger = setup_logger(__name__)
 
 
 class MVectorTrainer(object):
-    def __init__(self, configs, use_gpu=True):
+    def __init__(self, configs, use_gpu=True, data_augment_configs=None):
         """ mvector集成工具类
 
         :param configs: 配置字典
         :param use_gpu: 是否使用GPU训练模型
+        :param data_augment_configs: 数据增强配置字典或者其文件路径
         """
         if use_gpu:
             assert (torch.cuda.is_available()), 'GPU不可用'
@@ -67,8 +66,14 @@ class MVectorTrainer(object):
         self.trials_loader = None
         self.margin_scheduler = None
         self.amp_scaler = None
+        # 读取数据增强配置文件
+        if isinstance(data_augment_configs, str):
+            with open(data_augment_configs, 'r', encoding='utf-8') as f:
+                data_augment_configs = yaml.load(f.read(), Loader=yaml.FullLoader)
+            print_arguments(configs=data_augment_configs, title='数据增强配置')
+        self.data_augment_configs = dict_to_object(data_augment_configs)
         # 特征增强
-        self.spec_aug = SpecAug(**self.configs.dataset_conf.get('spec_aug_args', {}))
+        self.spec_aug = SpecAugmentor(**self.data_augment_configs.spec_aug if self.data_augment_configs else {})
         self.spec_aug.to(self.device)
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.dataLoader.num_workers = 0
@@ -98,7 +103,8 @@ class MVectorTrainer(object):
         if is_train:
             self.train_dataset = MVectorDataset(data_list_path=self.configs.dataset_conf.train_list,
                                                 audio_featurizer=self.audio_featurizer,
-                                                aug_conf=self.configs.dataset_conf.aug_conf,
+                                                aug_conf=self.data_augment_configs,
+                                                num_speakers=self.configs.model_conf.classifier.num_speakers,
                                                 mode='train',
                                                 **dataset_args)
             train_sampler = RandomSampler(self.train_dataset)
@@ -189,8 +195,8 @@ class MVectorTrainer(object):
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
             # 语速扰动要增加分类数量
-            if self.configs.dataset_conf.aug_conf.speed_perturb:
-                if self.configs.dataset_conf.aug_conf.speed_perturb_3_class:
+            if self.data_augment_configs.speed.prob > 0:
+                if self.data_augment_configs.speed.speed_perturb_3_class:
                     self.configs.model_conf.classifier.num_speakers = num_class * 3
             # 分类器
             classifier = SpeakerIdentification(input_dim=self.backbone.embd_dim,
@@ -246,8 +252,7 @@ class MVectorTrainer(object):
                 features = features.to(self.device)
                 label = label.to(self.device).long()
             # 特征增强
-            if self.configs.dataset_conf.use_spec_aug:
-                features = self.spec_aug(features)
+            features = self.spec_aug(features)
             # 执行模型计算，是否开启自动混合精度
             with torch.amp.autocast(device_type='cuda', enabled=self.configs.train_conf.enable_amp):
                 outputs = self.model(features)
@@ -469,6 +474,7 @@ class MVectorTrainer(object):
         fnr, fpr, thresholds = compute_fnr_fpr(all_score, all_labels)
         eer, threshold = compute_eer(fnr, fpr, all_score)
         min_dcf = compute_dcf(fnr, fpr)
+        eer, min_dcf, threshold = float(eer), float(min_dcf), float(threshold)
 
         if save_image_path:
             import matplotlib.pyplot as plt

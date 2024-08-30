@@ -1,11 +1,9 @@
 import importlib
 
+from loguru import logger
 from torch.optim import *
 from .scheduler import WarmupCosineSchedulerLR
 from torch.optim.lr_scheduler import *
-from mvector.utils.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 __all__ = ['build_optimizer', 'build_lr_scheduler']
 

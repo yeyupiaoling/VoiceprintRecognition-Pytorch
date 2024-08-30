@@ -14,12 +14,10 @@ import torch.nn as nn
 import yaml
 from tqdm import tqdm
 
-from mvector.data_utils.audio import AudioSegment
+from loguru import logger
+from yeaudio.audio import AudioSegment
 from mvector.data_utils.featurizer import AudioFeaturizer
-from mvector.utils.logger import setup_logger
 from mvector.utils.utils import dict_to_object, print_arguments
-
-logger = setup_logger(__name__)
 
 
 class MVectorPredictor:
