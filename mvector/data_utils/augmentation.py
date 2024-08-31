@@ -10,6 +10,16 @@ from yeaudio.audio import AudioSegment
 
 
 class SpeedPerturbAugmentor(object):
+    """语速扰动增强模型
+
+    :param prob: 数据增强概率
+    :type prob: float
+    :param speed_perturb_3_class: 是否使用语速三类语速增强
+    :type speed_perturb_3_class: bool
+    :param num_speakers: 说话人数量
+    :type num_speakers: int
+    """
+
     def __init__(self, prob=1.0, speed_perturb_3_class=False, num_speakers=None):
         self.speeds = [1.0, 0.9, 1.1]
         self.prob = prob
@@ -31,6 +41,16 @@ class SpeedPerturbAugmentor(object):
 
 
 class VolumePerturbAugmentor(object):
+    """添加随机音量扰动的增强模型
+
+    :param prob: 数据增强概率
+    :type prob: float
+    :param min_gain_dBFS: 最小音量，单位为分贝。
+    :type min_gain_dBFS: int
+    :param max_gain_dBFS: 最大音量，单位为分贝。
+    :type max_gain_dBFS: int
+    """
+
     def __init__(self, prob=0.0, min_gain_dBFS=-15, max_gain_dBFS=15):
         self.prob = prob
         self.min_gain_dBFS = min_gain_dBFS
@@ -44,6 +64,18 @@ class VolumePerturbAugmentor(object):
 
 
 class NoisePerturbAugmentor(object):
+    """噪声扰动增强模型
+
+    :param noise_dir: 噪声文件夹路径
+    :type noise_dir: str
+    :param prob: 数据增强概率
+    :type prob: float
+    :param min_snr_dB: 最小信噪比
+    :type min_snr_dB: int
+    :param max_snr_dB: 最大信噪比
+    :type max_snr_dB: int
+    """
+
     def __init__(self, noise_dir='', prob=0.5, min_snr_dB=10, max_snr_dB=50):
         self.prob = prob
         self.min_snr_dB = min_snr_dB
@@ -73,6 +105,14 @@ class NoisePerturbAugmentor(object):
 
 
 class ReverbPerturbAugmentor(object):
+    """混响增强模型
+
+    :param reverb_dir: 混响文件夹路径
+    :type reverb_dir: str
+    :param prob: 数据增强概率
+    :type prob: float
+    """
+
     def __init__(self, reverb_dir='', prob=0.5):
         self.prob = prob
         self.reverb_path = self.get_audio_path(path=reverb_dir)
@@ -98,6 +138,15 @@ class ReverbPerturbAugmentor(object):
 
 
 class SpecAugmentor(nn.Module):
+    """频域掩蔽和时域掩蔽增强模型
+
+    :param prob: 数据增强概率
+    :type prob: float
+    :param freq_mask_width: 频域掩蔽的宽度范围
+    :type freq_mask_width: tuple
+    :param time_mask_width: 时域掩蔽的宽度范围
+    :type time_mask_width: tuple
+    """
 
     def __init__(self, prob=1.0, freq_mask_width=(0, 8), time_mask_width=(0, 10)):
         self.prob = prob
