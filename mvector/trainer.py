@@ -696,6 +696,7 @@ class MVectorTrainer(object):
         fnr, fpr, thresholds = compute_fnr_fpr(all_score, all_labels)
         eer, threshold = compute_eer(fnr, fpr, all_score)
         min_dcf = compute_dcf(fnr, fpr)
+        eer, min_dcf, threshold = float(eer), float(min_dcf), float(threshold)
 
         if save_image_path:
             import matplotlib.pyplot as plt
