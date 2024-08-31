@@ -32,6 +32,8 @@
 2. 支持池化层：AttentiveStatsPool(ASP)、SelfAttentivePooling(SAP)、TemporalStatisticsPooling(TSP)、TemporalAveragePooling(TAP)、TemporalStatsPool(TSTP)
 3. 支持损失函数：AAMLoss、SphereFace2、AMLoss、ARMLoss、CELoss、SubCenterLoss、TripletAngularMarginLoss
 4. 支持预处理方法：MelSpectrogram、Spectrogram、MFCC、Fbank、Wav2vec2.0、WavLM
+5. 支持数据增强方法：语速增强、音量增强、噪声增强、混响增强、SpecAugment
+
 
 **模型论文：**
 
