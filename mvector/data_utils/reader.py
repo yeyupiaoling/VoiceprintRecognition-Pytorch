@@ -48,7 +48,6 @@ class MVectorDataset(Dataset):
         self._use_dB_normalization = use_dB_normalization
         self._target_dB = target_dB
         self.num_speakers = num_speakers
-        self.aug_conf = aug_conf
         self.speed_augment = None
         self.volume_augment = None
         self.noise_augment = None
@@ -62,9 +61,9 @@ class MVectorDataset(Dataset):
         with open(self.data_list_path, 'r', encoding='utf-8') as f:
             self.lines = f.readlines()
         self.labels = [np.int64(line.strip().split('\t')[1]) for line in self.lines]
-        if mode == 'train':
+        if mode == 'train' and aug_conf is not None:
             # 获取数据增强器
-            self.get_augment()
+            self.get_augmentor(aug_conf)
         # 评估模式下，数据列表需要排序
         if self.mode == 'eval':
             self.sort_list()
@@ -144,17 +143,17 @@ class MVectorDataset(Dataset):
         self.lines = [self.lines[i] for i in sorted_indexes]
 
     # 获取数据增强器
-    def get_augment(self):
-        if self.aug_conf.speed is not None:
-            self.speed_augment = SpeedPerturbAugmentor(num_speakers=self.num_speakers, **self.aug_conf.speed)
-        if self.aug_conf.volume is not None:
-            self.volume_augment = VolumePerturbAugmentor(**self.aug_conf.volume)
-        if self.aug_conf.noise is not None:
-            self.noise_augment = NoisePerturbAugmentor(**self.aug_conf.noise)
-        if self.aug_conf.reverb is not None:
-            self.reverb_augment = ReverbPerturbAugmentor(**self.aug_conf.reverb)
-        if self.aug_conf.spec_aug is not None:
-            self.spec_augment = SpecAugmentor(**self.aug_conf.spec_aug)
+    def get_augmentor(self, aug_conf):
+        if aug_conf.speed is not None:
+            self.speed_augment = SpeedPerturbAugmentor(num_speakers=self.num_speakers, **aug_conf.speed)
+        if aug_conf.volume is not None:
+            self.volume_augment = VolumePerturbAugmentor(**aug_conf.volume)
+        if aug_conf.noise is not None:
+            self.noise_augment = NoisePerturbAugmentor(**aug_conf.noise)
+        if aug_conf.reverb is not None:
+            self.reverb_augment = ReverbPerturbAugmentor(**aug_conf.reverb)
+        if aug_conf.spec_aug is not None:
+            self.spec_augment = SpecAugmentor(**aug_conf.spec_aug)
 
     # 音频增强
     def augment_audio(self, audio_segment, spk_id):
