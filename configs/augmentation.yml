@@ -35,8 +35,14 @@ reverb:
 # Spec增强
 spec_aug:
   # 增强概率
-  prob: 1.0
-  # 随机频谱掩码大小
-  freq_mask_width: [ 0, 8 ]
-  # 随机时间掩码大小
-  time_mask_width: [ 0, 10 ]
+  prob: 0.5
+  # 频域掩蔽的比例
+  freq_mask_ratio: 0.1
+  # 频域掩蔽次数
+  n_freq_masks: 1
+  # 频域掩蔽的比例
+  time_mask_ratio: 0.05
+  # 频域掩蔽次数
+  n_time_masks: 1
+  # 最大时间扭曲
+  max_time_warp: 0

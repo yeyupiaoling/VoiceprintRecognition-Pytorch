@@ -20,7 +20,6 @@ from mvector.data_utils.collate_fn import collate_fn
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.data_utils.pk_sampler import PKSampler
 from mvector.data_utils.reader import MVectorDataset
-from mvector.data_utils.augmentation import SpecAugmentor
 from mvector.loss import build_loss
 from mvector.metric.metrics import compute_fnr_fpr, compute_eer, compute_dcf, accuracy
 from mvector.models import build_model
@@ -72,9 +71,6 @@ class MVectorTrainer(object):
                 data_augment_configs = yaml.load(f.read(), Loader=yaml.FullLoader)
             print_arguments(configs=data_augment_configs, title='数据增强配置')
         self.data_augment_configs = dict_to_object(data_augment_configs)
-        # 特征增强
-        self.spec_aug = SpecAugmentor(**self.data_augment_configs.spec_aug if self.data_augment_configs else {})
-        self.spec_aug.to(self.device)
         if platform.system().lower() == 'windows':
             self.configs.dataset_conf.dataLoader.num_workers = 0
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
@@ -251,10 +247,8 @@ class MVectorTrainer(object):
             else:
                 features = features.to(self.device)
                 label = label.to(self.device).long()
-            # 特征增强
-            features = self.spec_aug(features)
             # 执行模型计算，是否开启自动混合精度
-            with torch.amp.autocast(device_type='cuda', enabled=self.configs.train_conf.enable_amp):
+            with torch.autocast('cuda', enabled=self.configs.train_conf.enable_amp):
                 outputs = self.model(features)
             logits = outputs['logits']
             # 计算损失值
@@ -457,7 +451,7 @@ class MVectorTrainer(object):
                 trials_features = np.concatenate((trials_features, feature)) if trials_features is not None else feature
                 trials_labels = np.concatenate((trials_labels, label)) if trials_labels is not None else label
         self.model.train()
-        print('开始对比音频特征...')
+        logger.info('开始对比音频特征...')
         all_score, all_labels = [], []
         for i in tqdm(range(len(trials_features)), desc='特征对比'):
             if self.stop_eval: break
