@@ -6,8 +6,8 @@ from loguru import logger
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from yeaudio.audio import AudioSegment
-from yeaudio.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor, \
-    ReverbPerturbAugmentor, SpecAugmentor
+from yeaudio.augmentation import ReverbPerturbAugmentor, SpecAugmentor
+from yeaudio.augmentation import SpeedPerturbAugmentor, VolumePerturbAugmentor, NoisePerturbAugmentor
 
 from mvector.data_utils.featurizer import AudioFeaturizer
 
