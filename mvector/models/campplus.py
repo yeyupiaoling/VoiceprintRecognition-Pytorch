@@ -143,7 +143,7 @@ class CAMDenseTDNNLayer(nn.Module):
 
     def forward(self, x):
         if self.training and self.memory_efficient:
-            x = cp.checkpoint(self.bn_function, x)
+            x = cp.checkpoint(self.bn_function, x, use_reentrant=False)
         else:
             x = self.bn_function(x)
         x = self.cam_layer(self.nonlinear2(x))
