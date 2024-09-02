@@ -72,10 +72,10 @@ class MVectorTrainer(object):
             print_arguments(configs=data_augment_configs, title='数据增强配置')
         self.data_augment_configs = dict_to_object(data_augment_configs)
         if platform.system().lower() == 'windows':
-            self.configs.dataset_conf.dataLoader.num_workers = 0
+            self.configs.dataset_conf.sampler.num_workers = 0
             logger.warning('Windows系统不支持多线程读取数据，已自动关闭！')
         if self.configs.preprocess_conf.get('use_hf_model', False):
-            self.configs.dataset_conf.dataLoader.num_workers = 0
+            self.configs.dataset_conf.sampler.num_workers = 0
             logger.warning('使用HuggingFace模型不支持多线程进行特征提取，已自动关闭！')
         self.max_step, self.train_step = None, None
         self.train_loss, self.train_acc = None, None
@@ -112,8 +112,7 @@ class MVectorTrainer(object):
                     train_sampler = DistributedSampler(dataset=self.train_dataset, shuffle=True)
                 batch_sampler = PKSampler(sampler=train_sampler,
                                           sample_per_id=self.configs.dataset_conf.get("sample_per_id", 4),
-                                          batch_size=self.configs.dataset_conf.sampler.batch_size,
-                                          drop_last=self.configs.dataset_conf.dataLoader.get("drop_last", True))
+                                          **sampler_args)
             else:
                 # 设置支持多卡训练
                 if torch.cuda.device_count() > 1:
