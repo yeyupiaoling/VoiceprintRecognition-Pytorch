@@ -186,7 +186,7 @@ class MVectorTrainer(object):
         # 获取训练所需的函数
         if is_train:
             if self.configs.train_conf.enable_amp:
-                self.amp_scaler = torch.cuda.amp.GradScaler(init_scale=1024)
+                self.amp_scaler = torch.GradScaler("cuda", init_scale=1024)
             # 获取分类器
             num_class = self.configs.model_conf.classifier.num_speakers
             # 语速扰动要增加分类数量
@@ -359,7 +359,6 @@ class MVectorTrainer(object):
         self.train_loss, self.train_acc = None, None
         self.test_log_step, self.train_log_step = 0, 0
         self.eval_eer, self.eval_min_dcf, self.eval_threshold = None, None, None
-        last_epoch += 1
         if local_rank == 0:
             writer.add_scalar('Train/lr', self.scheduler.get_last_lr()[0], last_epoch)
         # 最大步数

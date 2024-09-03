@@ -65,7 +65,7 @@ def load_checkpoint(configs, model, optimizer, amp_scaler, scheduler, margin_sch
     :param save_model_path: 模型保存路径
     :param resume_model: 恢复训练的模型路径
     """
-    last_epoch1 = -1
+    last_epoch1 = 0
     best_eer1 = 1
 
     def load_model(model_path):
@@ -82,7 +82,7 @@ def load_checkpoint(configs, model, optimizer, amp_scaler, scheduler, margin_sch
             amp_scaler.load_state_dict(torch.load(os.path.join(model_path, 'scaler.pth')))
         with open(os.path.join(model_path, 'model.state'), 'r', encoding='utf-8') as f:
             json_data = json.load(f)
-            last_epoch = json_data['last_epoch'] - 1
+            last_epoch = json_data['last_epoch']
             if 'eer' in json_data.keys():
                 best_eer = json_data['eer']
         logger.info('成功恢复模型参数和优化方法参数：{}'.format(model_path))
