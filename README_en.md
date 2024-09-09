@@ -43,12 +43,12 @@ Environment：
 
 |   Model    | Params(M) |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
 |:----------:|:---------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:|
-|  ERes2Net  |    6.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.13414  | 0.09873 | 0.51275 | 
-|   CAM++    |    6.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.14228  | 0.10357 | 0.55704 |
-|  ResNetSE  |    7.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.14543  | 0.10671 | 0.59055 |
-| EcapaTdnn  |    6.1    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.16645  | 0.10954 | 0.62656 |
-|    TDNN    |    2.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.18728  | 0.11641 | 0.65420 |
-|  Res2Net   |    5.0    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.14433  | 0.14345 | 0.70355 |
+|  ERes2Net  |    6.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         | 
+|   CAM++    |    6.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.23323  | 0.08332 | 0.48536 | 
+|  ResNetSE  |    7.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.19066  | 0.08544 | 0.49142 | 
+| EcapaTdnn  |    6.1    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.23646  | 0.09259 | 0.51378 | 
+|    TDNN    |    2.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.23858  | 0.10825 | 0.59545 | 
+|  Res2Net   |    5.0    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.19526  | 0.12436 | 0.65347 | 
 |   CAM++    |    6.8    |               更大数据集                |      2W+       |   0.33    | 0.07874 | 0.52524 |
 |  ERes2Net  |   55.1    |               其他数据集                |      20W+      |   0.36    | 0.02936 | 0.18355 |
 | ERes2NetV2 |   56.2    |               其他数据集                |      20W+      |   0.36    | 0.03847 | 0.24301 |
