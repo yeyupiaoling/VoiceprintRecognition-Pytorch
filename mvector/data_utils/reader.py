@@ -84,9 +84,7 @@ class MVectorDataset(Dataset):
             audio_segment = AudioSegment.from_file(data_path)
             # 数据太短不利于训练
             if self.mode == 'train':
-                if audio_segment.duration < self.min_duration:
-                    logger.error(f"[{data_path}]音频太短，已跳过，最低阈值是{self.min_duration}s，"
-                                 f"实际时长是{audio_segment.duration}s")
+                if self.mode == 'train' or self.mode == 'extract_feature':
                     return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
             # 重采样
             if audio_segment.sample_rate != self._target_sample_rate:
