@@ -43,7 +43,7 @@ Environment：
 
 |   Model    | Params(M) |              Dataset               | train speakers | threshold |   EER   | MinDCF  | 
 |:----------:|:---------:|:----------------------------------:|:--------------:|:---------:|:-------:|:-------:|
-|  ERes2Net  |    6.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |           |         |         | 
+|  ERes2Net  |    6.6    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.20014  | 0.08132 | 0.45544 | 
 |   CAM++    |    6.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.23323  | 0.08332 | 0.48536 | 
 |  ResNetSE  |    7.8    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.19066  | 0.08544 | 0.49142 | 
 | EcapaTdnn  |    6.1    | [CN-Celeb](http://openslr.org/82/) |      2796      |  0.23646  | 0.09259 | 0.51378 | 

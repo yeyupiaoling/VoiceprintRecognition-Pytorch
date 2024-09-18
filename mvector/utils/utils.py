@@ -10,7 +10,7 @@ def print_arguments(args=None, configs=None, title=None):
     if args:
         logger.info("----------- 额外配置参数 -----------")
         for arg, value in sorted(vars(args).items()):
-            logger.info("%s: %s" % (arg, value))
+            logger.info(f"{arg}: {value}")
         logger.info("------------------------------------------------")
     if configs:
         title = title if title else "配置文件参数"
@@ -22,11 +22,11 @@ def print_arguments(args=None, configs=None, title=None):
                     if isinstance(v, dict):
                         logger.info(f"\t{a}:")
                         for a1, v1 in sorted(v.items()):
-                            logger.info("\t\t%s: %s" % (a1, v1))
+                            logger.info(f"\t\t{a1}: {v1}")
                     else:
-                        logger.info("\t%s: %s" % (a, v))
+                        logger.info(f"\t{a}: {v}")
             else:
-                logger.info("%s: %s" % (arg, value))
+                logger.info(f"{arg}: {value}")
         logger.info("------------------------------------------------")
 
 
