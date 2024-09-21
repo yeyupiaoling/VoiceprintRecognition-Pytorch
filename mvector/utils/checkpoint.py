@@ -21,14 +21,14 @@ def load_pretrained(model, pretrained_model, use_gpu=True):
     if os.path.isdir(pretrained_model):
         pretrained_model = os.path.join(pretrained_model, 'model.pth')
     assert os.path.exists(pretrained_model), f"{pretrained_model} 模型不存在！"
-    model_state_dict = torch.load(pretrained_model)
+    model_state_dict = torch.load(pretrained_model, weights_only=False)
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_dict = model.module.state_dict()
     else:
         if torch.cuda.is_available() and use_gpu:
-            model_dict = torch.load(pretrained_model)
+            model_dict = torch.load(pretrained_model, weights_only=False)
         else:
-            model_dict = torch.load(pretrained_model, map_location='cpu')
+            model_dict = torch.load(pretrained_model, weights_only=False, map_location='cpu')
     # 过滤不存在的参数
     for name, weight in model_dict.items():
         if name in model_state_dict.keys():
