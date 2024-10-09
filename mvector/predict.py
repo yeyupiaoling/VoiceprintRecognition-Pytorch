@@ -3,20 +3,19 @@ import pickle
 import shutil
 from io import BufferedReader
 
-from mvector.models import build_model
-from mvector.utils.checkpoint import load_pretrained
-
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-import faiss
 import numpy as np
 import torch
 import torch.nn as nn
 import yaml
-from tqdm import tqdm
-
 from loguru import logger
+from tqdm import tqdm
 from yeaudio.audio import AudioSegment
+
 from mvector.data_utils.featurizer import AudioFeaturizer
+from mvector.infer_utils.speaker_diarization import SpeakerDiarization
+from mvector.infer_utils.viewer import PlotSpeaker
+from mvector.models import build_model
+from mvector.utils.checkpoint import load_pretrained
 from mvector.utils.utils import dict_to_object, print_arguments
 
 
@@ -60,7 +59,7 @@ class MVectorPredictor:
             model_path = os.path.join(model_path, 'model.pth')
         assert os.path.exists(model_path), f"{model_path} 模型不存在！"
         self.predictor = load_pretrained(self.predictor, model_path, use_gpu=use_gpu)
-        print(f"成功加载模型参数：{model_path}")
+        logger.info(f"成功加载模型参数：{model_path}")
         self.predictor.eval()
 
         self.index = None
@@ -78,6 +77,8 @@ class MVectorPredictor:
             self.audio_indexes_path = os.path.join(audio_db_path, "audio_indexes.bin")
             # 加载声纹库中的声纹
             self.__load_audio_db(self.audio_db_path)
+        # 说话人日志
+        self.speaker_diarize = SpeakerDiarization()
 
     # 加载声纹特征索引
     def __load_audio_indexes(self):
@@ -108,6 +109,7 @@ class MVectorPredictor:
 
     # 创建声纹特征Faiss索引
     def __create_index(self):
+        import faiss
         # 求每个用户特征的平均值
         self.index_users_name = list(set(self.users_name))
         features = []
@@ -193,7 +195,7 @@ class MVectorPredictor:
 
     def _load_audio(self, audio_data, sample_rate=16000):
         """加载音频
-        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 识别的文本结果和解码的得分数
         """
@@ -206,6 +208,8 @@ class MVectorPredictor:
             audio_segment = AudioSegment.from_ndarray(audio_data, sample_rate)
         elif isinstance(audio_data, bytes):
             audio_segment = AudioSegment.from_bytes(audio_data)
+        elif isinstance(audio_data, AudioSegment):
+            audio_segment = audio_data
         else:
             raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
         assert audio_segment.duration >= self.configs.dataset_conf.dataset.min_duration, \
@@ -223,7 +227,7 @@ class MVectorPredictor:
                 sample_rate=16000):
         """预测一个音频的特征
 
-        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整并带格式的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 声纹特征向量
         """
@@ -235,10 +239,10 @@ class MVectorPredictor:
         feature = self.predictor(audio_feature).data.cpu().numpy()[0]
         return feature
 
-    def predict_batch(self, audios_data, sample_rate=16000):
+    def predict_batch(self, audios_data, sample_rate=16000, batch_size=32):
         """预测一批音频的特征
 
-        :param audios_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
+        :param audios_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整并带格式的字节文件
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 声纹特征向量
         """
@@ -250,11 +254,11 @@ class MVectorPredictor:
         # 找出音频长度最长的
         batch = sorted(audios_data1, key=lambda a: a.shape[0], reverse=True)
         max_audio_length = batch[0].shape[0]
-        batch_size = len(batch)
+        input_size = len(batch)
         # 以最大的长度创建0张量
-        inputs = np.zeros((batch_size, max_audio_length), dtype=np.float32)
+        inputs = np.zeros((input_size, max_audio_length), dtype=np.float32)
         input_lens_ratio = []
-        for x in range(batch_size):
+        for x in range(input_size):
             tensor = audios_data1[x]
             seq_length = tensor.shape[0]
             # 将数据插入都0张量中，实现了padding
@@ -264,14 +268,18 @@ class MVectorPredictor:
         input_lens_ratio = torch.tensor(input_lens_ratio, dtype=torch.float32)
         audio_feature = self._audio_featurizer(inputs, input_lens_ratio).to(self.device)
         # 执行预测
-        features = self.predictor(audio_feature).data.cpu().numpy()
+        features = []
+        for i in range(0, input_size, batch_size):
+            feature = self.predictor(audio_feature[i:i + batch_size]).data.cpu().numpy()
+            features.extend(feature)
+        features = np.array(features)
         return features
 
     def contrast(self, audio_data1, audio_data2):
         """声纹对比
 
-        param audio_data1: 需要对比的音频1，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
-        param audio_data2: 需要对比的音频2，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        param audio_data1: 需要对比的音频1，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整的字节文件
+        param audio_data2: 需要对比的音频2，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整的字节文件
 
         return: 两个音频的相似度
         """
@@ -292,17 +300,8 @@ class MVectorPredictor:
         :return: 识别的文本结果和解码的得分数
         """
         # 加载音频文件
-        if isinstance(audio_data, str):
-            audio_segment = AudioSegment.from_file(audio_data)
-        elif isinstance(audio_data, BufferedReader):
-            audio_segment = AudioSegment.from_file(audio_data)
-        elif isinstance(audio_data, np.ndarray):
-            audio_segment = AudioSegment.from_ndarray(audio_data, sample_rate)
-        elif isinstance(audio_data, bytes):
-            audio_segment = AudioSegment.from_bytes(audio_data)
-        else:
-            raise Exception(f'不支持该数据类型，当前数据类型为：{type(audio_data)}')
-        feature = self.predict(audio_data=audio_segment.samples, sample_rate=audio_segment.sample_rate)
+        audio_segment = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
+        feature = self.predict(audio_data=audio_segment)
         if self.audio_feature is None:
             self.audio_feature = feature
         else:
@@ -322,7 +321,7 @@ class MVectorPredictor:
 
     def recognition(self, audio_data, threshold=None, sample_rate=16000):
         """声纹识别
-        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整的字节文件
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整的字节文件
         :param threshold: 判断的阈值，如果为None则用创建对象时使用的阈值
         :param sample_rate: 如果传入的事numpy数据，需要指定采样率
         :return: 识别的用户名称，如果为None，即没有识别到用户
@@ -357,3 +356,25 @@ class MVectorPredictor:
             return True
         else:
             return False
+
+    def speaker_diarization(self, audio_data, sample_rate=16000, show_plot=True):
+        """说话人日志识别
+
+        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
+        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
+        :param show_plot: 是否显示绘图
+        :return: 识别的结果
+        """
+        input_data = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
+        segments = self.speaker_diarize.segments_audio(input_data)
+        segments_data = [segment[2] for segment in segments]
+        features = self.predict_batch(segments_data, sample_rate=sample_rate)
+        labels = self.speaker_diarize.clustering(features)
+        output = self.speaker_diarize.postprocess(segments, labels)
+        if show_plot:
+            plot_speaker = PlotSpeaker(output, audio_path=audio_data if isinstance(audio_data, str) else None, gui=True)
+            os.makedirs('output', exist_ok=True)
+            plot_speaker.draw('output/speaker_diarization.png')
+            plot_speaker.plot.show()
+        return output
+
