@@ -10,12 +10,13 @@ from mvector.utils.utils import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
 add_arg('configs',          str,    'configs/cam++.yml',        '配置文件')
+add_arg('audio_path',       str,    'dataset/test_long.wav',    '预测音频路径')
 add_arg('audio_db_path',    str,    'audio_db/',                '音频库的路径')
 add_arg('speaker_num',      int,    None,                       '说话人数量，提供说话人数量可以提高准确率')
 add_arg('use_gpu',          bool,   True,                       '是否使用GPU预测')
 add_arg('show_plot',        bool,   True,                       '是否显示结果图像')
 add_arg('search_audio_db',  bool,   True,                       '是否在音频库中搜索对应的说话人')
-add_arg('audio_path',       str,    'dataset/test_long.wav',    '预测音频路径')
+add_arg('threshold',        float,  0.6,                        '判断是否为同一个人的阈值')
 add_arg('model_path',       str,    'models/CAMPPlus_Fbank/best_model/', '导出的预测模型文件路径')
 args = parser.parse_args()
 print_arguments(args=args)
@@ -26,6 +27,8 @@ if args.search_audio_db:
 # 获取识别器
 predictor = MVectorPredictor(configs=args.configs,
                              model_path=args.model_path,
+                             threshold=args.threshold,
+                             audio_db_path=args.audio_db_path,
                              use_gpu=args.use_gpu)
 
 # 进行说话人日志识别

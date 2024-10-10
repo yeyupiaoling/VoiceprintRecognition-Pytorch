@@ -381,9 +381,9 @@ class MVectorPredictor:
             names = self.__retrieval(np_feature=spk_center_embeddings)
             results = []
             for output in outputs:
-                name = names[output['label']]
+                name = names[output['speaker']][0]
                 result = {
-                    'speaker': name if name else f"陌生人{output['label']}",
+                    'speaker': name if name else f"陌生人{output['speaker']}",
                     'start': output['start'],
                     'end': output['end']
                 }

@@ -104,12 +104,12 @@ class SpeakerDiarization(object):
             spk_center.append(spk_emb)
         assert len(spk_center) > 0
         spk_center_embeddings = np.stack(spk_center, axis=0)
-        labels = self._merge_by_cos(labels, embeddings, self.merge_threshold)
+        labels = self._merge_by_cos(labels, spk_center, self.merge_threshold)
         return labels, spk_center_embeddings
 
     # 通过余弦相似度合并相似说话人
     @staticmethod
-    def _merge_by_cos(labels, embs, cos_thr):
+    def _merge_by_cos(labels, spk_center_emb, cos_thr):
         assert 0 < cos_thr <= 1
         while True:
             spk_num = labels.max() + 1
@@ -117,7 +117,7 @@ class SpeakerDiarization(object):
                 break
             spk_center = []
             for i in range(spk_num):
-                spk_emb = embs[labels == i].mean(0)
+                spk_emb = spk_center_emb[i]
                 spk_center.append(spk_emb)
             assert len(spk_center) > 0
             spk_center = np.stack(spk_center, axis=0)

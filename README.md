@@ -349,7 +349,9 @@ Estimated Total Size (MB): 42.44
 
 启动VisualDL：`visualdl --logdir=log --host 0.0.0.0`，VisualDL页面如下：
 
+<div align="center">
 <img src="./docs/images/log.jpg" alt="VisualDL页面" width="600">
+</div>
 
 
 # 评估模型
@@ -420,7 +422,9 @@ audio/a_1.wav 和 audio/b_2.wav 不是同一个人，相似度为：-0.095655441
 
 同时还提供了有GUI界面的声纹对比程序，执行`infer_contrast_gui.py`启动程序，界面如下，分别选择两个音频，点击开始判断，就可以判断它们是否是同一个人。
 
+<div align="center">
 <img src="./docs/images/contrast.jpg" alt="声纹对比界面">
+</div>
 
 # 声纹识别
 
@@ -462,7 +466,71 @@ Loaded 李达康 audio.
 
 同时还提供了有GUI界面的声纹识别程序，执行`infer_recognition_gui.py`启动，点击`注册音频到声纹库`按钮，理解开始说话，录制3秒钟，然后输入注册人的名称，之后可以`执行声纹识别`按钮，然后立即说话，录制3秒钟后，等待识别结果。`删除用户`按钮可以删除用户。`实时识别`按钮可以实时识别，可以一直录音，一直识别。
 
+<div align="center">
 <img src="./docs/images/recognition.jpg" alt="声纹识别界面">
+</div>
+
+# 说话人日志（分离说话人）
+
+执行`infer_speaker_diarization.py`程序，输入音频路径，就可以分离出说话人，并显示结果，建议音频长度不要低于10秒。更多功能可以查看该程序参数。
+```shell
+python infer_speaker_diarization.py --audio_path=dataset/test_long.wav
+```
+
+输出类似如下：
+```
+2024-10-10 19:30:40.768 | INFO     | mvector.predict:__init__:61 - 成功加载模型参数：models/CAMPPlus_Fbank/best_model/model.pth
+2024-10-10 19:30:40.795 | INFO     | mvector.predict:__create_index:127 - 声纹特征索引创建完成，一共有3个用户，分别是：['沙瑞金', '夜雨飘零', '李达康']
+2024-10-10 19:30:40.796 | INFO     | mvector.predict:__load_audio_db:142 - 正在加载声纹库数据...
+100%|██████████| 3/3 [00:00<?, ?it/s]
+2024-10-10 19:30:40.798 | INFO     | mvector.predict:__create_index:127 - 声纹特征索引创建完成，一共有3个用户，分别是：['沙瑞金', '夜雨飘零', '李达康']
+2024-10-10 19:30:40.798 | INFO     | mvector.predict:__load_audio_db:172 - 声纹库数据加载完成！
+识别结果：
+{'speaker': '沙瑞金', 'start': 0.0, 'end': 2.0}
+{'speaker': '陌生人1', 'start': 4.0, 'end': 7.0}
+{'speaker': '李达康', 'start': 7.0, 'end': 8.0}
+{'speaker': '沙瑞金', 'start': 9.0, 'end': 12.0}
+{'speaker': '沙瑞金', 'start': 13.0, 'end': 14.0}
+{'speaker': '陌生人1', 'start': 15.0, 'end': 19.0}
+```
+
+显示结果图像如下：
+<div align="center">
+<img src="./docs/images/speaker_diarization.jpg" alt="说话人日志" width="800">
+</div>
+
+项目同样提供了GUI界面的程序，执行`infer_speaker_diarization_gui.py`程序。更多功能可以查看该程序参数。
+```shell
+python infer_speaker_diarization_gui.py
+```
+
+可以打开这样一个页面，进行说话人识别：
+
+<div align="center">
+<img src="./docs/images/speaker_diarization_gui.png" alt="说话人日志" width="800">
+</div>
+
+
+注意：如果说话人名字是中文的，需要设置安装字体才能正常显示，一般情况下Windows无需安装，Ubuntu需要安装。如果Windows确实是缺少字体，只需要[字体文件](https://github.com/tracyone/program_font)这里下载`.ttf`格式的文件，复制到`C:\Windows\Fonts`即可。Ubuntu系统操作如下。
+
+1. 安装字体
+```shell
+git clone https://github.com/tracyone/program_font && cd program_font && ./install.sh
+```
+
+2. 执行下面Python代码
+```python
+import matplotlib
+import shutil
+import os
+
+path = matplotlib.matplotlib_fname()
+path = path.replace('matplotlibrc', 'fonts/ttf/')
+print(path)
+shutil.copy('/usr/share/fonts/MyFonts/simhei.ttf', path)
+user_dir = os.path.expanduser('~')
+shutil.rmtree(f'{user_dir}/.cache/matplotlib', ignore_errors=True)
+```
 
 
 # 其他版本

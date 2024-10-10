@@ -16,7 +16,7 @@ class PlotSpeaker:
             size (tuple, optional): 图形窗口的大小（宽度，高度），默认为(14, 6)。
         """
         # 检测类别名称是否包含中文，是则设置相应字体
-        s = ''.join([data["speaker"] for data in speakers_data])
+        s = ''.join([str(data["speaker"]) for data in speakers_data])
         s += title
         is_ascii = all(ord(c) < 128 for c in s)
         if not is_ascii:
@@ -85,7 +85,7 @@ class PlotSpeaker:
         y = 0
         labels_pos = []
         labels = []
-        for i, cluster in enumerate(sorted(self.speakers_data.keys())):
+        for i, cluster in enumerate(self.speakers_data.keys()):
             labels.append(cluster)
             labels_pos.append(y + self.height // 2)
             for row in self.speakers_data[cluster]:
