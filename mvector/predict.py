@@ -13,7 +13,6 @@ from yeaudio.audio import AudioSegment
 
 from mvector.data_utils.featurizer import AudioFeaturizer
 from mvector.infer_utils.speaker_diarization import SpeakerDiarization
-from mvector.infer_utils.viewer import PlotSpeaker
 from mvector.models import build_model
 from mvector.utils.checkpoint import load_pretrained
 from mvector.utils.utils import dict_to_object, print_arguments
@@ -321,10 +320,13 @@ class MVectorPredictor:
 
     def recognition(self, audio_data, threshold=None, sample_rate=16000):
         """声纹识别
-        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy，AudioSegment对象。如果是字节的话，必须是完整的字节文件
-        :param threshold: 判断的阈值，如果为None则用创建对象时使用的阈值
-        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
-        :return: 识别的用户名称，如果为None，即没有识别到用户
+
+        Args:
+            audio_data (str, file-like object, bytes, numpy.ndarray, AudioSegment): 需要识别的数据
+            threshold (float): 判断的阈值，如果为None则用创建对象时使用的阈值。默认为None。
+            sample_rate (int): 如果传入的是numpy数组，需要指定采样率。默认为16000。
+        Returns:
+            str: 识别的用户名称，如果为None，即没有识别到用户。
         """
         if threshold:
             self.threshold = threshold
@@ -357,24 +359,35 @@ class MVectorPredictor:
         else:
             return False
 
-    def speaker_diarization(self, audio_data, sample_rate=16000, show_plot=True):
+    def speaker_diarization(self, audio_data, sample_rate=16000, speaker_num=None, search_audio_db=False):
         """说话人日志识别
 
-        :param audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
-        :param sample_rate: 如果传入的事numpy数据，需要指定采样率
-        :param show_plot: 是否显示绘图
-        :return: 识别的结果
+        Args:
+            audio_data: 需要识别的数据，支持文件路径，文件对象，字节，numpy。如果是字节的话，必须是完整并带格式的字节文件
+            sample_rate (int): 如果传入的是numpy数据，需要指定采样率
+            speaker_num (int): 预期的说话人数量，提供说话人数量可以提高准确率
+            search_audio_db (bool): 是否在数据库中搜索与输入音频最匹配的音频进行识别
+        Returns:
+            list: 说话人日志识别结果
         """
         input_data = self._load_audio(audio_data=audio_data, sample_rate=sample_rate)
         segments = self.speaker_diarize.segments_audio(input_data)
         segments_data = [segment[2] for segment in segments]
         features = self.predict_batch(segments_data, sample_rate=sample_rate)
-        labels = self.speaker_diarize.clustering(features)
-        output = self.speaker_diarize.postprocess(segments, labels)
-        if show_plot:
-            plot_speaker = PlotSpeaker(output, audio_path=audio_data if isinstance(audio_data, str) else None, gui=True)
-            os.makedirs('output', exist_ok=True)
-            plot_speaker.draw('output/speaker_diarization.png')
-            plot_speaker.plot.show()
-        return output
+        labels, spk_center_embeddings = self.speaker_diarize.clustering(features, speaker_num=speaker_num)
+        outputs = self.speaker_diarize.postprocess(segments, labels)
+        if search_audio_db:
+            assert self.audio_feature is not None, "数据库中没有音频数据，请先指定说话人特征数据库或者注册说话人"
+            names = self.__retrieval(np_feature=spk_center_embeddings)
+            results = []
+            for output in outputs:
+                name = names[output['label']]
+                result = {
+                    'speaker': name if name else f"陌生人{output['label']}",
+                    'start': output['start'],
+                    'end': output['end']
+                }
+                results.append(result)
+            outputs = results
+        return outputs
 

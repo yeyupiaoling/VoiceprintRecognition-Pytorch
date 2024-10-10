@@ -5,9 +5,26 @@ from mvector.infer_utils.player import AudioPlayer
 
 
 class PlotSpeaker:
-    def __init__(self, speakers_data, audio_path=None, title="speaker-diarization", gui=False, size=(14, 6)):
+    def __init__(self, speakers_data, audio_path=None, title="speaker-diarization", gui=True, size=(14, 6)):
+        """绘制说话人结果
+
+        Args:
+            speakers_data (list): 包含说话人信息的列表，每个元素是一个包含起始时间戳、结束时间戳和说话人的字典。
+            audio_path (str, optional): 音频文件的路径，默认为None。如果提供，则使用AudioPlayer播放音频。
+            title (str, optional): 图形窗口的标题，默认为"speaker-diarization"。
+            gui (bool, optional): 是否启用图形用户界面，默认为True。
+            size (tuple, optional): 图形窗口的大小（宽度，高度），默认为(14, 6)。
+        """
+        # 检测类别名称是否包含中文，是则设置相应字体
+        s = ''.join([data["speaker"] for data in speakers_data])
+        s += title
+        is_ascii = all(ord(c) < 128 for c in s)
+        if not is_ascii:
+            plot.rcParams['font.sans-serif'] = ['SimHei']
+            plot.rcParams['axes.unicode_minus'] = False
+        # 定义颜色
         self.rect_color = (0.0, 0.6, 1.0, 1.0)
-        self.rect_selected_color = (0.75, 0.75, 0, 1.0)  # 'y'
+        self.rect_selected_color = (0.75, 0.75, 0, 1.0)
         self.cluster_colors = [(0.0, 0.6, 1.0, 1.0), (0.0, 1.0, 0.6, 1.0), (0.6, 0.0, 1.0, 1.0),
                                (0.6, 1.0, 0.0, 1.0), (1.0, 0.0, 0.6, 1.0), (1.0, 0.6, 0.0, 1.0)]
         self.gui = gui
@@ -37,33 +54,22 @@ class PlotSpeaker:
             segment_data[speaker].append(dict(start=start, end=end))
         self.speakers_data = segment_data
 
+    # 根据音频播放器中的位置更新时间轴
     def _update_timeline(self):
-        """
-        Update the timeline given the position in the audio player
-
-        """
         if self.audio is not None and self.audio.playing:
             t = self.audio.current_time()
             self._draw_timeline(t)
             self.fig.canvas.draw()
 
+    # 绘制时间轴
     def _draw_timeline(self, t):
-        """
-        Draw the timeline a position t
-        :param t: in second, a float
-
-        """
         min_y, max_y = self.ax.get_ylim()
         self.timeline.set_data([t, t], [min_y, max_y])
         self._draw_info(t)
 
+    # 绘制信息
     @staticmethod
     def _draw_info(t):
-        """
-        Draw information on segment and timestamp
-        :param t: a float
-        :return:
-        """
         h = int(t) // 3600
         t %= 3600
         m = int(t) // 60
@@ -71,6 +77,11 @@ class PlotSpeaker:
         plot.xlabel(f'time: {h:02}:{m:02}:{s:02}')
 
     def draw(self, save_path=None):
+        """绘制说话人分割结果
+
+        Args:
+            save_path (str, optional): 保存图像的路径，默认为None。如果提供，则将绘制的图像保存到指定路径。
+        """
         y = 0
         labels_pos = []
         labels = []
