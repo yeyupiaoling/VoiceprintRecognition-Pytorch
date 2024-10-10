@@ -494,7 +494,7 @@ python infer_speaker_diarization.py --audio_path=dataset/test_long.wav
 {'speaker': '陌生人1', 'start': 15.0, 'end': 19.0}
 ```
 
-显示结果图像如下：
+显示结果图像如下，可以通过`空格`键控制播放音频，点击位置可以跳转音频到指定位置：
 <div align="center">
 <img src="./docs/images/speaker_diarization.jpg" alt="说话人日志" width="800">
 </div>
