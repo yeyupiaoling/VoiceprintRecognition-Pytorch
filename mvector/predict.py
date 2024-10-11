@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import yaml
 from loguru import logger
+from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 from yeaudio.audio import AudioSegment
 
@@ -61,15 +62,16 @@ class MVectorPredictor:
         logger.info(f"成功加载模型参数：{model_path}")
         self.predictor.eval()
 
-        self.index = None
         # 声纹库的声纹特征
         self.audio_feature = None
+        # 每个用户的平均声纹特征
+        self.audio_feature_mean = None
         # 声纹特征对应的用户名
         self.users_name = []
         # 声纹特征对应的声纹文件路径
         self.users_audio_path = []
-        # 索引对应的用户名称
-        self.index_users_name = []
+        # 每个用户的平均声纹特征对应的用户名称
+        self.users_name_mean = []
         # 加载声纹库
         self.audio_db_path = audio_db_path
         if self.audio_db_path is not None:
@@ -94,8 +96,6 @@ class MVectorPredictor:
                 self.audio_feature = feature
             else:
                 self.audio_feature = np.vstack((self.audio_feature, feature))
-        # 创建特征检索索引
-        self.__create_index()
 
     # 保存声纹特征索引
     def __write_index(self):
@@ -103,28 +103,6 @@ class MVectorPredictor:
             pickle.dump({"users_name": self.users_name,
                          "faces_feature": self.audio_feature,
                          "users_image_path": self.users_audio_path}, f)
-        # 创建特征检索索引
-        self.__create_index()
-
-    # 创建声纹特征Faiss索引
-    def __create_index(self):
-        import faiss
-        # 求每个用户特征的平均值
-        self.index_users_name = list(set(self.users_name))
-        features = []
-        for name in self.index_users_name:
-            idx = [i for i, x in enumerate(self.users_name) if x == name]
-            feature = self.audio_feature[idx].mean(axis=0)
-            feature = self.normalize_features(feature[np.newaxis, :])[0]
-            features.append(feature)
-        features = np.array(features, dtype=np.float32)
-        # 获取特征值的维度
-        dimension = features.shape[1]
-        # 将特征值添加Faiss索引对象，使用内积作为相似度度量
-        self.index = faiss.IndexFlatIP(dimension)
-        self.index.add(features)
-        assert len(self.index_users_name) == self.index.ntotal, '索引数量和用名数量不一致！'
-        logger.info(f'声纹特征索引创建完成，一共有{len(self.index_users_name)}个用户，分别是：{self.index_users_name}')
 
     # 加载声纹库中的声纹
     def __load_audio_db(self, audio_db_path):
@@ -169,7 +147,18 @@ class MVectorPredictor:
         assert len(self.audio_feature) == len(self.users_name) == len(self.users_audio_path), '加载的数量对不上！'
         # 将声纹特征保存到索引文件中
         self.__write_index()
-        logger.info('声纹库数据加载完成！')
+        # 计算平均特征，用于检索
+        for name in set(self.users_name):
+            indexes = [idx for idx, val in enumerate(self.users_name) if val == name]
+            feature = self.audio_feature[indexes].mean(axis=0)
+            if self.audio_feature_mean is None:
+                self.audio_feature_mean = feature
+            else:
+                self.audio_feature_mean = np.vstack((self.audio_feature_mean, feature))
+            self.users_name_mean.append(name)
+        if len(self.audio_feature_mean.shape) == 1:
+            self.audio_feature_mean = self.audio_feature_mean[np.newaxis, :]
+        logger.info(f'声纹库数据加载完成，一共有{len(self.audio_feature_mean)}个用户，分别是：{self.users_name_mean}')
 
     # 特征进行归一化
     @staticmethod
@@ -182,12 +171,13 @@ class MVectorPredictor:
             np_feature = np.array(np_feature)
         labels = []
         np_feature = self.normalize_features(np_feature.astype(np.float32))
-        similarities, indices = self.index.search(np_feature, 1)
-        for sim, idx in zip(similarities, indices):
-            sim, idx = sim[0], idx[0]
+        similarities = cosine_similarity(np_feature, self.audio_feature_mean)
+        for sim in similarities:
+            idx = np.argmax(sim)
+            sim = sim[idx]
             if sim >= self.threshold:
                 sim = round(float(sim), 5)
-                labels.append([self.index_users_name[idx], sim])
+                labels.append([self.users_name_mean[idx], sim])
             else:
                 labels.append([None, None])
         return labels
@@ -316,6 +306,15 @@ class MVectorPredictor:
         self.users_audio_path.append(audio_path.replace('\\', '/'))
         self.users_name.append(user_name)
         self.__write_index()
+        # 更新检索的特征
+        if user_name in self.users_name_mean:
+            index = self.users_name_mean.index(user_name)
+            indexes = [idx for idx, val in enumerate(self.users_name) if val == user_name]
+            feature = self.audio_feature[indexes].mean(axis=0)
+            self.audio_feature_mean[index] = feature
+        else:
+            self.users_name_mean.append(user_name)
+            self.audio_feature_mean = np.vstack((self.audio_feature_mean, feature))
         return True, "注册成功"
 
     def recognition(self, audio_data, threshold=None, sample_rate=16000):
@@ -347,7 +346,7 @@ class MVectorPredictor:
         :param user_name: 用户名
         :return:
         """
-        if user_name in self.users_name:
+        if user_name in self.users_name and user_name in self.users_name_mean:
             indexes = [i for i in range(len(self.users_name)) if self.users_name[i] == user_name]
             for index in sorted(indexes, reverse=True):
                 del self.users_name[index]
@@ -355,6 +354,10 @@ class MVectorPredictor:
                 self.audio_feature = np.delete(self.audio_feature, index, axis=0)
             self.__write_index()
             shutil.rmtree(os.path.join(self.audio_db_path, user_name))
+            # 删除检索内的特征
+            index = self.users_name_mean.index(user_name)
+            del self.users_name_mean[index]
+            self.audio_feature_mean = np.delete(self.audio_feature_mean, index, axis=0)
             return True
         else:
             return False
