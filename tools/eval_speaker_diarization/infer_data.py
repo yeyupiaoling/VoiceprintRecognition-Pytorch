@@ -32,4 +32,4 @@ with open(args.data_list_path, 'r') as f_r, open(args.result_path, 'w', encoding
         annotation = Annotation(uri=name)
         for i, result in enumerate(results):
             annotation[Segment(result['start'], result['end']), i] = str(result['speaker'])
-        f_w.write(annotation.to_rttm() + "\n")
+        f_w.write(annotation.to_rttm())

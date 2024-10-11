@@ -36,8 +36,8 @@ class SpeakerDiarization(object):
         self.sample_rate = audio_segment.sample_rate
         vad_time_list = audio_segment.vad(return_seconds=True)
         for t in vad_time_list:
-            st = int(t['start'])
-            ed = int(t['end'])
+            st = round(t['start'], 3)
+            ed = round(t['end'], 3)
             vad_segments.append([st, ed, samples[int(st * self.sample_rate):int(ed * self.sample_rate)]])
         self._check_audio_list(vad_segments)
         segments = self._chunk(vad_segments)
@@ -96,6 +96,7 @@ class SpeakerDiarization(object):
             Dict[np.ndarray, dict]: 聚类后的标签数组，形状为 (n_samples,)
         """
         labels = self.spectral_cluster(embeddings, oracle_num=speaker_num)
+        labels = self._correct_labels(labels)
         # 每个说话人特征向量平均值
         spk_num = labels.max() + 1
         spk_center = []
@@ -144,7 +145,6 @@ class SpeakerDiarization(object):
             list: 包含处理后的音频片段信息的列表，包含说话人标签、起始时间和结束时间。
         """
         assert len(segments) == len(labels)
-        labels = self._correct_labels(labels)
         distribute_res = []
         for i in range(len(segments)):
             distribute_res.append([segments[i][0], segments[i][1], labels[i]])
