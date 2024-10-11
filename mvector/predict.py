@@ -141,7 +141,7 @@ class MVectorPredictor:
         if len(audios_path) == 0: return
         logger.info('正在加载声纹库数据...')
         input_audios = []
-        for audio_path in tqdm(audios_path):
+        for audio_path in tqdm(audios_path, desc='加载声纹库数据'):
             # 如果声纹特征已经在索引就跳过
             if audio_path in self.users_audio_path: continue
             # 读取声纹库音频

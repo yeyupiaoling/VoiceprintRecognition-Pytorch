@@ -19,4 +19,3 @@ print("False alarm:", round(sum(false_alarms) / len(false_alarms), 5))
 print("Confusion:", round(sum(confusions) / len(confusions), 5))
 print("Missed detection:", round(sum(missed_detections) / len(missed_detections), 5))
 print("Diarization error rate:", round(sum(error_rates) / len(error_rates), 5))
-
