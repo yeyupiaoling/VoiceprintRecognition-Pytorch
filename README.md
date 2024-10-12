@@ -1,6 +1,6 @@
 简体中文 | [English](./README_en.md)
 
-# 基于Pytorch实现的声纹识别系统（该分支未完成，请使用其他分支）
+# 基于Pytorch实现的声纹识别系统
 
 ![python version](https://img.shields.io/badge/python-3.8+-orange.svg)
 ![GitHub forks](https://img.shields.io/github/forks/yeyupiaoling/VoiceprintRecognition-Pytorch)
