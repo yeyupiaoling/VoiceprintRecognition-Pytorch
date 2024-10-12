@@ -26,6 +26,10 @@
  - Pytorch 2.4.0
  - Windows 11 or Ubuntu 22.04
 
+# 项目记录
+
+1. 2024.10.12：发布1.1版本。
+
 # 项目特性
 
 1. 支持模型：EcapaTdnn、TDNN、Res2Net、ResNetSE、ERes2Net、CAM++
