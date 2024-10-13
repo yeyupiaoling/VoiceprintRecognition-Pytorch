@@ -83,7 +83,7 @@ class MVectorDataset(Dataset):
             # 读取音频
             audio_segment = AudioSegment.from_file(data_path)
             # 数据太短不利于训练
-            if self.mode == 'train':
+            if self.mode == 'train' or self.mode == 'extract_feature':
                 if audio_segment.duration < self.min_duration:
                     return self.__getitem__(idx + 1 if idx < len(self.lines) - 1 else 0)
             # 重采样
